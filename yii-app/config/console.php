@@ -18,14 +18,30 @@ $config = [
             'class' => 'yii\caching\FileCache',
         ],
         'log' => [
+            'traceLevel' => YII_DEBUG ? 3 : 0,
             'targets' => [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
                 ],
+                [
+                    'class' => 'yii\log\FileTarget',
+                    'levels' => ['info'],
+                    'categories' => ['mqtt*'],
+                    'logFile' => '@runtime/logs/mqtt.log',
+                    'logVars' => [],
+                    'prefix' => function ($message) {
+                        return '[MQTT] ';
+                    },
+                ],
             ],
         ],
         'db' => $db,
+        'mqtt' => [
+            'class' => 'app\components\MqttComponent',
+            'host' => 'localhost',  // Change to your MQTT broker host if not localhost
+            'port' => 1883,         // Change if your broker uses a different port
+        ],
     ],
     'params' => $params,
     /*

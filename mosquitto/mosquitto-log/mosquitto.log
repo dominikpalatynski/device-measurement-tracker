@@ -6,3 +6,141 @@
 1746772937: mosquitto version 2.0.21 running
 1746774739: Saving in-memory database to /mosquitto/data//mosquitto.db.
 1746776540: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746778341: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746781099: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746785700: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746789428: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746791229: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746793266: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746795067: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746796868: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746798809: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746800610: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746802411: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746804212: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746806013: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746811176: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746815443: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746817244: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746819045: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746820846: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746822647: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746824448: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746826249: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746828050: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746829851: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746834906: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746838747: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746843334: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746848135: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746852409: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746857002: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746858803: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746860604: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746862405: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746864206: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746866007: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746866661: New connection from 172.24.0.1:56674 on port 1883.
+1746866661: New client connected from 172.24.0.1:56674 as yii-mqtt-681f11e55b0a4 (p1, c0, k10).
+1746866706: New connection from 172.24.0.1:57366 on port 1883.
+1746866706: New client connected from 172.24.0.1:57366 as yii-mqtt-681f121258455 (p1, c0, k10).
+1746866706: Client yii-mqtt-681f121258455 closed its connection.
+1746867808: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746868477: New connection from 172.24.0.1:56126 on port 1883.
+1746868477: New client connected from 172.24.0.1:56126 as yii-mqtt-681f18fdca2a7 (p1, c0, k10).
+1746868477: Client yii-mqtt-681f18fdca2a7 closed its connection.
+1746868504: New connection from 172.24.0.1:58028 on port 1883.
+1746868504: New client connected from 172.24.0.1:58028 as yii-mqtt-681f19187eae1 (p1, c0, k10).
+1746868504: Client yii-mqtt-681f19187eae1 closed its connection.
+1746868519: New connection from 172.24.0.1:61618 on port 1883.
+1746868519: New client connected from 172.24.0.1:61618 as yii-mqtt-681f192701d21 (p1, c0, k10).
+1746868519: Client yii-mqtt-681f192701d21 closed its connection.
+1746868663: New connection from 172.24.0.1:58608 on port 1883.
+1746868663: New client connected from 172.24.0.1:58608 as yii-mqtt-681f19b775b72 (p1, c0, k10).
+1746868663: Client yii-mqtt-681f19b775b72 closed its connection.
+1746868671: New connection from 172.24.0.1:65506 on port 1883.
+1746868671: New client connected from 172.24.0.1:65506 as yii-mqtt-681f19bfcbc2c (p1, c0, k10).
+1746868671: Client yii-mqtt-681f19bfcbc2c closed its connection.
+1746868780: New connection from 172.24.0.1:60356 on port 1883.
+1746868780: New client connected from 172.24.0.1:60356 as yii-mqtt-681f1a2c60dfd (p1, c0, k10).
+1746868780: Client yii-mqtt-681f1a2c60dfd closed its connection.
+1746869123: Client yii-mqtt-681f11e55b0a4 closed its connection.
+1746869125: New connection from 172.24.0.1:62286 on port 1883.
+1746869125: New client connected from 172.24.0.1:62286 as yii-mqtt-681f1b856747b (p1, c0, k10).
+1746869129: New connection from 172.24.0.1:62302 on port 1883.
+1746869129: New client connected from 172.24.0.1:62302 as yii-mqtt-681f1b89b27f7 (p1, c0, k10).
+1746869129: Client yii-mqtt-681f1b89b27f7 closed its connection.
+1746869162: Client yii-mqtt-681f1b856747b closed its connection.
+1746869163: New connection from 172.24.0.1:60398 on port 1883.
+1746869163: New client connected from 172.24.0.1:60398 as yii-mqtt-681f1bab65411 (p1, c0, k10).
+1746869165: New connection from 172.24.0.1:56768 on port 1883.
+1746869165: New client connected from 172.24.0.1:56768 as yii-mqtt-681f1badb92a8 (p1, c0, k10).
+1746869165: Client yii-mqtt-681f1badb92a8 closed its connection.
+1746869205: New connection from 172.24.0.1:61122 on port 1883.
+1746869205: New client connected from 172.24.0.1:61122 as yii-mqtt-681f1bd561542 (p1, c0, k10).
+1746869205: Client yii-mqtt-681f1bd561542 closed its connection.
+1746869210: New connection from 172.24.0.1:61126 on port 1883.
+1746869210: New client connected from 172.24.0.1:61126 as yii-mqtt-681f1bda8210f (p1, c0, k10).
+1746869210: Client yii-mqtt-681f1bda8210f closed its connection.
+1746869310: Client yii-mqtt-681f1bab65411 closed its connection.
+1746869312: New connection from 172.24.0.1:59060 on port 1883.
+1746869312: New client connected from 172.24.0.1:59060 as yii-mqtt-681f1c40cf02b (p1, c0, k10).
+1746869318: New connection from 172.24.0.1:59304 on port 1883.
+1746869318: New client connected from 172.24.0.1:59304 as yii-mqtt-681f1c460f3c1 (p1, c0, k10).
+1746869318: Client yii-mqtt-681f1c460f3c1 closed its connection.
+1746869334: Client yii-mqtt-681f1c40cf02b closed its connection.
+1746869609: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746872098: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746874062: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746876074: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746877875: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746879676: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746881477: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746883278: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746884325: New connection from 172.24.0.1:57524 on port 1883.
+1746884325: New client connected from 172.24.0.1:57524 as yii-mqtt-681f56e577cef (p1, c0, k10).
+1746884333: New connection from 172.24.0.1:64772 on port 1883.
+1746884333: New client connected from 172.24.0.1:64772 as yii-mqtt-681f56ed210ee (p1, c0, k10).
+1746884333: Client yii-mqtt-681f56ed210ee closed its connection.
+1746884386: Client yii-mqtt-681f56e577cef closed its connection.
+1746884388: New connection from 172.24.0.1:57196 on port 1883.
+1746884388: New client connected from 172.24.0.1:57196 as yii-mqtt-681f5724a4e3a (p1, c0, k10).
+1746884391: New connection from 172.24.0.1:57206 on port 1883.
+1746884391: New client connected from 172.24.0.1:57206 as yii-mqtt-681f5727ab4aa (p1, c0, k10).
+1746884391: Client yii-mqtt-681f5727ab4aa closed its connection.
+1746884407: mosquitto version 2.0.21 terminating
+1746884407: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746884413: mosquitto version 2.0.21 starting
+1746884413: Config loaded from /mosquitto/config/mosquitto.conf.
+1746884413: Opening ipv4 listen socket on port 1883.
+1746884413: Opening ipv6 listen socket on port 1883.
+1746884413: Opening websockets listen socket on port 9001.
+1746884413: mosquitto version 2.0.21 running
+1746884419: New connection from 172.24.0.1:61290 on port 1883.
+1746884419: New client connected from 172.24.0.1:61290 as yii-mqtt-681f5743a98fb (p1, c0, k10).
+1746884423: New connection from 172.24.0.1:61300 on port 1883.
+1746884423: New client connected from 172.24.0.1:61300 as yii-mqtt-681f574775971 (p1, c0, k10).
+1746884423: Client yii-mqtt-681f574775971 closed its connection.
+1746884498: New connection from 172.24.0.1:61834 on port 1883.
+1746884498: New client connected from 172.24.0.1:61834 as yii-mqtt-681f5792a6300 (p1, c0, k10).
+1746884498: Client yii-mqtt-681f5792a6300 closed its connection.
+1746884503: Client yii-mqtt-681f5743a98fb closed its connection.
+1746884505: New connection from 172.24.0.1:61844 on port 1883.
+1746884505: New client connected from 172.24.0.1:61844 as yii-mqtt-681f57990484f (p1, c0, k10).
+1746884507: New connection from 172.24.0.1:60182 on port 1883.
+1746884507: New client connected from 172.24.0.1:60182 as yii-mqtt-681f579bae316 (p1, c0, k10).
+1746884507: Client yii-mqtt-681f579bae316 closed its connection.
+1746884741: Client yii-mqtt-681f57990484f has exceeded timeout, disconnecting.
+1746886214: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1746887046: New connection from 172.24.0.1:61460 on port 1883.
+1746887046: New client connected from 172.24.0.1:61460 as yii-mqtt-681f6186b86b2 (p1, c0, k10).
+1746887052: New connection from 172.24.0.1:61476 on port 1883.
+1746887052: New client connected from 172.24.0.1:61476 as yii-mqtt-681f618cd124d (p1, c0, k10).
+1746887052: Client yii-mqtt-681f618cd124d closed its connection.
+1746887464: Client yii-mqtt-681f6186b86b2 closed its connection.
+1746887720: New connection from 172.24.0.1:60640 on port 1883.
+1746887720: New client connected from 172.24.0.1:60640 as yii-mqtt-681f6428ee69c (p1, c0, k10).
+1746887724: New connection from 172.24.0.1:60642 on port 1883.
+1746887724: New client connected from 172.24.0.1:60642 as yii-mqtt-681f642cecb12 (p1, c0, k10).
+1746887724: Client yii-mqtt-681f642cecb12 closed its connection.
+1746887738: Client yii-mqtt-681f6428ee69c closed its connection.

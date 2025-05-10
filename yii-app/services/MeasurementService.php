@@ -12,18 +12,25 @@ class MeasurementService extends Component
 {
     /**
      * Process incoming measurement from MQTT
-     * 
-     * @param string $topic The MQTT topic
-     * @param string $payload The MQTT message payload
-     * @return Measurement|false The saved measurement or false on failure
      */
     public function processMqttMessage($topic, $payload)
     {
         try {
+            echo "\033[32m[MQTT] Processing message: $payload\033[0m\n";
+            
+            // Przykład debugowania z użyciem Yii2
+            Yii::info([
+                'topic' => $topic,
+                'payload' => $payload,
+                'decoded' => Json::decode($payload)
+            ], 'mqtt-debug');
+
+            Yii::info("Processing MQTT message: $payload", 'mqtt');
             // Parse the payload
             $data = Json::decode($payload);
             
             if (!isset($data['deviceId'])) {
+                echo "\033[31m[MQTT] Error: Missing deviceId in payload\033[0m\n";
                 Yii::error("Missing deviceId in MQTT payload: $payload", 'mqtt');
                 return false;
             }
@@ -49,19 +56,16 @@ class MeasurementService extends Component
             $measurement->created_at = time();
             
             if (!$measurement->save()) {
+                echo "\033[31m[MQTT] Error: Failed to save measurement\033[0m\n";
                 Yii::error("Failed to save measurement: " . Json::encode($measurement->errors), 'mqtt');
                 return false;
             }
-            
-            // Optionally trigger events or cache updates
-            Yii::$app->cache->set(
-                "latest_measurement_{$device->id}", 
-                $measurement, 
-                3600
-            );
-            
+
+            $this->sendMeasurementToPredictionService($measurement);
+            echo "\033[32m[MQTT] Successfully processed measurement for device: $deviceUuid\033[0m\n";
             return $measurement;
         } catch (\Exception $e) {
+            echo "\033[31m[MQTT] Error: " . $e->getMessage() . "\033[0m\n";
             Yii::error("Error processing MQTT message: " . $e->getMessage(), 'mqtt');
             return false;
         }
@@ -69,9 +73,6 @@ class MeasurementService extends Component
     
     /**
      * Find or create a device by UUID
-     * 
-     * @param string $deviceUuid
-     * @return Device
      */
     protected function getOrCreateDevice($deviceUuid)
     {
@@ -96,10 +97,6 @@ class MeasurementService extends Component
     
     /**
      * Get latest measurements for all devices or a specific device
-     * 
-     * @param integer|null $deviceId
-     * @param integer $limit
-     * @return array
      */
     public function getLatestMeasurements($deviceId = null, $limit = 10)
     {
@@ -111,5 +108,21 @@ class MeasurementService extends Component
         }
         
         return $query->limit($limit)->all();
+    }
+
+    protected function sendMeasurementToPredictionService($measurement)
+    {
+       $topic = 'predictions/'.$measurement->device_id.'/measurements';
+       $payload = [
+        'temperature' => $measurement->temperature,
+        'humidity' => $measurement->humidity,
+        'pressure' => $measurement->pressure,
+        'batteryLevel' => $measurement->battery_level,
+        'timestamp' => $measurement->measured_at,
+       ];
+        
+       Yii::$app->mqtt->publish($topic, Json::encode($payload), 1);
+       echo "\033[32m[MQTT] Measurement sent to prediction service: $topic\033[0m\n";
+       Yii::info("Measurement sent successfully to topic: {$topic}", 'mqtt');
     }
 }
