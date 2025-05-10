@@ -18,7 +18,11 @@ class Module extends \yii\base\Module
     public function init()
     {
         parent::init();
-
-        // custom initialization code goes here
+        
+        // Ustawienie domyślnego kontrolera
+        $this->defaultRoute = 'device-measurement';
+        
+        // Konfiguracja dla API
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
     }
 }

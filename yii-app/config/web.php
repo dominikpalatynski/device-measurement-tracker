@@ -43,6 +43,10 @@ $config = [
             ],
         ],
         'db' => $db,
+        'user' => [
+            'identityClass' => 'app\models\User',
+            'enableAutoLogin' => true,
+        ],
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
@@ -51,6 +55,17 @@ $config = [
                 'api/measurements/device/<id:\w+>' => 'api/measurement/device',
                 'api/dashboard-data' => 'api/measurement/dashboard-data',
                 'dashboard/device/<id:\w+>' => 'dashboard/device-details',
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => ['api/device-measurement'],
+                    'pluralize' => false,
+                    'patterns' => [
+                        'GET index' => 'index',
+                        'GET latest' => 'latest',
+                        'GET stats' => 'stats',
+                        'GET range' => 'range',
+                    ],
+                ],
             ],
         ],
         'mqtt' => [

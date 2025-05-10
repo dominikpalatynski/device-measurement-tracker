@@ -144,3 +144,4 @@
 1746887724: New client connected from 172.24.0.1:60642 as yii-mqtt-681f642cecb12 (p1, c0, k10).
 1746887724: Client yii-mqtt-681f642cecb12 closed its connection.
 1746887738: Client yii-mqtt-681f6428ee69c closed its connection.
+1746888015: Saving in-memory database to /mosquitto/data//mosquitto.db.
