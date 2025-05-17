@@ -4,7 +4,7 @@ namespace app\modules\api\controllers;
 use Yii;
 use yii\rest\Controller;
 use yii\web\Response;
-use app\handlers\DeviceMeasurementHandler;
+use app\services\DeviceMeasurementService;
 
 class DeviceMeasurementController extends Controller
 {
@@ -28,7 +28,7 @@ class DeviceMeasurementController extends Controller
     public function actionIndex($deviceUuid, $limit = 10)
     {
         try {
-            $handler = new DeviceMeasurementHandler($deviceUuid);
+            $handler = new DeviceMeasurementService($deviceUuid);
             $measurements = $handler->getAllMeasurements($limit);
             
             return [
@@ -53,7 +53,7 @@ class DeviceMeasurementController extends Controller
     public function actionLatest($deviceUuid)
     {
         try {
-            $handler = new DeviceMeasurementHandler($deviceUuid);
+            $handler = new DeviceMeasurementService($deviceUuid);
             $measurement = $handler->getLatestMeasurement();
 
             if (!$measurement) {
@@ -86,7 +86,7 @@ class DeviceMeasurementController extends Controller
     public function actionStats($deviceUuid)
     {
         try {
-            $handler = new DeviceMeasurementHandler($deviceUuid);
+            $handler = new DeviceMeasurementService($deviceUuid);
             $stats = $handler->getMeasurementStats();
 
             return [
@@ -113,7 +113,7 @@ class DeviceMeasurementController extends Controller
     public function actionRange($deviceUuid, $startTimestamp, $endTimestamp)
     {
         try {
-            $handler = new DeviceMeasurementHandler($deviceUuid);
+            $handler = new DeviceMeasurementService($deviceUuid);
             $measurements = $handler->getMeasurementsInTimeRange($startTimestamp, $endTimestamp);
 
             return [

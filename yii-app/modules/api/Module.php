@@ -18,7 +18,7 @@ class Module extends \yii\base\Module
     public function init()
     {
         parent::init();
-        
+
         // Ustawienie domyślnego kontrolera
         $this->defaultRoute = 'device-measurement';
         
