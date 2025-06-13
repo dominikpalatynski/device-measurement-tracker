@@ -98,6 +98,75 @@ export interface MeasurementStatsResponse {
   error?: string;
 }
 
+// Device interfaces
+export interface Device {
+  id: number;
+  device_id: string;
+  device_uuid: string;
+  device_name: string;
+  device_type: "Drone" | "DSP" | "IoT-Sensor" | "Other";
+  status: "Active" | "Pending-Registration" | "Not-Active";
+  last_updated: string;
+  created_at: string;
+  last_seen_at?: string;
+  experiments_count?: number;
+  active_experiments_count?: number;
+}
+
+export interface DeviceResponse {
+  success: boolean;
+  data: Device[];
+  error?: string;
+}
+
+export interface SingleDeviceResponse {
+  success: boolean;
+  data: Device;
+  error?: string;
+}
+
+// Experiment interfaces
+export interface Experiment {
+  id: number;
+  experiment_id: string;
+  name: string;
+  description?: string;
+  status: "Active" | "Completed" | "Paused" | "Draft";
+  start_date: string;
+  end_date?: string;
+  device_ids: string[];
+  phenomena: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExperimentResponse {
+  success: boolean;
+  data: Experiment[];
+  error?: string;
+}
+
+export interface SingleExperimentResponse {
+  success: boolean;
+  data: Experiment;
+  error?: string;
+}
+
+// Phenomenon interface
+export interface Phenomenon {
+  id: number;
+  name: string;
+  description?: string;
+  unit?: string;
+  type: string;
+}
+
+export interface PhenomenonResponse {
+  success: boolean;
+  data: Phenomenon[];
+  error?: string;
+}
+
 /**
  * Get all measurements for a device
  */
@@ -139,10 +208,260 @@ export async function testApiConnection(message: string = "hello"): Promise<{suc
   return fetchApi<{success: boolean, message: string, time: string}>(`measurement/echo?message=${message}`);
 }
 
+// Device API functions
+/**
+ * Get all devices
+ */
+export async function getDevices(): Promise<Device[]> {
+  try {
+    const response = await fetchApi<DeviceResponse>('device/list');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching devices:', error);
+    return [];
+  }
+}
+
+/**
+ * Get a single device by ID
+ */
+export async function getDevice(deviceId: string): Promise<Device | null> {
+  try {
+    const response = await fetchApi<SingleDeviceResponse>(`device/view?id=${deviceId}`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching device:', error);
+    return null;
+  }
+}
+
+/**
+ * Register a new device
+ */
+export async function registerDevice(deviceData: {device_name: string}): Promise<Device | null> {
+  try {
+    const response = await fetchApi<SingleDeviceResponse>('device/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(deviceData),
+    });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error registering device:', error);
+    return null;
+  }
+}
+
+/**
+ * Update device
+ */
+export async function updateDevice(deviceId: string, deviceData: Partial<Device>): Promise<Device | null> {
+  try {
+    const response = await fetchApi<SingleDeviceResponse>(`device/update?id=${deviceId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(deviceData),
+    });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error updating device:', error);
+    return null;
+  }
+}
+
+/**
+ * Activate device
+ */
+export async function activateDevice(deviceId: string): Promise<boolean> {
+  try {
+    const response = await updateDevice(deviceId, { status: "Active" });
+    return response !== null;
+  } catch (error) {
+    console.error('Error activating device:', error);
+    return false;
+  }
+}
+
+/**
+ * Deactivate device
+ */
+export async function deactivateDevice(deviceId: string): Promise<boolean> {
+  try {
+    const response = await updateDevice(deviceId, { status: "Not-Active" });
+    return response !== null;
+  } catch (error) {
+    console.error('Error deactivating device:', error);
+    return false;
+  }
+}
+
+/**
+ * Delete device
+ */
+export async function deleteDevice(deviceId: string): Promise<boolean> {
+  try {
+    const response = await fetchApi<{success: boolean}>(`device/delete?id=${deviceId}`, {
+      method: 'DELETE',
+    });
+    return response.success;
+  } catch (error) {
+    console.error('Error deleting device:', error);
+    return false;
+  }
+}
+
+// Experiment API functions
+/**
+ * Get all experiments
+ */
+export async function getExperiments(): Promise<Experiment[]> {
+  try {
+    const response = await fetchApi<ExperimentResponse>('experiment/list');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching experiments:', error);
+    return [];
+  }
+}
+
+/**
+ * Get a single experiment by ID
+ */
+export async function getExperiment(experimentId: string): Promise<Experiment | null> {
+  try {
+    const response = await fetchApi<SingleExperimentResponse>(`experiment/view?id=${experimentId}`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching experiment:', error);
+    return null;
+  }
+}
+
+/**
+ * Create a new experiment
+ */
+export async function createExperiment(experimentData: Partial<Experiment>): Promise<Experiment | null> {
+  try {
+    const response = await fetchApi<SingleExperimentResponse>('experiment/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(experimentData),
+    });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error creating experiment:', error);
+    return null;
+  }
+}
+
+/**
+ * Update experiment
+ */
+export async function updateExperiment(experimentId: string, experimentData: Partial<Experiment>): Promise<Experiment | null> {
+  try {
+    const response = await fetchApi<SingleExperimentResponse>(`experiment/update?id=${experimentId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(experimentData),
+    });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error updating experiment:', error);
+    return null;
+  }
+}
+
+/**
+ * Delete experiment
+ */
+export async function deleteExperiment(experimentId: string): Promise<boolean> {
+  try {
+    const response = await fetchApi<{success: boolean}>(`experiment/delete?id=${experimentId}`, {
+      method: 'DELETE',
+    });
+    return response.success;
+  } catch (error) {
+    console.error('Error deleting experiment:', error);
+    return false;
+  }
+}
+
+/**
+ * Get all phenomena
+ */
+export async function getPhenomena(): Promise<Phenomenon[]> {
+  try {
+    const response = await fetchApi<PhenomenonResponse>('phenomenon/list');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching phenomena:', error);
+    return [];
+  }
+}
+
+// Device API object for easy access
+export const deviceApi = {
+  getDevices,
+  getDevice,
+  registerDevice,
+  updateDevice,
+  activateDevice,
+  deactivateDevice,
+  deleteDevice,
+};
+
+// Experiment API object for easy access
+export const experimentApi = {
+  getExperiments,
+  getExperiment,
+  createExperiment,
+  updateExperiment,
+  deleteExperiment,
+};
+
+// Update the default export
 export default {
   getAllMeasurements,
   getLatestMeasurement,
   getMeasurementStats,
   getMeasurementsInRange,
-  testApiConnection
+  testApiConnection,
+  deviceApi,
+  experimentApi,
+  getPhenomena,
 };
