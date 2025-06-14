@@ -1,4 +1,3 @@
-# Git ignore file for device-measurement-tracker
-
-# Ignore MySQL data directory
-docker/mysql/data/*
+/docker/mysql
+/docker
+project_env/

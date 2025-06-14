@@ -1,0 +1,15 @@
+{
+  "name": "Sample Device",
+  "type": "sensor",
+  "location": "Office",
+  "settings": {
+    "interval": 30,
+    "enabled": true,
+    "debug_mode": false
+  },
+  "capabilities": [
+    "temperature",
+    "humidity",
+    "pressure"
+  ]
+}
