@@ -1,0 +1,5 @@
+{
+    "host": "localhost", 
+    "port": 1883,
+    "send_interval": 10
+  }

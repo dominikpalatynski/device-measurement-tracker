@@ -14,8 +14,8 @@ from typing import Dict, Any
 
 class DeviceRegistrar:
     def __init__(self, base_url: str = None):
-        self.base_url = base_url or "https://your-api-server.com"
-        self.register_endpoint = f"{self.base_url}/api/device/register"
+        self.base_url = "http://localhost:8080"
+        self.register_endpoint = f"{self.base_url}/api/device-register/register"
     
     def load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration from JSON file."""

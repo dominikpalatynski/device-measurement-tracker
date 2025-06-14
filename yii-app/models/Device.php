@@ -58,14 +58,17 @@ class Device extends ActiveRecord
     public function rules()
     {
         return [
-            [['device_id', 'device_name'], 'required'],
-            [['device_id'], 'string', 'max' => 255],
+            [['device_uuid'], 'required'],
+            [['device_uuid'], 'string', 'max' => 50],
+            [['device_uuid'], 'unique'],
+            [['device_id'], 'string', 'max' => 100],
             [['device_id'], 'unique'],
-            [['device_name'], 'string', 'max' => 255],
-            [['device_type'], 'in', 'range' => [self::TYPE_DRONE, self::TYPE_DSP, self::TYPE_LINEAR_MODULE]],
-            [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_PENDING, self::STATUS_INACTIVE]],
-            [['status'], 'default', 'value' => self::STATUS_PENDING],
-            [['registration_date', 'last_updated'], 'safe'],
+            [['config'], 'safe'],
+            [['access_token'], 'string', 'max' => 255],
+            [['name'], 'string', 'max' => 100],
+            [['type'], 'string', 'max' => 50],
+            [['status'], 'integer'],
+            [['last_seen_at'], 'integer'],
         ];
     }    
     /**

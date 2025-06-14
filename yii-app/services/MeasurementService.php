@@ -95,6 +95,25 @@ class MeasurementService extends Component
         return $device;
     }
     
+    public function processRealTimeDataMqttMessage($topic, $payload)
+    {
+        try {
+            echo "\033[32m[MQTT] Processing real time data message: $payload\033[0m\n";
+            $data = Json::decode($payload);
+            $deviceUuid = $data['deviceId'];
+            $device = $this->getOrCreateDevice($deviceUuid);
+            $device->status = Device::STATUS_ACTIVE;
+            $device->updated_at = time();
+            $device->save();
+            echo "\033[32m[MQTT] Successfully processed real time data for device: $deviceUuid\033[0m\n";
+            return $device;
+        } catch (\Exception $e) {
+            echo "\033[31m[MQTT] Error: " . $e->getMessage() . "\033[0m\n";
+            Yii::error("Error processing real time data MQTT message: " . $e->getMessage(), 'mqtt');
+            return false;
+        }
+    }
+
     /**
      * Get latest measurements for all devices or a specific device
      */
