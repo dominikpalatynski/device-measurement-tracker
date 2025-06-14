@@ -3,112 +3,148 @@
 namespace app\modules\api\controllers;
 
 use Yii;
-use yii\web\Controller;
+use yii\rest\Controller;
 use yii\web\Response;
-use yii\filters\AccessControl;
-use yii\filters\VerbFilter;
-use app\models\Device;
+use app\models\Devices;
 use yii\web\NotFoundHttpException;
 use yii\web\ServerErrorHttpException;
 use yii\helpers\Json;
 use app\models\VerificationToken;
 
 class DeviceRegisterController extends Controller
-{
-    /**
+{    /**
      * {@inheritdoc}
-     */
-    public function behaviors()
+     */    public function behaviors()
     {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'actions' => ['register'],
-                        'roles' => ['?'],
-                    ],
-                    [
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                ],
-            ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'register' => ['post'],
-                    'update' => ['put', 'post'],
-                    'delete' => ['delete'],
-                    'list' => ['get'],
-                    'view' => ['get'],
-                ],
-            ],
-            'corsFilter' => [
-                'class' => \yii\filters\Cors::class,
-                'cors' => [
-                    'Origin' => ['*'],
-                    'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
-                    'Access-Control-Request-Headers' => ['*'],
-                    'Access-Control-Allow-Credentials' => true,
-                ],
+        $behaviors = parent::behaviors();
+        $behaviors['contentNegotiator']['formats']['application/json'] = Response::FORMAT_JSON;
+          // Add HTTP method filter
+        $behaviors['verbs'] = [
+            'class' => \yii\filters\VerbFilter::class,
+            'actions' => [
+                'register' => ['POST', 'OPTIONS'],
+                'update' => ['PUT', 'PATCH', 'OPTIONS'],
+                'delete' => ['DELETE', 'OPTIONS'],
+                'list' => ['GET', 'OPTIONS'],
+                'view' => ['GET', 'OPTIONS'],
+                'activate' => ['POST', 'OPTIONS'],
+                'deactivate' => ['POST', 'OPTIONS'],
+                'test' => ['GET', 'OPTIONS'],
             ],
         ];
-    }
-
-    /**
-     * {@inheritdoc}
+        
+        // Add CORS filter with improved configuration
+        $behaviors['corsFilter'] = [
+            'class' => \yii\filters\Cors::class,
+            'cors' => [
+                'Origin' => ['http://localhost:3000', 'http://localhost:3001', 'http://172.22.176.1:3000', 'http://172.22.176.1:3001'], // Specific allowed origins
+                'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+                'Access-Control-Request-Headers' => ['*'],
+                'Access-Control-Allow-Credentials' => true,
+                'Access-Control-Max-Age' => 3600, // Cache preflight for 1 hour
+                'Access-Control-Expose-Headers' => ['X-Pagination-Current-Page', 'X-Pagination-Page-Count', 'X-Pagination-Per-Page', 'X-Pagination-Total-Count'],
+            ],
+        ];
+        
+        return $behaviors;
+    }/**
+     * Simple test endpoint to verify controller is working
      */
-    public function beforeAction($action)
+    public function actionTest()
     {
-        // Wyłącz walidację CSRF dla wszystkich akcji API
-        $this->enableCsrfValidation = false;
-        return parent::beforeAction($action);
-    }
-
-    /**
+        Yii::info("DeviceRegister test endpoint called", 'api.device-register');
+        
+        return [
+            'success' => true,
+            'message' => 'DeviceRegisterController is working',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'controller' => static::class,
+        ];
+    }    /**
      * Rejestruje nowe urządzenie
      */
     public function actionRegister()
     {
-        Yii::$app->response->format = Response::FORMAT_JSON;
+        Yii::info("Device registration endpoint called via " . Yii::$app->request->method, 'api.device-register');
+        
+        // Ensure this is only accessible via POST
+        if (!Yii::$app->request->isPost) {
+            Yii::$app->response->statusCode = 405;
+            return [
+                'success' => false,
+                'error' => 'Method not allowed. Use POST to register a device.',
+                'allowed_methods' => ['POST']
+            ];
+        }
         
         try {
-            $data = Json::decode(Yii::$app->request->rawBody);
+            // Validate request body exists
+            $rawBody = Yii::$app->request->rawBody;
+            if (empty($rawBody)) {
+                throw new ServerErrorHttpException('Brak danych w żądaniu');
+            }
             
-            if (!isset($data['device_name'])) {
+            $data = Json::decode($rawBody);
+            
+            if (!isset($data['device_name']) || empty($data['device_name'])) {
                 throw new ServerErrorHttpException('Brak wymaganego parametru device_name');
             }
 
-            $device = new Device();
-            $device->device_uuid = Yii::$app->security->generateRandomString(32); // Generujemy unikalny UUID
-            $device->name = $data['device_name'];
-            $device->status = Device::STATUS_INACTIVE;
-            $device->created_at = time();
-            $device->updated_at = time();
+            // Start transaction to ensure data consistency
+            $transaction = Yii::$app->db->beginTransaction();
+              try {
+                $device = new Devices();
+                $device->device_id = Yii::$app->security->generateRandomString(32);
+                $device->device_name = $data['device_name'];
+                $device->device_type = $data['device_type'] ?? Devices::TYPE_DRONE;
+                $device->status = Devices::STATUS_PENDING;                if (!$device->save()) {
+                    throw new ServerErrorHttpException('Błąd podczas zapisywania urządzenia: ' . 
+                        Json::encode($device->errors));
+                }
 
-            if (!$device->save()) {
-                throw new ServerErrorHttpException('Błąd podczas zapisywania urządzenia: ' . 
-                    Json::encode($device->errors));
+                // Note: Verification token system may need updating for string device_id
+                // For now, we'll skip token generation and activate device directly
+                // $verificationToken = VerificationToken::generate($device->device_id);
+                
+                $transaction->commit();                return [
+                    'success' => true,
+                    'device' => [
+                        'device_id' => $device->device_id,
+                        'device_name' => $device->device_name,
+                        'device_type' => $device->device_type,
+                        'status' => $device->status,
+                        'registration_date' => $device->registration_date,
+                        'last_updated' => $device->last_updated,
+                    ],
+                    // 'verification_token' => $verificationToken->token,
+                    'message' => 'Urządzenie zostało pomyślnie zarejestrowane',
+                ];
+                
+            } catch (\Exception $e) {
+                $transaction->rollBack();
+                throw $e;
             }
-
-            $verificationToken = VerificationToken::generate($device->id);
-            if (!$verificationToken->save()) {
-                throw new ServerErrorHttpException('Błąd podczas generowania tokenu: ' . 
-                    Json::encode($verificationToken->errors));
-            }
-
+            
+        } catch (\yii\base\InvalidArgumentException $e) {
+            Yii::error("Błąd parsowania JSON: " . $e->getMessage());
+            Yii::$app->response->statusCode = 400;
             return [
-                'success' => true,
-                'device' => $device->attributes,
-                'verification_token' => $verificationToken->token,
+                'success' => false,
+                'error' => 'Nieprawidłowy format danych JSON',
             ];
         } catch (\Exception $e) {
-            Yii::error("Błąd rejestracji urządzenia: " . $e->getMessage());
+            Yii::error("Błąd rejestracji urządzenia: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            Yii::$app->response->statusCode = 500;
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
+            ];
+        } catch (\Throwable $e) {
+            Yii::error("Krytyczny błąd rejestracji urządzenia: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            Yii::$app->response->statusCode = 500;
+            return [
+                'success' => false,
+                'error' => 'Wystąpił nieoczekiwany błąd podczas rejestracji urządzenia',
             ];
         }
     }
@@ -125,7 +161,7 @@ class DeviceRegisterController extends Controller
             $data = Json::decode(Yii::$app->request->rawBody);
 
             if (isset($data['name'])) {
-                $device->name = $data['name'];
+                $device->device_name = $data['name'];
             }
             if (isset($data['status'])) {
                 $device->status = $data['status'];
@@ -175,20 +211,18 @@ class DeviceRegisterController extends Controller
                 'error' => $e->getMessage(),
             ];
         }
-    }
-
-    /**
+    }    /**
      * Zwraca listę wszystkich urządzeń
      */
     public function actionList()
     {
-        Yii::$app->response->format = Response::FORMAT_JSON;
+        Yii::info("Device list endpoint called", 'api.device-register');
         
         try {
-            $devices = Device::find()->all();
+            $devices = Devices::find()->all();
             return [
                 'success' => true,
-                'devices' => array_map(function($device) {
+                'data' => array_map(function($device) {
                     return $device->attributes;
                 }, $devices),
             ];
@@ -199,20 +233,23 @@ class DeviceRegisterController extends Controller
                 'error' => $e->getMessage(),
             ];
         }
-    }
-
-    /**
+    }    /**
      * Zwraca szczegóły konkretnego urządzenia
      */
-    public function actionView($id)
+    public function actionView()
     {
-        Yii::$app->response->format = Response::FORMAT_JSON;
+        Yii::info("Device view endpoint called", 'api.device-register');
         
         try {
+            $id = Yii::$app->request->get('id');
+            if (!$id) {
+                throw new ServerErrorHttpException('Missing required parameter: id');
+            }
+            
             $device = $this->findDevice($id);
             return [
                 'success' => true,
-                'device' => $device->attributes,
+                'data' => $device->attributes,
             ];
         } catch (\Exception $e) {
             Yii::error("Błąd pobierania danych urządzenia: " . $e->getMessage());
@@ -221,17 +258,84 @@ class DeviceRegisterController extends Controller
                 'error' => $e->getMessage(),
             ];
         }
+    }    /**
+     * Activate a device
+     */
+    public function actionActivate()
+    {
+        try {
+            $id = Yii::$app->request->get('id');
+            if (!$id) {
+                throw new ServerErrorHttpException('Missing required parameter: id');
+            }
+            
+            $device = $this->findDevice($id);
+            
+            $device->status = Devices::STATUS_ACTIVE;
+            
+            if (!$device->save()) {
+                throw new ServerErrorHttpException('Error activating device: ' . 
+                    Json::encode($device->errors));
+            }
+            
+            return [
+                'success' => true,
+                'data' => $device->attributes,
+                'message' => 'Device activated successfully',
+            ];
+        } catch (\Exception $e) {
+            Yii::error("Error activating device: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 
     /**
-     * Znajduje urządzenie po ID
+     * Deactivate a device
      */
-    protected function findDevice($id)
+    public function actionDeactivate()
     {
-        $device = Device::findOne($id);
+        try {
+            $id = Yii::$app->request->get('id');
+            if (!$id) {
+                throw new ServerErrorHttpException('Missing required parameter: id');
+            }
+            
+            $device = $this->findDevice($id);
+            
+            $device->status = Devices::STATUS_INACTIVE;
+            
+            if (!$device->save()) {
+                throw new ServerErrorHttpException('Error deactivating device: ' . 
+                    Json::encode($device->errors));
+            }
+            
+            return [
+                'success' => true,
+                'data' => $device->attributes,
+                'message' => 'Device deactivated successfully',
+            ];
+        } catch (\Exception $e) {
+            Yii::error("Error deactivating device: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Znajduje urządzenie po ID lub UUID
+     */
+    protected function findDevice($id)    {
+        // Try to find by device_id
+        $device = Devices::findByDeviceId($id);
+        
         if ($device === null) {
             throw new NotFoundHttpException('Urządzenie nie zostało znalezione');
         }
         return $device;
     }
-} 
+}

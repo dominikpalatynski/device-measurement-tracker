@@ -3,7 +3,7 @@
 namespace app\services;
 
 use Yii;
-use app\models\Device;
+use app\models\Devices;
 use app\models\VerificationToken;
 use yii\base\Component;
 use yii\helpers\Json;
@@ -68,22 +68,17 @@ class DeviceRegisterService extends Component
                 echo "\033[31m[MQTT] Error: Token has already been used\033[0m\n";
                 Yii::error("Token already used: {$data['token']}", 'mqtt');
                 return false;
-            }
-
-            // Znajdź urządzenie
-            $device = Device::findOne($token->device_id);
+            }            // Znajdź urządzenie
+            $device = Devices::findByDeviceId($token->device_id);
             
             if (!$device) {
                 $this->sendMqttResponse('error', 'Device not found for token', $token->token);
                 echo "\033[31m[MQTT] Error: Device not found for token\033[0m\n";
                 Yii::error("Device not found for token: {$data['token']}", 'mqtt');
                 return false;
-            }
-
-            // Aktualizuj status urządzenia
-            $device->status = Device::STATUS_ACTIVE;
-            $device->last_seen_at = time();
-            $device->updated_at = time();
+            }            // Aktualizuj status urządzenia
+            $device->status = Devices::STATUS_ACTIVE;
+            $device->last_updated = new \yii\db\Expression('NOW()');
             
             if (!$device->save()) {
                 $this->sendMqttResponse('error', 'Failed to update device status', $token->token);

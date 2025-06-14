@@ -2,14 +2,13 @@
 namespace app\handlers;
 
 use Yii;
-use app\models\Device;
+use app\models\Devices;
 use app\models\Measurement;
 use yii\db\ActiveQuery;
 
 class DeviceMeasurementHandler
-{
-    /**
-     * @var Device
+{    /**
+     * @var Devices
      */
     private $device;
 
@@ -19,7 +18,7 @@ class DeviceMeasurementHandler
      */
     public function __construct(string $deviceUuid)
     {
-        $this->device = Device::findOne(['device_uuid' => $deviceUuid]);
+        $this->device = Devices::findByDeviceId($deviceUuid);
         if (!$this->device) {
             throw new \yii\web\NotFoundHttpException("Urządzenie o UUID: {$deviceUuid} nie zostało znalezione");
         }

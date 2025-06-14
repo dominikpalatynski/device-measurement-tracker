@@ -5,6 +5,7 @@ namespace app\models;
 use Yii;
 use yii\db\ActiveRecord;
 use yii\behaviors\TimestampBehavior;
+use app\models\Devices;
 
 /**
  * This is the model class for table "{{%verification_token}}".
@@ -40,16 +41,16 @@ class VerificationToken extends ActiveRecord
 
     /**
      * {@inheritdoc}
-     */
-    public function rules()
+     */    public function rules()
     {
         return [
             [['token', 'expiration_date', 'device_id'], 'required'],
             [['expiration_date', 'created_at', 'updated_at', 'device_id'], 'integer'],
+            [['used'], 'boolean'],
             [['token'], 'string', 'max' => 255],
             [['token'], 'unique'],
             ['expiration_date', 'validateExpirationDate'],
-            ['device_id', 'exist', 'skipOnError' => true, 'targetClass' => Device::class, 'targetAttribute' => ['device_id' => 'id']],
+            ['device_id', 'exist', 'skipOnError' => true, 'targetClass' => Devices::class, 'targetAttribute' => ['device_id' => 'device_id']],
         ];
     }
 
@@ -75,7 +76,7 @@ class VerificationToken extends ActiveRecord
      */
     public function getDevice()
     {
-        return $this->hasOne(Device::class, ['id' => 'device_id']);
+        return $this->hasOne(Devices::class, ['device_id' => 'device_id']);
     }
 
     /**
@@ -122,4 +123,4 @@ class VerificationToken extends ActiveRecord
     {
         return self::findOne(['token' => $token]);
     }
-} 
+}

@@ -2,7 +2,7 @@
 namespace app\services;
 
 use Yii;
-use app\models\Device;
+use app\models\Devices;
 use app\models\Measurement;
 use yii\db\ActiveQuery;
 
@@ -20,12 +20,12 @@ class DeviceMeasurementService
     public function __construct(string $deviceUuid)
     {
         Yii::info("Looking up device with UUID: {$deviceUuid}", 'api.device-measurement');
-        $this->device = Device::findOne(['device_uuid' => $deviceUuid]);
+        $this->device = Devices::findByDeviceId($deviceUuid);
         if (!$this->device) {
             Yii::warning("Device with UUID: {$deviceUuid} not found", 'api.device-measurement');
             throw new \yii\web\NotFoundHttpException("Urządzenie o UUID: {$deviceUuid} nie zostało znalezione");
         }
-        Yii::info("Found device: ID={$this->device->id}, Name={$this->device->name}", 'api.device-measurement');
+        Yii::info("Found device: ID={$this->device->device_id}, Name={$this->device->device_name}", 'api.device-measurement');
     }
 
     /**

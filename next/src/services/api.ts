@@ -100,15 +100,13 @@ export interface MeasurementStatsResponse {
 
 // Device interfaces
 export interface Device {
-  id: number;
   device_id: string;
-  device_uuid: string;
   device_name: string;
-  device_type: "Drone" | "DSP" | "IoT-Sensor" | "Other";
-  status: "Active" | "Pending-Registration" | "Not-Active";
+  device_type: 'Drone' | 'DSP' | 'Linear Module';
+  status: 'Active' | 'Pending-Registration' | 'Not-Active';
+  registration_date: string;
   last_updated: string;
-  created_at: string;
-  last_seen_at?: string;
+  // Optional fields that might be added by frontend
   experiments_count?: number;
   active_experiments_count?: number;
 }
@@ -131,13 +129,14 @@ export interface Experiment {
   experiment_id: string;
   name: string;
   description?: string;
-  status: "Active" | "Completed" | "Paused" | "Draft";
+  device_id: string;
+  mode: "Online" | "Offline";
+  status: "Created" | "Running" | "Paused" | "Completed" | "Failed";
   start_date: string;
   end_date?: string;
-  device_ids: string[];
-  phenomena: string[];
   created_at: string;
   updated_at: string;
+  phenomena?: Phenomenon[];
 }
 
 export interface ExperimentResponse {
@@ -155,15 +154,55 @@ export interface SingleExperimentResponse {
 // Phenomenon interface
 export interface Phenomenon {
   id: number;
+  phenomenon_id: string;
+  experiment_id: string;
   name: string;
   description?: string;
-  unit?: string;
-  type: string;
+  status: "Pending" | "Active" | "Finished" | "Stopped";
+  start_time?: string;
+  end_time?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PhenomenonResponse {
   success: boolean;
   data: Phenomenon[];
+  error?: string;
+}
+
+// Online Mode interfaces
+export interface LiveExperiment {
+  live_experiment_id: number;
+  experiment_id: string;
+  device_id: string;
+  stream_url?: string;
+  is_active: boolean;
+  start_time: string;
+  end_time?: string;
+  current_phenomenon?: ActivePhenomenon;
+  phenomena_count: number;
+  duration: number; // in seconds
+}
+
+export interface ActivePhenomenon {
+  phenomenon_id: string;
+  name: string;
+  description?: string;
+  status: "Active";
+  start_time: string;
+  duration: number; // in seconds
+}
+
+export interface LiveExperimentResponse {
+  success: boolean;
+  data: LiveExperiment;
+  error?: string;
+}
+
+export interface PhenomenonControlResponse {
+  success: boolean;
+  data: ActivePhenomenon;
   error?: string;
 }
 
@@ -226,11 +265,11 @@ export async function getDevices(): Promise<Device[]> {
 }
 
 /**
- * Get a single device by ID
+ * Get a single device by UUID
  */
-export async function getDevice(deviceId: string): Promise<Device | null> {
+export async function getDevice(deviceUuid: string): Promise<Device | null> {
   try {
-    const response = await fetchApi<SingleDeviceResponse>(`device/view?id=${deviceId}`);
+    const response = await fetchApi<SingleDeviceResponse>(`device/view?id=${deviceUuid}`);
     if (response.success && response.data) {
       return response.data;
     }
@@ -244,7 +283,7 @@ export async function getDevice(deviceId: string): Promise<Device | null> {
 /**
  * Register a new device
  */
-export async function registerDevice(deviceData: {device_name: string}): Promise<Device | null> {
+export async function registerDevice(deviceData: {device_name: string, device_type: string}): Promise<Device | null> {
   try {
     const response = await fetchApi<SingleDeviceResponse>('device/register', {
       method: 'POST',
@@ -266,9 +305,9 @@ export async function registerDevice(deviceData: {device_name: string}): Promise
 /**
  * Update device
  */
-export async function updateDevice(deviceId: string, deviceData: Partial<Device>): Promise<Device | null> {
+export async function updateDevice(deviceUuid: string, deviceData: Partial<Device>): Promise<Device | null> {
   try {
-    const response = await fetchApi<SingleDeviceResponse>(`device/update?id=${deviceId}`, {
+    const response = await fetchApi<SingleDeviceResponse>(`device/update?id=${deviceUuid}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -288,9 +327,9 @@ export async function updateDevice(deviceId: string, deviceData: Partial<Device>
 /**
  * Activate device
  */
-export async function activateDevice(deviceId: string): Promise<boolean> {
+export async function activateDevice(deviceUuid: string): Promise<boolean> {
   try {
-    const response = await updateDevice(deviceId, { status: "Active" });
+    const response = await updateDevice(deviceUuid, { status: 'Active' });
     return response !== null;
   } catch (error) {
     console.error('Error activating device:', error);
@@ -301,9 +340,9 @@ export async function activateDevice(deviceId: string): Promise<boolean> {
 /**
  * Deactivate device
  */
-export async function deactivateDevice(deviceId: string): Promise<boolean> {
+export async function deactivateDevice(deviceUuid: string): Promise<boolean> {
   try {
-    const response = await updateDevice(deviceId, { status: "Not-Active" });
+    const response = await updateDevice(deviceUuid, { status: 'Not-Active' });
     return response !== null;
   } catch (error) {
     console.error('Error deactivating device:', error);
@@ -314,9 +353,9 @@ export async function deactivateDevice(deviceId: string): Promise<boolean> {
 /**
  * Delete device
  */
-export async function deleteDevice(deviceId: string): Promise<boolean> {
+export async function deleteDevice(deviceUuid: string): Promise<boolean> {
   try {
-    const response = await fetchApi<{success: boolean}>(`device/delete?id=${deviceId}`, {
+    const response = await fetchApi<{success: boolean}>(`device/delete?id=${deviceUuid}`, {
       method: 'DELETE',
     });
     return response.success;
@@ -327,81 +366,98 @@ export async function deleteDevice(deviceId: string): Promise<boolean> {
 }
 
 // Experiment API functions
-/**
- * Get all experiments
- */
-export async function getExperiments(): Promise<Experiment[]> {
-  try {
-    const response = await fetchApi<ExperimentResponse>('experiment/list');
-    if (response.success && response.data) {
-      return response.data;
+export const experimentApi = {
+  /**
+   * Get all experiments
+   */
+  getExperiments: async (): Promise<Experiment[]> => {
+    try {
+      const response = await fetchApi<ExperimentResponse>('experiments/list');
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching experiments:', error);
+      return [];
     }
-    return [];
-  } catch (error) {
-    console.error('Error fetching experiments:', error);
-    return [];
-  }
-}
+  },
 
-/**
- * Get a single experiment by ID
- */
-export async function getExperiment(experimentId: string): Promise<Experiment | null> {
-  try {
-    const response = await fetchApi<SingleExperimentResponse>(`experiment/view?id=${experimentId}`);
-    if (response.success && response.data) {
-      return response.data;
+  /**
+   * Get a single experiment by ID
+   */
+  getExperiment: async (experimentId: string): Promise<Experiment | null> => {
+    try {
+      const response = await fetchApi<SingleExperimentResponse>(`experiments/view?id=${experimentId}`);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching experiment:', error);
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error('Error fetching experiment:', error);
-    return null;
-  }
-}
+  },
 
-/**
- * Create a new experiment
- */
-export async function createExperiment(experimentData: Partial<Experiment>): Promise<Experiment | null> {
-  try {
-    const response = await fetchApi<SingleExperimentResponse>('experiment/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(experimentData),
-    });
-    if (response.success && response.data) {
-      return response.data;
+  /**
+   * Create a new experiment
+   */
+  createExperiment: async (experimentData: Partial<Experiment>): Promise<Experiment | null> => {
+    try {
+      const response = await fetchApi<SingleExperimentResponse>('experiments/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(experimentData),
+      });
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error creating experiment:', error);
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error('Error creating experiment:', error);
-    return null;
-  }
-}
+  },
 
-/**
- * Update experiment
- */
-export async function updateExperiment(experimentId: string, experimentData: Partial<Experiment>): Promise<Experiment | null> {
-  try {
-    const response = await fetchApi<SingleExperimentResponse>(`experiment/update?id=${experimentId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(experimentData),
-    });
-    if (response.success && response.data) {
-      return response.data;
+  /**
+   * Update experiment
+   */
+  updateExperiment: async (experimentId: string, experimentData: Partial<Experiment>): Promise<Experiment | null> => {
+    try {
+      const response = await fetchApi<SingleExperimentResponse>(`experiments/update?id=${experimentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(experimentData),
+      });
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error updating experiment:', error);
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error('Error updating experiment:', error);
-    return null;
+  },
+
+  /**
+   * Delete experiment
+   */
+  deleteExperiment: async (experimentId: string): Promise<boolean> => {
+    try {
+      const response = await fetchApi<{success: boolean}>(`experiments/delete?id=${experimentId}`, {
+        method: 'DELETE',
+      });
+      return response.success;
+    } catch (error) {
+      console.error('Error deleting experiment:', error);
+      return false;
+    }
   }
-}
+};
 
 /**
  * Delete experiment
@@ -445,23 +501,278 @@ export const deviceApi = {
   deleteDevice,
 };
 
-// Experiment API object for easy access
-export const experimentApi = {
-  getExperiments,
-  getExperiment,
-  createExperiment,
-  updateExperiment,
-  deleteExperiment,
+// Online Mode API for real-time experiment control
+export const onlineModeApi = {
+  /**
+   * Start a live experiment on a device (Online Mode)
+   */
+  startLiveExperiment: async (deviceId: string, name?: string): Promise<LiveExperiment> => {
+    try {
+      const response = await fetchApi<LiveExperimentResponse>(`devices/${deviceId}/live-experiment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name || `Live Experiment - ${new Date().toLocaleString()}`,
+        }),
+      });
+      
+      if (response.success && response.data) {
+        return response.data;
+      }
+      throw new Error(response.error || 'Failed to start live experiment');
+    } catch (error) {
+      console.error('Error starting live experiment:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get current live experiment status for a device
+   */
+  getLiveExperiment: async (deviceId: string): Promise<LiveExperiment | null> => {
+    try {
+      const response = await fetchApi<LiveExperimentResponse>(`devices/${deviceId}/live-experiment`);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting live experiment:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Stop/Complete a live experiment
+   */
+  stopLiveExperiment: async (deviceId: string): Promise<boolean> => {
+    try {
+      const response = await fetchApi<{ success: boolean; error?: string }>(`devices/${deviceId}/live-experiment`, {
+        method: 'DELETE',
+      });
+      return response.success;
+    } catch (error) {
+      console.error('Error stopping live experiment:', error);
+      return false;
+    }
+  },
+  /**
+   * Start a phenomenon in the current live experiment
+   */
+  startPhenomenon: async (deviceId: string, phenomenonData: { name: string; description?: string }): Promise<ActivePhenomenon> => {
+    try {
+      const response = await fetchApi<PhenomenonControlResponse>(`devices/${deviceId}/start-phenomenon`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(phenomenonData),
+      });
+      
+      if (response.success && response.data) {
+        return response.data;
+      }
+      throw new Error(response.error || 'Failed to start phenomenon');
+    } catch (error) {
+      console.error('Error starting phenomenon:', error);
+      throw error;
+    }
+  },  /**
+   * Stop the current active phenomenon
+   */
+  stopPhenomenon: async (deviceId: string, phenomenonId: string): Promise<boolean> => {
+    try {
+      const response = await fetchApi<{ success: boolean; error?: string }>(`devices/${deviceId}/stop-phenomenon`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phenomenon_id: phenomenonId,
+        }),
+      });
+      return response.success;
+    } catch (error) {
+      console.error('Error stopping phenomenon:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Get real-time data for the current phenomenon
+   */
+  getLiveData: async (deviceId: string): Promise<any[]> => {
+    try {
+      const response = await fetchApi<{ success: boolean; data: any[]; error?: string }>(`devices/${deviceId}/live-data`);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getting live data:', error);
+      return [];
+    }
+  },
 };
 
-// Update the default export
-export default {
-  getAllMeasurements,
-  getLatestMeasurement,
-  getMeasurementStats,
-  getMeasurementsInRange,
-  testApiConnection,
-  deviceApi,
-  experimentApi,
-  getPhenomena,
+export const phenomenaApi = {
+  /**
+   * Get all phenomena
+   */
+  getPhenomena: async (): Promise<Phenomenon[]> => {
+    try {
+      const response = await fetchApi<PhenomenonResponse>('phenomena/list');
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching phenomena:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get phenomena for an experiment
+   */
+  getPhenomenaForExperiment: async (experimentId: string): Promise<Phenomenon[]> => {
+    try {
+      const allPhenomena = await phenomenaApi.getPhenomena();
+      return allPhenomena.filter(p => p.experiment_id === experimentId);
+    } catch (error) {
+      console.error('Error fetching phenomena for experiment:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get a single phenomenon by ID
+   */
+  getPhenomenon: async (phenomenonId: string): Promise<Phenomenon | null> => {
+    try {
+      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/view?id=${phenomenonId}`);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching phenomenon:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Create a new phenomenon
+   */
+  createPhenomenon: async (phenomenonData: Partial<Phenomenon>): Promise<Phenomenon | null> => {
+    try {
+      const response = await fetchApi<{success: boolean, data: Phenomenon}>('phenomena/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(phenomenonData),
+      });
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error creating phenomenon:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Update phenomenon
+   */
+  updatePhenomenon: async (phenomenonId: string, phenomenonData: Partial<Phenomenon>): Promise<Phenomenon | null> => {
+    try {
+      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/update?id=${phenomenonId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(phenomenonData),
+      });
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error updating phenomenon:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Delete phenomenon
+   */
+  deletePhenomenon: async (phenomenonId: string): Promise<boolean> => {
+    try {
+      const response = await fetchApi<{success: boolean}>(`phenomena/delete?id=${phenomenonId}`, {
+        method: 'DELETE',
+      });
+      return response.success;
+    } catch (error) {
+      console.error('Error deleting phenomenon:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Start a phenomenon
+   */
+  startPhenomenon: async (phenomenonId: string): Promise<Phenomenon | null> => {
+    try {
+      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/start?id=${phenomenonId}`, {
+        method: 'POST',
+      });
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error starting phenomenon:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Stop a phenomenon
+   */
+  stopPhenomenon: async (phenomenonId: string): Promise<Phenomenon | null> => {
+    try {
+      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/stop?id=${phenomenonId}`, {
+        method: 'POST',
+      });
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error stopping phenomenon:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Finish a phenomenon
+   */
+  finishPhenomenon: async (phenomenonId: string): Promise<Phenomenon | null> => {
+    try {
+      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/finish?id=${phenomenonId}`, {
+        method: 'POST',
+      });
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error finishing phenomenon:', error);
+      return null;
+    }
+  }
 };

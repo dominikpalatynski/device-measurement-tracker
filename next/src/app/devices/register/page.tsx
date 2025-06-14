@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PageLayout from "@/components/PageLayout";
 import { deviceApi, Device } from "@/services/api";
 
 export default function DeviceRegisterPage() {
 	const router = useRouter();
 	const [formData, setFormData] = useState({
 		device_name: "",
+		device_type: "Drone" as "Drone" | "DSP" | "Linear Module",
 	});
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,6 @@ export default function DeviceRegisterPage() {
 			[name]: value,
 		}));
 	};
-
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -38,6 +39,7 @@ export default function DeviceRegisterPage() {
 
 			const device = await deviceApi.registerDevice({
 				device_name: formData.device_name.trim(),
+				device_type: formData.device_type,
 			});
 
 			if (device) {
@@ -53,15 +55,14 @@ export default function DeviceRegisterPage() {
 			setLoading(false);
 		}
 	};
-
 	const handleReset = () => {
 		setFormData({
 			device_name: "",
+			device_type: "Drone",
 		});
 		setError(null);
 		setSuccess(null);
 	};
-
 	const handleViewDevice = () => {
 		if (success) {
 			router.push(`/devices/${success.device_id}`);
@@ -95,14 +96,23 @@ export default function DeviceRegisterPage() {
 						<div className='bg-white rounded-lg p-4 mb-6'>
 							<h3 className='text-lg font-medium text-gray-900 mb-3'>
 								Device Details
-							</h3>
+							</h3>{" "}
 							<dl className='space-y-2'>
+								{" "}
 								<div className='flex justify-between'>
 									<dt className='text-sm font-medium text-gray-500'>
 										Device Name:
 									</dt>
 									<dd className='text-sm text-gray-900'>
 										{success.device_name}
+									</dd>
+								</div>
+								<div className='flex justify-between'>
+									<dt className='text-sm font-medium text-gray-500'>
+										Device Type:
+									</dt>
+									<dd className='text-sm text-gray-900'>
+										{success.device_type}
 									</dd>
 								</div>
 								<div className='flex justify-between'>
@@ -115,19 +125,16 @@ export default function DeviceRegisterPage() {
 								</div>
 								<div className='flex justify-between'>
 									<dt className='text-sm font-medium text-gray-500'>
-										Device UUID:
-									</dt>
-									<dd className='text-sm text-gray-900 font-mono'>
-										{success.device_uuid}
-									</dd>
-								</div>
-								<div className='flex justify-between'>
-									<dt className='text-sm font-medium text-gray-500'>
 										Status:
 									</dt>
 									<dd className='text-sm'>
 										<span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800'>
-											{success.status}
+											{success.status === "Active"
+												? "Active"
+												: success.status ===
+												  "Pending-Registration"
+												? "Pending Registration"
+												: "Not Active"}
 										</span>
 									</dd>
 								</div>
@@ -183,24 +190,22 @@ export default function DeviceRegisterPage() {
 		);
 	}
 
+	const breadcrumbs = [
+		{ label: "Home", href: "/" },
+		{ label: "Devices", href: "/devices" },
+		{ label: "Register Device", href: "/devices/register", current: true },
+	];
+
 	return (
-		<div className='container mx-auto px-4 py-8'>
+		<PageLayout
+			title='Register New Device'
+			breadcrumbs={breadcrumbs}
+		>
 			<div className='max-w-2xl mx-auto'>
-				<div className='flex items-center mb-8'>
-					<Link
-						href='/devices'
-						className='text-blue-600 hover:text-blue-500 mr-4'
-					>
-						← Back to Devices
-					</Link>
-					<div>
-						<h1 className='text-3xl font-bold text-gray-900'>
-							Register New Device
-						</h1>
-						<p className='text-gray-600 mt-1'>
-							Add a new measurement device to your system
-						</p>
-					</div>
+				<div className='mb-8'>
+					<p className='text-gray-600 mt-1'>
+						Add a new measurement device to your system
+					</p>
 				</div>
 
 				{error && (
@@ -222,10 +227,12 @@ export default function DeviceRegisterPage() {
 				)}
 
 				<div className='bg-white border border-gray-200 rounded-lg p-6'>
+					{" "}
 					<form
 						onSubmit={handleSubmit}
 						className='space-y-6'
 					>
+						{" "}
 						<div>
 							<label
 								htmlFor='device_name'
@@ -249,8 +256,32 @@ export default function DeviceRegisterPage() {
 								device (e.g., "Office Temperature Sensor", "Lab
 								Drone #1")
 							</p>
-						</div>
-
+						</div>{" "}
+						<div>
+							<label
+								htmlFor='device_type'
+								className='block text-sm font-medium text-gray-700 mb-2'
+							>
+								Device Type
+							</label>
+							<select
+								id='device_type'
+								name='device_type'
+								value={formData.device_type}
+								onChange={handleInputChange}
+								className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+								disabled={loading}
+							>
+								<option value='Drone'>Drone</option>
+								<option value='DSP'>DSP</option>
+								<option value='Linear Module'>
+									Linear Module
+								</option>
+							</select>
+							<p className='text-sm text-gray-500 mt-1'>
+								Select the type of device you are registering
+							</p>
+						</div>{" "}
 						<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
 							<h3 className='text-sm font-medium text-blue-800 mb-2'>
 								About Device Registration
@@ -261,11 +292,11 @@ export default function DeviceRegisterPage() {
 									generated for your device
 								</li>
 								<li>
-									The device will initially have
-									"Pending-Registration" status
+									The device will initially have "Inactive"
+									status (0)
 								</li>
 								<li>
-									Status will change to "Active" once the
+									Status will change to "Active" (1) once the
 									device starts sending data
 								</li>
 								<li>
@@ -274,8 +305,8 @@ export default function DeviceRegisterPage() {
 								</li>
 							</ul>
 						</div>
-
 						<div className='flex space-x-4'>
+							{" "}
 							<button
 								type='submit'
 								disabled={
@@ -347,10 +378,10 @@ export default function DeviceRegisterPage() {
 									dashboard.
 								</p>
 							</div>
-						</div>
+						</div>{" "}
 					</div>
 				</div>
 			</div>
-		</div>
+		</PageLayout>
 	);
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import PageLayout from "@/components/PageLayout";
 import { deviceApi, Device } from "@/services/api";
 
 export default function DevicesPage() {
@@ -30,7 +31,6 @@ export default function DevicesPage() {
 			setLoading(false);
 		}
 	};
-
 	const handleActivateDevice = async (deviceId: string) => {
 		try {
 			await deviceApi.activateDevice(deviceId);
@@ -57,7 +57,6 @@ export default function DevicesPage() {
 			);
 		}
 	};
-
 	const getStatusColor = (status: Device["status"]) => {
 		switch (status) {
 			case "Active":
@@ -70,18 +69,30 @@ export default function DevicesPage() {
 				return "bg-gray-100 text-gray-800";
 		}
 	};
-	const getDeviceIcon = (type: Device["device_type"]) => {
+
+	const getStatusText = (status: Device["status"]) => {
+		switch (status) {
+			case "Active":
+				return "Active";
+			case "Pending-Registration":
+				return "Pending Registration";
+			case "Not-Active":
+				return "Not Active";
+			default:
+				return "Unknown";
+		}
+	};
+
+	const getDeviceIcon = (type: string) => {
 		switch (type) {
 			case "Drone":
 				return "🚁";
 			case "DSP":
 				return "📡";
-			case "IoT-Sensor":
+			case "Linear Module":
 				return "📏";
-			case "Other":
-				return "�";
 			default:
-				return "�";
+				return "📱";
 		}
 	};
 
@@ -108,14 +119,19 @@ export default function DevicesPage() {
 		);
 	}
 
+	const breadcrumbs = [
+		{ label: "Home", href: "/" },
+		{ label: "Devices", href: "/devices", current: true },
+	];
+
 	return (
-		<div className='container mx-auto px-4 py-8'>
+		<PageLayout
+			title='Devices'
+			breadcrumbs={breadcrumbs}
+		>
 			{/* Header */}
 			<div className='flex items-center justify-between mb-8'>
 				<div>
-					<h1 className='text-3xl font-bold text-gray-900'>
-						Devices
-					</h1>
 					<p className='text-gray-600 mt-1'>
 						Manage and monitor your measurement devices
 					</p>
@@ -127,7 +143,6 @@ export default function DevicesPage() {
 					+ Register Device
 				</Link>
 			</div>
-
 			{error && (
 				<div className='mb-6 bg-red-50 border border-red-200 rounded-lg p-4'>
 					<div className='flex items-center'>
@@ -146,8 +161,7 @@ export default function DevicesPage() {
 						</button>
 					</div>
 				</div>
-			)}
-
+			)}{" "}
 			{/* Filters */}
 			<div className='flex space-x-4 mb-6'>
 				{(
@@ -159,7 +173,7 @@ export default function DevicesPage() {
 					] as const
 				).map((status) => (
 					<button
-						key={status}
+						key={String(status)}
 						onClick={() => setFilter(status)}
 						className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
 							filter === status
@@ -169,7 +183,11 @@ export default function DevicesPage() {
 					>
 						{status === "all"
 							? "All Devices"
-							: status.replace("-", " ")}
+							: status === "Active"
+							? "Active"
+							: status === "Pending-Registration"
+							? "Pending Registration"
+							: "Not Active"}
 						{status !== "all" && (
 							<span className='ml-2 bg-white px-2 py-0.5 rounded-full text-xs'>
 								{
@@ -181,7 +199,6 @@ export default function DevicesPage() {
 					</button>
 				))}
 			</div>
-
 			{/* Device Stats */}
 			<div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-8'>
 				<div className='bg-white border border-gray-200 rounded-lg p-4'>
@@ -189,7 +206,7 @@ export default function DevicesPage() {
 						{devices.length}
 					</div>
 					<div className='text-sm text-gray-500'>Total Devices</div>
-				</div>
+				</div>{" "}
 				<div className='bg-green-50 border border-green-200 rounded-lg p-4'>
 					<div className='text-2xl font-bold text-green-600'>
 						{devices.filter((d) => d.status === "Active").length}
@@ -204,7 +221,9 @@ export default function DevicesPage() {
 							).length
 						}
 					</div>
-					<div className='text-sm text-yellow-600'>Pending</div>
+					<div className='text-sm text-yellow-600'>
+						Pending Registration
+					</div>
 				</div>
 				<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
 					<div className='text-2xl font-bold text-red-600'>
@@ -213,20 +232,21 @@ export default function DevicesPage() {
 								.length
 						}
 					</div>
-					<div className='text-sm text-red-600'>Inactive</div>
+					<div className='text-sm text-red-600'>Not Active</div>
 				</div>
 			</div>
-
 			{/* Devices List */}
 			{filteredDevices.length === 0 ? (
 				<div className='text-center py-12'>
-					<div className='text-gray-400 text-6xl mb-4'>📱</div>
+					<div className='text-gray-400 text-6xl mb-4'>📱</div>{" "}
 					<h3 className='text-lg font-medium text-gray-900 mb-2'>
 						{filter === "all"
 							? "No devices found"
-							: `No ${filter
-									.replace("-", " ")
-									.toLowerCase()} devices`}
+							: filter === "Active"
+							? "No active devices"
+							: filter === "Pending-Registration"
+							? "No pending devices"
+							: "No inactive devices"}
 					</h3>
 					<p className='text-gray-500 mb-6'>
 						{filter === "all"
@@ -267,11 +287,13 @@ export default function DevicesPage() {
 								</tr>
 							</thead>
 							<tbody className='bg-white divide-y divide-gray-200'>
+								{" "}
 								{filteredDevices.map((device) => (
 									<tr
 										key={device.device_id}
 										className='hover:bg-gray-50'
 									>
+										{" "}
 										<td className='px-6 py-4 whitespace-nowrap'>
 											<div className='flex items-center'>
 												<div className='text-2xl mr-3'>
@@ -303,13 +325,15 @@ export default function DevicesPage() {
 													device.status
 												)}`}
 											>
-												{device.status}
+												{getStatusText(device.status)}
 											</span>
-										</td>
+										</td>{" "}
 										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-											{new Date(
-												device.last_updated
-											).toLocaleDateString()}
+											{device.last_updated
+												? new Date(
+														device.last_updated
+												  ).toLocaleDateString()
+												: "N/A"}
 										</td>
 										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
 											{device.experiments_count || 0}{" "}
@@ -323,8 +347,9 @@ export default function DevicesPage() {
 													active)
 												</span>
 											) : null}
-										</td>
+										</td>{" "}
 										<td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
+											{" "}
 											<div className='flex items-center justify-end space-x-2'>
 												<Link
 													href={`/devices/${device.device_id}`}
@@ -362,10 +387,10 @@ export default function DevicesPage() {
 									</tr>
 								))}
 							</tbody>
-						</table>
+						</table>{" "}
 					</div>
 				</div>
 			)}
-		</div>
+		</PageLayout>
 	);
 }

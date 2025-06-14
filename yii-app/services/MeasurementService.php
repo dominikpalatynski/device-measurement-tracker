@@ -2,7 +2,7 @@
 namespace app\services;
 
 use Yii;
-use app\models\Device;
+use app\models\Devices;
 use app\models\Measurement;
 use yii\base\Component;
 use yii\helpers\Json;
@@ -75,16 +75,16 @@ class MeasurementService extends Component
      * Find or create a device by UUID
      */
     protected function getOrCreateDevice($deviceUuid)
-    {
-        $device = Device::findOne(['device_uuid' => $deviceUuid]);
+    {        $device = Devices::findByDeviceId($deviceUuid);
         
         if (!$device) {
-            $device = new Device();
-            $device->device_uuid = $deviceUuid;
-            $device->name = "Device $deviceUuid";
-            $device->status = Device::STATUS_ACTIVE;
-            $device->created_at = time();
-            $device->updated_at = time();
+            $device = new Devices();
+            $device->device_id = $deviceUuid;
+            $device->device_name = "Device $deviceUuid";
+            $device->device_type = Devices::TYPE_DSP; // Default type
+            $device->status = Devices::STATUS_ACTIVE;
+            $device->registration_date = new \yii\db\Expression('NOW()');
+            $device->last_updated = new \yii\db\Expression('NOW()');
             
             if (!$device->save()) {
                 throw new ServerErrorHttpException('Failed to create device: ' . 

@@ -16,16 +16,15 @@ class Measurement extends ActiveRecord
             [['device_id', 'measured_at', 'created_at'], 'required'],
             [['device_id', 'measured_at', 'created_at'], 'integer'],
             [['temperature', 'humidity', 'pressure', 'battery_level'], 'number'],
-            [['raw_data'], 'string'],
-            [['device_id'], 'exist', 'skipOnError' => true, 
-                'targetClass' => Device::class, 
-                'targetAttribute' => ['device_id' => 'id']],
+            [['raw_data'], 'string'],            [['device_id'], 'exist', 'skipOnError' => true, 
+                'targetClass' => Devices::class, 
+                'targetAttribute' => ['device_id' => 'device_id']],
         ];
     }
     
     public function getDevice()
     {
-        return $this->hasOne(Device::class, ['id' => 'device_id']);
+        return $this->hasOne(Devices::class, ['device_id' => 'device_id']);
     }
     
     public function fields()

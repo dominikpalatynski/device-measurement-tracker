@@ -3,51 +3,141 @@ namespace app\models;
 
 use yii\db\ActiveRecord;
 use yii\behaviors\TimestampBehavior;
+use yii\db\Expression;
 
+/**
+ * This is the model class for table "devices".
+ *
+ * @property string $device_id
+ * @property string $device_name
+ * @property string $device_type
+ * @property string $status
+ * @property string $registration_date
+ * @property string $last_updated
+ *
+ * @property Measurement[] $measurements
+ * @property Experiments[] $experiments
+ */
 class Device extends ActiveRecord
 {
-    const STATUS_INACTIVE = 0;
-    const STATUS_ACTIVE = 1;
+    // Status constants
+    const STATUS_ACTIVE = 'Active';
+    const STATUS_PENDING = 'Pending-Registration';
+    const STATUS_INACTIVE = 'Not-Active';
     
+    // Type constants
+    const TYPE_DRONE = 'Drone';
+    const TYPE_DSP = 'DSP';
+    const TYPE_LINEAR_MODULE = 'Linear Module';
+    
+    /**
+     * {@inheritdoc}
+     */
     public static function tableName()
     {
-        return 'device';
-    }
-    
+        return 'devices';
+    }    
+    /**
+     * {@inheritdoc}
+     */
     public function behaviors()
     {
         return [
-            TimestampBehavior::class,
+            [
+                'class' => TimestampBehavior::class,
+                'createdAtAttribute' => 'registration_date',
+                'updatedAtAttribute' => 'last_updated',
+                'value' => new Expression('NOW()'),
+            ],
         ];
     }
     
+    /**
+     * {@inheritdoc}
+     */
     public function rules()
     {
         return [
-            [['device_uuid'], 'required'],
-            [['device_uuid'], 'string', 'max' => 50],
-            [['device_uuid'], 'unique'],
-            [['name'], 'string', 'max' => 100],
-            [['type'], 'string', 'max' => 50],
-            [['status'], 'integer'],
-            [['last_seen_at'], 'integer'],
+            [['device_id', 'device_name'], 'required'],
+            [['device_id'], 'string', 'max' => 255],
+            [['device_id'], 'unique'],
+            [['device_name'], 'string', 'max' => 255],
+            [['device_type'], 'in', 'range' => [self::TYPE_DRONE, self::TYPE_DSP, self::TYPE_LINEAR_MODULE]],
+            [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_PENDING, self::STATUS_INACTIVE]],
+            [['status'], 'default', 'value' => self::STATUS_PENDING],
+            [['registration_date', 'last_updated'], 'safe'],
         ];
-    }
-    
+    }    
+    /**
+     * Get measurements for this device
+     */
     public function getMeasurements()
     {
-        return $this->hasMany(Measurement::class, ['device_id' => 'id']);
+        return $this->hasMany(Measurement::class, ['device_id' => 'device_id']);
     }
     
+    /**
+     * Get experiments for this device
+     */
+    public function getExperiments()
+    {
+        return $this->hasMany(Experiments::class, ['device_id' => 'device_id']);
+    }
+    
+    /**
+     * Get the latest measurement
+     */
     public function getLatestMeasurement()
     {
-        return $this->hasOne(Measurement::class, ['device_id' => 'id'])
+        return $this->hasOne(Measurement::class, ['device_id' => 'device_id'])
             ->orderBy(['measured_at' => SORT_DESC]);
     }
     
-    public function getIsOnline()
+    /**
+     * Check if device is active
+     */
+    public function getIsActive()
     {
-        // Consider device online if seen in the last 5 minutes
-        return $this->last_seen_at && (time() - $this->last_seen_at < 300);
+        return $this->status === self::STATUS_ACTIVE;
+    }
+    
+    /**
+     * Check if device is pending registration
+     */
+    public function getIsPending()
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+    
+    /**
+     * Find device by ID
+     */
+    public static function findById($id)
+    {
+        return static::findOne(['device_id' => $id]);
+    }
+    
+    /**
+     * Get all device types
+     */
+    public static function getDeviceTypes()
+    {
+        return [
+            self::TYPE_DRONE => 'Drone',
+            self::TYPE_DSP => 'DSP',
+            self::TYPE_LINEAR_MODULE => 'Linear Module',
+        ];
+    }
+    
+    /**
+     * Get all status options
+     */
+    public static function getStatusOptions()
+    {
+        return [
+            self::STATUS_ACTIVE => 'Active',
+            self::STATUS_PENDING => 'Pending Registration',
+            self::STATUS_INACTIVE => 'Not Active',
+        ];
     }
 }

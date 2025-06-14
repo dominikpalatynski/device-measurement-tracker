@@ -145,3 +145,41 @@
 1746887724: Client yii-mqtt-681f642cecb12 closed its connection.
 1746887738: Client yii-mqtt-681f6428ee69c closed its connection.
 1746888015: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749904531: mosquitto version 2.0.21 starting
+1749904531: Config loaded from /mosquitto/config/mosquitto.conf.
+1749904531: Opening ipv4 listen socket on port 1883.
+1749904531: Opening ipv6 listen socket on port 1883.
+1749904531: Opening websockets listen socket on port 9001.
+1749904531: mosquitto version 2.0.21 running
+1749906332: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749908133: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749909934: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749911735: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749912021: mosquitto version 2.0.21 terminating
+1749912021: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749912030: mosquitto version 2.0.21 starting
+1749912030: Config loaded from /mosquitto/config/mosquitto.conf.
+1749912030: Opening ipv4 listen socket on port 1883.
+1749912030: Opening ipv6 listen socket on port 1883.
+1749912030: Opening websockets listen socket on port 9001.
+1749912030: mosquitto version 2.0.21 running
+1749913831: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749915632: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749917433: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749918523: mosquitto version 2.0.21 terminating
+1749918523: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749918540: mosquitto version 2.0.21 starting
+1749918540: Config loaded from /mosquitto/config/mosquitto.conf.
+1749918540: Opening ipv4 listen socket on port 1883.
+1749918540: Opening ipv6 listen socket on port 1883.
+1749918540: Opening websockets listen socket on port 9001.
+1749918540: mosquitto version 2.0.21 running
+1749920341: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749922142: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749923943: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749925744: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749927545: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749929346: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749931147: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749932948: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749934749: Saving in-memory database to /mosquitto/data//mosquitto.db.

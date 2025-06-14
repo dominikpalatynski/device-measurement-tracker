@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import PageLayout from "@/components/PageLayout";
 import {
 	deviceApi,
 	experimentApi,
@@ -117,18 +118,7 @@ export default function Dashboard() {
 	}
 
 	return (
-		<div className='container mx-auto px-4 py-8'>
-			{/* Header */}
-			<div className='mb-8'>
-				<h1 className='text-4xl font-bold text-gray-900 mb-2'>
-					📊 Device Measurement Tracker
-				</h1>
-				<p className='text-xl text-gray-600'>
-					Monitor your devices, experiments, and measurements in
-					real-time
-				</p>
-			</div>
-
+		<PageLayout title='Dashboard'>
 			{/* API Status Banner */}
 			{apiStatus && (
 				<div
@@ -529,6 +519,6 @@ export default function Dashboard() {
 					</button>
 				</div>
 			</div>
-		</div>
+		</PageLayout>
 	);
 }
