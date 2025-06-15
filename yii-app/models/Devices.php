@@ -98,16 +98,6 @@ class Devices extends ActiveRecord
     }
 
     /**
-     * Gets query for [[UnassignedData]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getUnassignedData()
-    {
-        return $this->hasMany(UnassignedData::class, ['device_id' => 'device_id']);
-    }
-
-    /**
      * Gets query for [[LiveExperiments]].
      *
      * @return \yii\db\ActiveQuery

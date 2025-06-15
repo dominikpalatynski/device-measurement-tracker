@@ -214,12 +214,12 @@ class MqttController extends Controller
             $result = $this->measurementService->processRealTimeDataMqttMessage($topic, $message);
             
             if ($result) {
-                $this->stdout("Successfully processed device registration for device {$result->device_uuid}\n");
+                $this->stdout("Successfully processed real time data from device ");
             } else {
-                $this->stderr("Failed to process device registration\n");
+                $this->stderr("Failed to process device real time data\n");
             }
         } catch (\Exception $e) {
-            $this->stderr("Error processing device registration: " . $e->getMessage() . "\n");
+            $this->stderr("Error processing device real time data: " . $e->getMessage() . "\n");
         }
     }
 

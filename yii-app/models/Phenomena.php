@@ -125,7 +125,7 @@ class Phenomena extends ActiveRecord
         $phenomenon->experiment_id = $experimentId;
         $phenomenon->name = $name;
         $phenomenon->description = $description;
-        $phenomenon->status = self::STATUS_PENDING;
+        $phenomenon->status = self::STATUS_ACTIVE;
         
         if ($phenomenon->save()) {
             return $phenomenon;

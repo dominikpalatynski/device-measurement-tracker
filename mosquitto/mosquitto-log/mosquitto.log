@@ -215,3 +215,79 @@
 1749974714: mosquitto version 2.0.21 running
 1749976515: Saving in-memory database to /mosquitto/data//mosquitto.db.
 1749978316: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749978926: New connection from 172.18.0.1:64278 on port 1883.
+1749978926: New client connected from 172.18.0.1:64278 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749978932: New connection from 172.18.0.1:64286 on port 1883.
+1749978932: New client connected from 172.18.0.1:64286 as yii-mqtt-684e8f347765b (p1, c0, k10).
+1749978950: Client device_vQvo6DEP0PkY disconnected.
+1749978951: Client yii-mqtt-684e8f347765b closed its connection.
+1749979170: New connection from 172.18.0.1:60356 on port 1883.
+1749979170: New client connected from 172.18.0.1:60356 as yii-mqtt-684e9022499ca (p1, c0, k10).
+1749979172: New connection from 172.18.0.1:60362 on port 1883.
+1749979172: New client connected from 172.18.0.1:60362 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749979187: Client device_vQvo6DEP0PkY disconnected.
+1749979456: Client yii-mqtt-684e9022499ca has exceeded timeout, disconnecting.
+1749979905: New connection from 172.18.0.1:61148 on port 1883.
+1749979905: New client connected from 172.18.0.1:61148 as yii-mqtt-684e93016329e (p1, c0, k10).
+1749979907: New connection from 172.18.0.1:61154 on port 1883.
+1749979907: New client connected from 172.18.0.1:61154 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749979927: Client yii-mqtt-684e93016329e closed its connection.
+1749979929: Client device_vQvo6DEP0PkY disconnected.
+1749979993: New connection from 172.18.0.1:60966 on port 1883.
+1749979993: New client connected from 172.18.0.1:60966 as yii-mqtt-684e935923d64 (p1, c0, k10).
+1749979995: New connection from 172.18.0.1:63476 on port 1883.
+1749979995: New client connected from 172.18.0.1:63476 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749980091: Client device_vQvo6DEP0PkY disconnected.
+1749980117: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749980230: Client yii-mqtt-684e935923d64 closed its connection.
+1749981426: New connection from 172.18.0.1:65498 on port 1883.
+1749981426: New client connected from 172.18.0.1:65498 as yii-mqtt-684e98f2bc484 (p1, c0, k10).
+1749981438: New connection from 172.18.0.1:60798 on port 1883.
+1749981438: New client connected from 172.18.0.1:60798 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749981457: Client device_vQvo6DEP0PkY disconnected.
+1749981620: New connection from 172.18.0.1:58342 on port 1883.
+1749981620: New client connected from 172.18.0.1:58342 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749981648: Client yii-mqtt-684e98f2bc484 closed its connection.
+1749981649: New connection from 172.18.0.1:63660 on port 1883.
+1749981649: New client connected from 172.18.0.1:63660 as yii-mqtt-684e99d18d2da (p1, c0, k10).
+1749981664: Client yii-mqtt-684e99d18d2da closed its connection.
+1749981667: Client device_vQvo6DEP0PkY disconnected.
+1749981757: New connection from 172.18.0.1:58428 on port 1883.
+1749981757: New client connected from 172.18.0.1:58428 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749981760: New connection from 172.18.0.1:58430 on port 1883.
+1749981760: New client connected from 172.18.0.1:58430 as yii-mqtt-684e9a400fc7e (p1, c0, k10).
+1749981781: Client device_vQvo6DEP0PkY disconnected.
+1749981782: Client yii-mqtt-684e9a400fc7e closed its connection.
+1749981918: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749983021: New connection from 172.18.0.1:64820 on port 1883.
+1749983021: New client connected from 172.18.0.1:64820 as yii-mqtt-684e9f2db10c1 (p1, c0, k10).
+1749983027: New connection from 172.18.0.1:64824 on port 1883.
+1749983027: New client connected from 172.18.0.1:64824 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749983070: Client device_vQvo6DEP0PkY disconnected.
+1749983318: Client yii-mqtt-684e9f2db10c1 closed its connection.
+1749983319: New connection from 172.18.0.1:62362 on port 1883.
+1749983319: New client connected from 172.18.0.1:62362 as yii-mqtt-684ea0576f80e (p1, c0, k10).
+1749983321: New connection from 172.18.0.1:62378 on port 1883.
+1749983321: New client connected from 172.18.0.1:62378 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749983348: Client device_vQvo6DEP0PkY disconnected.
+1749983365: Client yii-mqtt-684ea0576f80e closed its connection.
+1749983366: New connection from 172.18.0.1:64946 on port 1883.
+1749983366: New client connected from 172.18.0.1:64946 as yii-mqtt-684ea086b7abd (p1, c0, k10).
+1749983369: New connection from 172.18.0.1:64954 on port 1883.
+1749983369: New client connected from 172.18.0.1:64954 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749983382: Client yii-mqtt-684ea086b7abd closed its connection.
+1749983382: New connection from 172.18.0.1:55128 on port 1883.
+1749983382: New client connected from 172.18.0.1:55128 as yii-mqtt-684ea096e6168 (p1, c0, k10).
+1749983420: Client device_vQvo6DEP0PkY disconnected.
+1749983421: New connection from 172.18.0.1:62802 on port 1883.
+1749983421: New client connected from 172.18.0.1:62802 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749983427: Client device_vQvo6DEP0PkY disconnected.
+1749983441: New connection from 172.18.0.1:55022 on port 1883.
+1749983441: New client connected from 172.18.0.1:55022 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749983455: Client device_vQvo6DEP0PkY disconnected.
+1749983496: New connection from 172.18.0.1:57202 on port 1883.
+1749983496: New client connected from 172.18.0.1:57202 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749983509: Client device_vQvo6DEP0PkY disconnected.
+1749983522: New connection from 172.18.0.1:55834 on port 1883.
+1749983522: New client connected from 172.18.0.1:55834 as device_vQvo6DEP0PkY (p2, c1, k60).
+1749983534: Client device_vQvo6DEP0PkY disconnected.

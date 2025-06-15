@@ -407,18 +407,21 @@ export const experimentApi = {
    */
   createExperiment: async (experimentData: Partial<Experiment>): Promise<Experiment | null> => {
     try {
-      const response = await fetchApi<SingleExperimentResponse>('experiments/create', {
+      const response = await fetchApi<SingleExperimentResponse>('api/experiments/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(experimentData),
       });
+      console.log('API response:', response);
       if (response.success && response.data) {
         return response.data;
       }
+      console.log('API response:', response);
       return null;
     } catch (error) {
+      console.log('API response:', error);
       console.error('Error creating experiment:', error);
       return null;
     }

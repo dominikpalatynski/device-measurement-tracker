@@ -119,7 +119,7 @@ class MQTTDataSender:
         data = custom_data if custom_data else self.generate_raw_data()
         return self.publish_data(data)
     
-    def run_continuous_sending(self, interval: int = 10):
+    def run_continuous_sending(self, interval: int = 1):
         """Send messages continuously with specified interval"""
         self.running = True
         print(f"🚀 Starting continuous data sending for device: {self.device_id}")
@@ -139,7 +139,7 @@ class MQTTDataSender:
                     time.sleep(5)
                     continue
                 
-                time.sleep(interval)
+                time.sleep(1)
                 
         except KeyboardInterrupt:
             print(f"\n🛑 Stopping continuous sending...")
@@ -178,7 +178,7 @@ def create_sample_config(filename: str = "mqtt_config.json"):
         "port": 1883,
         "username": "",
         "password": "",
-        "send_interval": 10,
+        "send_interval": 1,
         "qos": 1
     }
     
@@ -222,7 +222,7 @@ Examples:
     parser.add_argument(
         "--interval",
         type=int,
-        default=10,
+        default=1,
         help="Send interval in seconds for continuous mode (default: 10)"
     )
     

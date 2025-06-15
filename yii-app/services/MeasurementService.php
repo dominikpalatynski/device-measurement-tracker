@@ -98,15 +98,46 @@ class MeasurementService extends Component
     public function processRealTimeDataMqttMessage($topic, $payload)
     {
         try {
+            $parts = explode('/', $topic);
+            $deviceId = isset($parts[1]) ? $parts[1] : null;
             echo "\033[32m[MQTT] Processing real time data message: $payload\033[0m\n";
             $data = Json::decode($payload);
-            $deviceUuid = $data['deviceId'];
-            $device = $this->getOrCreateDevice($deviceUuid);
-            $device->status = Device::STATUS_ACTIVE;
-            $device->updated_at = time();
-            $device->save();
-            echo "\033[32m[MQTT] Successfully processed real time data for device: $deviceUuid\033[0m\n";
-            return $device;
+            $device = Devices::findByDeviceId($deviceId);
+            if (!$device) {
+                throw new \Exception("Device not found: $deviceId");
+            }
+
+            $activeExperiment = $device->getExperiments()
+                ->where(['status' => ['Running', 'Scheduled']])
+                ->one();
+            echo "\033[32m[MQTT] Active experiment: " . $activeExperiment->experiment_id . "\033[0m\n";
+            if ($activeExperiment) {
+                // 2. Pobierz aktywne phenomena dla tego eksperymentu
+                echo "\033[32m[MQTT] Found active experiment for device: $deviceId\033[0m\n";
+                $activePhenomena = $activeExperiment->getPhenomena()
+                    ->where(['status' => 'Active'])
+                    ->all();
+                
+                if (!empty($activePhenomena)) {
+                    echo "\033[32m[MQTT] Found active experiment and phenomena for device: $deviceId\033[0m\n";
+                    // ... Twoja logika dla aktywnych phenomena ...
+                    $measurement = new \app\models\MeasurementData();
+                    $measurement->device_id = $deviceId;
+                    $measurement->phenomenon_id = $activePhenomena[0]->phenomenon_id;
+                    $measurement->data_payload = $data;
+                    $measurement->timestamp = date('Y-m-d H:i:s');
+                    $measurement->save();
+                    return $measurement;
+                }
+            }
+
+            echo "\033[33m[MQTT] No active experiment or phenomena, saving to UnassignedData for device: $deviceId\033[0m\n";
+            $measurement = new \app\models\MeasurementData();
+            $measurement->device_id = $deviceId;
+            $measurement->data_payload = $data;
+            $measurement->timestamp = date('Y-m-d H:i:s');
+            $measurement->save();
+            return $measurement;
         } catch (\Exception $e) {
             echo "\033[31m[MQTT] Error: " . $e->getMessage() . "\033[0m\n";
             Yii::error("Error processing real time data MQTT message: " . $e->getMessage(), 'mqtt');
