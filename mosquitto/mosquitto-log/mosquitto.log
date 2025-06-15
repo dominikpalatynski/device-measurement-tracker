@@ -291,3 +291,6 @@
 1749983522: New connection from 172.18.0.1:55834 on port 1883.
 1749983522: New client connected from 172.18.0.1:55834 as device_vQvo6DEP0PkY (p2, c1, k60).
 1749983534: Client device_vQvo6DEP0PkY disconnected.
+1749983719: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749985520: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1749985627: Client yii-mqtt-684ea096e6168 has exceeded timeout, disconnecting.

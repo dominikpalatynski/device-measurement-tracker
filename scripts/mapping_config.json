@@ -1,0 +1,17 @@
+{
+    "deviceId": "DEVICE001",
+    "phenomenomId": 12345,
+    "included_files": [
+      "w.dat",
+      "udc.dat", 
+      "uc.dat",
+      "ub.dat",
+      "ua.dat",
+      "ib.dat",
+      "ic.dat",
+      "idc.dat"
+    ],
+    "server": {
+      "url": "http://localhost:8080/api/measurements"
+    }
+  }
