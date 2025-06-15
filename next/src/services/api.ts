@@ -3,7 +3,7 @@
  */
 
 // Get the API URL from environment variables
-const API_URL = "http://localhost:8080";
+const API_URL = "http://localhost:8080/api";
 
 /**
  * Base API request function with error handling
@@ -253,7 +253,7 @@ export async function testApiConnection(message: string = "hello"): Promise<{suc
  */
 export async function getDevices(): Promise<Device[]> {
   try {
-    const response = await fetchApi<DeviceResponse>('api/device-register/list');
+    const response = await fetchApi<DeviceResponse>('device-register/list');
     if (response.success && response.data) {
       return response.data;
     }
@@ -286,7 +286,7 @@ export async function getDevice(deviceUuid: string): Promise<Device | null> {
 export async function registerDevice(deviceData: {device_name: string, device_type: string}): Promise<Device | null> {
   try {
     console.log('Registering device:', deviceData);
-    const response = await fetchApi<SingleDeviceResponse>('api/device-register/create', {
+    const response = await fetchApi<SingleDeviceResponse>('device-register/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -407,7 +407,7 @@ export const experimentApi = {
    */
   createExperiment: async (experimentData: Partial<Experiment>): Promise<Experiment | null> => {
     try {
-      const response = await fetchApi<SingleExperimentResponse>('api/experiments/create', {
+      const response = await fetchApi<SingleExperimentResponse>('experiments/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -779,6 +779,25 @@ export const phenomenaApi = {
     } catch (error) {
       console.error('Error finishing phenomenon:', error);
       return null;
+    }
+  },
+
+  /**
+   * Upload measurement data to a phenomenon
+   */
+  uploadData: async (phenomenonId: string, data: any): Promise<boolean> => {
+    try {
+      const response = await fetchApi<{success: boolean, message: string}>(`phenomena/${phenomenonId}/data`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      return response.success;
+    } catch (error) {
+      console.error('Error uploading phenomenon data:', error);
+      return false;
     }
   }
 };

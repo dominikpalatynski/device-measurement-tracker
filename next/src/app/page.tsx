@@ -344,10 +344,10 @@ export default function Dashboard() {
 							Recent Experiments
 						</h2>
 						<Link
-							href='/experiments'
+							href='/devices'
 							className='text-blue-600 hover:text-blue-500 text-sm font-medium'
 						>
-							View All →
+							View Devices →
 						</Link>
 					</div>
 					{experiments.length > 0 ? (
@@ -403,10 +403,10 @@ export default function Dashboard() {
 								No experiments created yet
 							</p>
 							<Link
-								href='/experiments/register'
+								href='/devices'
 								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700'
 							>
-								Create First Experiment
+								View Devices to Start Experiments
 							</Link>
 						</div>
 					)}
@@ -490,16 +490,16 @@ export default function Dashboard() {
 						</div>
 					</Link>
 					<Link
-						href='/experiments/register'
+						href='/devices'
 						className='flex items-center p-4 bg-white rounded-lg border border-gray-200 hover:border-green-300 hover:shadow-md transition-all'
 					>
 						<span className='text-3xl mr-4'>🧪</span>
 						<div>
 							<h3 className='font-medium text-gray-900'>
-								New Experiment
+								View Devices
 							</h3>
 							<p className='text-sm text-gray-500'>
-								Create a measurement experiment
+								Manage devices and experiments
 							</p>
 						</div>
 					</Link>

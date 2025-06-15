@@ -28,12 +28,12 @@ export default function DeviceDetailPage() {
 	const [measurements, setMeasurements] = useState<Measurement[]>([]);
 	const [latestMeasurement, setLatestMeasurement] =
 		useState<Measurement | null>(null);
-	const [stats, setStats] = useState<MeasurementStats | null>(null);
-	const [activeExperiments, setActiveExperiments] = useState<Experiment[]>(
+	const [stats, setStats] = useState<MeasurementStats | null>(null);	const [activeExperiments, setActiveExperiments] = useState<Experiment[]>(
 		[]
 	);
+	const [allExperiments, setAllExperiments] = useState<Experiment[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);	const [activeTab, setActiveTab] = useState<
+	const [error, setError] = useState<string | null>(null);const [activeTab, setActiveTab] = useState<
 		"overview" | "live-experiments" | "data-explorer" | "online"
 	>("overview");
 
@@ -63,16 +63,17 @@ export default function DeviceDetailPage() {
 				setError("Device not found");
 				return;
 			}
-			setDevice(deviceData);
-
-			// Load active experiments for this device
+			setDevice(deviceData);			// Load active experiments for this device
 			const experimentsData = await experimentApi.getExperiments();
 			const deviceExperiments = experimentsData.filter(
-				(exp) =>
-					exp.device_id === deviceData.device_id &&
-					(exp.status === "Running" || exp.status === "Created")
+				(exp) => exp.device_id === deviceData.device_id
 			);
-			setActiveExperiments(deviceExperiments);
+			const activeDeviceExperiments = deviceExperiments.filter(
+				(exp) => exp.status === "Running" || exp.status === "Created"
+			);
+			
+			setAllExperiments(deviceExperiments);
+			setActiveExperiments(activeDeviceExperiments);
 
 			// Load measurement data using device ID
 			const [latestRes, measurementsRes, statsRes] =
@@ -359,9 +360,8 @@ export default function DeviceDetailPage() {
 									(exp) =>
 										exp.mode === "Online" &&
 										exp.status === "Running"
-								) ? (
-									<Link
-										href={`/experiments/${
+								) ? (									<Link
+										href={`/devices/${deviceId}/experiments/${
 											activeExperiments.find(
 												(exp) =>
 													exp.mode === "Online" &&
@@ -381,9 +381,8 @@ export default function DeviceDetailPage() {
 									</button>
 								)}
 
-								{/* Always show option to create Offline experiment */}
-								<Link
-									href='/experiments/register'
+								{/* Always show option to create Offline experiment */}								<Link
+									href={`/devices/${deviceId}/experiments/create`}
 									className='inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'
 								>
 									Create Offline Experiment
@@ -546,22 +545,78 @@ export default function DeviceDetailPage() {
 											device.registration_date
 										).toLocaleString()}
 									</dd>
-								</div>
-								<div>
+								</div>								<div>
 									<dt className='text-sm font-medium text-gray-500'>
 										Experiments
 									</dt>
 									<dd className='text-sm text-gray-900'>
-										{device.experiments_count || 0} total
-										{device.active_experiments_count
-											? ` (${device.active_experiments_count} active)`
+										{allExperiments.length} total
+										{activeExperiments.length > 0
+											? ` (${activeExperiments.length} active)`
 											: ""}
 									</dd>
-								</div>
-							</dl>
+								</div>							</dl>
 						</div>
+
+						{/* Experiment Summary */}
+						{allExperiments.length > 0 && (
+							<div className='bg-white p-6 rounded-lg border border-gray-200'>
+								<h3 className='text-lg font-medium text-gray-900 mb-4'>
+									📊 Experiment Summary
+								</h3>
+								<div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+									<div className='text-center'>
+										<div className='text-2xl mb-1'>🧪</div>
+										<div className='text-2xl font-bold text-blue-600'>
+											{allExperiments.length}
+										</div>
+										<div className='text-sm text-gray-500'>Total</div>
+									</div>
+									<div className='text-center'>
+										<div className='text-2xl mb-1'>🟢</div>
+										<div className='text-2xl font-bold text-green-600'>
+											{activeExperiments.length}
+										</div>
+										<div className='text-sm text-gray-500'>Active</div>
+									</div>
+									<div className='text-center'>
+										<div className='text-2xl mb-1'>✅</div>
+										<div className='text-2xl font-bold text-blue-600'>
+											{allExperiments.filter(exp => exp.status === "Completed").length}
+										</div>
+										<div className='text-sm text-gray-500'>Completed</div>
+									</div>
+									<div className='text-center'>
+										<div className='text-2xl mb-1'>⏸️</div>
+										<div className='text-2xl font-bold text-yellow-600'>
+											{allExperiments.filter(exp => exp.status === "Paused" || exp.status === "Failed").length}
+										</div>
+										<div className='text-sm text-gray-500'>Paused/Failed</div>
+									</div>
+								</div>
+								
+								{/* Quick Actions */}
+								<div className='mt-6 flex flex-wrap gap-3'>
+									<Link
+										href={`/devices/${deviceId}/experiments/create`}
+										className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
+									>
+										➕ Create New Experiment
+									</Link>
+									{activeExperiments.length > 0 && (
+										<Link
+											href={`/devices/${deviceId}/experiments/${activeExperiments[0].experiment_id}`}
+											className='inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'
+										>
+											👁️ View Active Experiment
+										</Link>
+									)}
+								</div>
+							</div>
+						)}
 					</div>
-				)}				{activeTab === "live-experiments" && (
+				)}
+				{activeTab === "live-experiments" && (
 					<div className='space-y-6'>
 						{/* Live Experiment Management */}
 						<div className='bg-white p-6 rounded-lg border border-gray-200'>
@@ -633,69 +688,157 @@ export default function DeviceDetailPage() {
 									</div>
 								</>
 							)}
-						</div>
-
-						{/* Recent Live Experiments History */}
+						</div>						{/* Experiments History */}
 						<div className='bg-white p-6 rounded-lg border border-gray-200'>
 							<h3 className='text-lg font-medium text-gray-900 mb-4'>
-								📋 Recent Live Experiments
+								📋 All Experiments
 							</h3>
-							{activeExperiments.length > 0 ? (
-								<div className='overflow-x-auto'>
-									<table className='min-w-full divide-y divide-gray-200'>
-										<thead className='bg-gray-50'>
-											<tr>
-												<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-													Experiment
-												</th>
-												<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-													Status
-												</th>
-												<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-													Started
-												</th>
-												<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-													Actions
-												</th>
-											</tr>
-										</thead>
-										<tbody className='bg-white divide-y divide-gray-200'>
-											{activeExperiments.map((experiment) => (
-												<tr key={experiment.experiment_id}>
-													<td className='px-6 py-4 whitespace-nowrap'>
-														<div className='text-sm font-medium text-gray-900'>
-															{experiment.name || experiment.experiment_id}
-														</div>
-														<div className='text-sm text-gray-500'>
-															{experiment.description || "No description"}
-														</div>
-													</td>
-													<td className='px-6 py-4 whitespace-nowrap'>
-														<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-															experiment.status === "Running" 
-																? "bg-green-100 text-green-800"
-																: experiment.status === "Created"
-																? "bg-yellow-100 text-yellow-800" 
-																: "bg-gray-100 text-gray-800"
-														}`}>
-															{experiment.status}
-														</span>
-													</td>
-													<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-														{new Date(experiment.start_date).toLocaleDateString()}
-													</td>
-													<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-														<Link
-															href={`/devices/${deviceId}/experiments/${experiment.experiment_id}`}
-															className='text-blue-600 hover:text-blue-900'
-														>
-															View Details
-														</Link>
-													</td>
-												</tr>
-											))}
-										</tbody>
-									</table>
+							{allExperiments.length > 0 ? (
+								<div className='space-y-6'>
+									{/* Active Experiments */}
+									{activeExperiments.length > 0 && (
+										<div>
+											<h4 className='text-md font-medium text-green-700 mb-3 flex items-center'>
+												<span className='w-3 h-3 bg-green-500 rounded-full mr-2'></span>
+												Active Experiments ({activeExperiments.length})
+											</h4>
+											<div className='overflow-x-auto'>
+												<table className='min-w-full divide-y divide-gray-200'>
+													<thead className='bg-gray-50'>
+														<tr>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Experiment
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Status
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Started
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Actions
+															</th>
+														</tr>
+													</thead>
+													<tbody className='bg-white divide-y divide-gray-200'>
+														{activeExperiments.map((experiment) => (
+															<tr key={experiment.experiment_id}>
+																<td className='px-6 py-4 whitespace-nowrap'>
+																	<div className='text-sm font-medium text-gray-900'>
+																		{experiment.name || experiment.experiment_id}
+																	</div>
+																	<div className='text-sm text-gray-500'>
+																		{experiment.description || "No description"}
+																	</div>
+																</td>
+																<td className='px-6 py-4 whitespace-nowrap'>
+																	<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+																		experiment.status === "Running" 
+																			? "bg-green-100 text-green-800"
+																			: experiment.status === "Created"
+																			? "bg-yellow-100 text-yellow-800" 
+																			: "bg-gray-100 text-gray-800"
+																	}`}>
+																		{experiment.status}
+																	</span>
+																</td>
+																<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+																	{new Date(experiment.start_date).toLocaleDateString()}
+																</td>
+																<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+																	<Link
+																		href={`/devices/${deviceId}/experiments/${experiment.experiment_id}`}
+																		className='text-blue-600 hover:text-blue-900'
+																	>
+																		View Details
+																	</Link>
+																</td>
+															</tr>
+														))}
+													</tbody>
+												</table>
+											</div>
+										</div>
+									)}
+
+									{/* Previous Experiments */}
+									{allExperiments.filter(exp => !activeExperiments.some(active => active.experiment_id === exp.experiment_id)).length > 0 && (
+										<div>
+											<h4 className='text-md font-medium text-gray-700 mb-3 flex items-center'>
+												<span className='w-3 h-3 bg-gray-400 rounded-full mr-2'></span>
+												Previous Experiments ({allExperiments.filter(exp => !activeExperiments.some(active => active.experiment_id === exp.experiment_id)).length})
+											</h4>
+											<div className='overflow-x-auto'>
+												<table className='min-w-full divide-y divide-gray-200'>
+													<thead className='bg-gray-50'>
+														<tr>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Experiment
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Status
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Started
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Ended
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Actions
+															</th>
+														</tr>
+													</thead>
+													<tbody className='bg-white divide-y divide-gray-200'>
+														{allExperiments
+															.filter(exp => !activeExperiments.some(active => active.experiment_id === exp.experiment_id))
+															.map((experiment) => (
+															<tr key={experiment.experiment_id} className='opacity-75'>
+																<td className='px-6 py-4 whitespace-nowrap'>
+																	<div className='text-sm font-medium text-gray-900'>
+																		{experiment.name || experiment.experiment_id}
+																	</div>
+																	<div className='text-sm text-gray-500'>
+																		{experiment.description || "No description"}
+																	</div>
+																</td>
+																<td className='px-6 py-4 whitespace-nowrap'>
+																	<span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+																		experiment.status === "Completed" 
+																			? "bg-blue-100 text-blue-800"
+																			: experiment.status === "Failed"
+																			? "bg-red-100 text-red-800"
+																			: experiment.status === "Paused"
+																			? "bg-yellow-100 text-yellow-800"
+																			: "bg-gray-100 text-gray-800"
+																	}`}>
+																		{experiment.status}
+																	</span>
+																</td>
+																<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+																	{new Date(experiment.start_date).toLocaleDateString()}
+																</td>
+																<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+																	{experiment.end_date 
+																		? new Date(experiment.end_date).toLocaleDateString()
+																		: "-"
+																	}
+																</td>
+																<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+																	<Link
+																		href={`/devices/${deviceId}/experiments/${experiment.experiment_id}`}
+																		className='text-blue-600 hover:text-blue-900'
+																	>
+																		View Details
+																	</Link>
+																</td>
+															</tr>
+														))}
+													</tbody>
+												</table>
+											</div>
+										</div>
+									)}
 								</div>
 							) : (
 								<div className='text-center py-6 text-gray-500'>
@@ -703,10 +846,10 @@ export default function DeviceDetailPage() {
 									<p>No experiments found for this device.</p>
 									<p className='text-sm'>Start your first live experiment above.</p>
 								</div>
-							)}
-						</div>
+							)}						</div>
 					</div>
-				)}				{activeTab === "data-explorer" && (
+				)}
+				{activeTab === "data-explorer" && (
 					<div className='bg-white p-6 rounded-lg border border-gray-200'>
 						<h3 className='text-lg font-medium text-gray-900 mb-4'>
 							Measurement Statistics
@@ -941,9 +1084,8 @@ export default function DeviceDetailPage() {
 																experiment.start_date
 															).toLocaleDateString()}
 														</td>
-														<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-															<Link
-																href={`/experiments/${experiment.experiment_id}`}
+														<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>															<Link
+																href={`/devices/${deviceId}/experiments/${experiment.experiment_id}`}
 																className='text-blue-600 hover:text-blue-900'
 															>
 																View Details
@@ -1013,9 +1155,8 @@ export default function DeviceDetailPage() {
 													Management panel experiment
 													with manual data collection
 													via scripts.
-												</p>
-												<Link
-													href='/experiments/register'
+												</p>												<Link
+													href={`/devices/${deviceId}/experiments/create`}
 													className='w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'
 												>
 													Create Offline Experiment
@@ -1049,12 +1190,12 @@ export default function DeviceDetailPage() {
 														Activate Device
 													</button>
 												)}
-											</div>
-										</div>
+											</div>										</div>
 									</div>
 								)}
 							</div>
-						</div>						{activeExperiments.length === 0 && (
+						</div>
+						{activeExperiments.length === 0 && (
 							<div className='bg-gray-50 border border-gray-200 rounded-lg p-6 text-center'>
 								<h3 className='text-lg font-medium text-gray-900 mb-2'>
 									No Active Experiments
@@ -1064,43 +1205,6 @@ export default function DeviceDetailPage() {
 									experiments. Create one to start collecting
 									data.
 								</p>
-							</div>
-						)}
-					</div>
-				)}
-				{activeTab === "online" && (
-					<div className='space-y-6'>
-						{device.status === "Active" ? (
-							<OnlineModeControl
-								deviceId={device.device_id}
-								deviceName={device.device_name}
-							/>
-						) : (
-							<div className='bg-yellow-50 border border-yellow-200 rounded-lg p-6'>
-								<div className='flex items-center'>
-									<div className='text-yellow-400 mr-3 text-2xl'>
-										⚠️
-									</div>
-									<div>
-										<h3 className='text-lg font-medium text-yellow-800 mb-2'>
-											Device Not Active
-										</h3>
-										<p className='text-yellow-700'>
-											The device must be active to use
-											Online Mode. Please activate the
-											device first.
-										</p>
-										{device.status ===
-											"Pending-Registration" && (
-											<button
-												onClick={handleActivateDevice}
-												className='mt-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700'
-											>
-												Activate Device
-											</button>
-										)}
-									</div>
-								</div>
 							</div>
 						)}
 					</div>
