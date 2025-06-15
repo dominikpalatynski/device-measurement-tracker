@@ -195,4 +195,90 @@ class DeviceMeasurementController extends Controller
             'server' => $_SERVER['SERVER_NAME'] ?? 'unknown'
         ];
     }
+
+    /**
+     * Receives batch measurement data from external script and saves to MeasurementData
+     * Endpoint: POST /api/device-measurement/phenomen-batch
+     *
+     * Expected JSON payload:
+     * {
+     *   "phenomenomId": 12345,
+     *   "timestamp": "2024-05-30T12:34:56.789Z",
+     *   "data": { ... },
+     *   "sampling_frequency": 100,
+     *   "deviceId": "DEVICE001"
+     * }
+     *
+     * @return array
+     */
+    public function actionPhenomenBatch()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $request = Yii::$app->request;
+        $body = $request->getRawBody();
+        $data = json_decode($body, true);
+
+        if (!$data) {
+            Yii::$app->response->statusCode = 400;
+            return [
+                'success' => false,
+                'error' => 'Invalid JSON payload.'
+            ];
+        }
+
+        // Validate required fields
+        $deviceId = $data['deviceId'] ?? null;
+        $phenomenonId = $data['phenomenomId'] ?? null;
+        $timestamp = $data['timestamp'] ?? null;
+        $payload = $data['data'] ?? null;
+        
+        if ( !$payload) {
+            Yii::$app->response->statusCode = 422;
+            return [
+                'success' => false,
+                'error' => 'Missing required fields: data.'
+            ];
+        }
+        if ( !$deviceId) {
+            Yii::$app->response->statusCode = 422;
+            return [
+                'success' => false,
+                'error' => 'Missing required fields: deviceId'
+            ];
+        }
+        if ( !$timestamp) {
+            Yii::$app->response->statusCode = 422;
+            return [
+                'success' => false,
+                'error' => 'Missing required fields: timestamp'
+            ];
+        }
+        try {
+            $measurement = new \app\models\MeasurementData();
+            $measurement->device_id = $deviceId;
+            $measurement->phenomenon_id = $phenomenonId;
+            $measurement->timestamp = $timestamp;
+            $measurement->data_payload = $payload;
+
+            if ($measurement->save()) {
+                return [
+                    'success' => true,
+                    'data_id' => $measurement->data_id
+                ];
+            } else {
+                Yii::$app->response->statusCode = 500;
+                return [
+                    'success' => false,
+                    'error' => $measurement->getErrors()
+                ];
+            }
+        } catch (\Throwable $e) {
+            Yii::error("Error saving batch measurement: " . $e->getMessage(), 'api.device-measurement');
+            Yii::$app->response->statusCode = 500;
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
 }

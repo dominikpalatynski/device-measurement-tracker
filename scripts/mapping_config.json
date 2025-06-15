@@ -1,6 +1,7 @@
 {
-    "deviceId": "DEVICE001",
-    "phenomenomId": 12345,
+    "deviceId": "vQvo6DEP0PkY",
+    "phenomenomId": "phenom_684e98a7e903c",
+    "sampling_frequency": 20000,
     "included_files": [
       "w.dat",
       "udc.dat", 
@@ -12,6 +13,6 @@
       "idc.dat"
     ],
     "server": {
-      "url": "http://localhost:8080/api/measurements"
+      "url": "http://localhost:8080/api/device-measurement/phenomen-batch"
     }
   }

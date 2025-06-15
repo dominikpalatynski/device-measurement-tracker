@@ -21,7 +21,7 @@ class FileDataMapper:
         self.included_files = config.get('included_files', [])
         self.server_config = config.get('server', {})
         self.phenomenon_id = config.get('phenomenomId')
-        
+        self.sampling_frequency = config.get('sampling_frequency')
     def read_file_data(self, file_path: Path) -> List[float]:
         """Read numerical data from file, one value per line"""
         try:
@@ -80,7 +80,9 @@ class FileDataMapper:
         payload = {
             "phenomenomId": self.phenomenon_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "data": channel_data
+            "data": channel_data,
+            "sampling_frequency": self.sampling_frequency,
+            "deviceId": self.device_id
         }
         
         return payload
