@@ -9,11 +9,13 @@ import {
 	experimentApi,
 	onlineModeApi,
 	phenomenaApi,
+	getAllMeasurements,
 	Device,
 	Experiment,
 	LiveExperiment,
 	ActivePhenomenon,
 	Phenomenon,
+	Measurement,
 } from "@/services/api";
 
 export default function ExperimentDetailPage() {
@@ -31,6 +33,15 @@ export default function ExperimentDetailPage() {
 	const [offlinePhenomena, setOfflinePhenomena] = useState<Phenomenon[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+	// Live data chart functionality
+	const [liveData, setLiveData] = useState<Measurement[]>([]);
+	const [autoRefresh, setAutoRefresh] = useState(false);
+	const [chartViewMode, setChartViewMode] = useState<
+		"chart" | "table" | "stats"
+	>("chart");
+	const [dataRefreshInterval, setDataRefreshInterval] =
+		useState<NodeJS.Timeout | null>(null);
 
 	// Live phenomenon creation
 	const [newPhenomenonName, setNewPhenomenonName] = useState("");
@@ -77,6 +88,56 @@ export default function ExperimentDetailPage() {
 			loadExperimentData();
 		}
 	}, [deviceId, experimentId]);
+
+	// Auto-refresh effect for live data
+	useEffect(() => {
+		if (autoRefresh && liveExperiment && device) {
+			loadLiveData();
+			const interval = setInterval(loadLiveData, 3000); // Refresh every 3 seconds
+			setDataRefreshInterval(interval);
+			return () => {
+				clearInterval(interval);
+				setDataRefreshInterval(null);
+			};
+		} else if (dataRefreshInterval) {
+			clearInterval(dataRefreshInterval);
+			setDataRefreshInterval(null);
+		}
+	}, [autoRefresh, liveExperiment, device]);
+
+	// Auto-enable live data monitoring when live experiment starts
+	useEffect(() => {
+		if (liveExperiment && device && !autoRefresh) {
+			setAutoRefresh(true); // Automatically enable auto-refresh for live experiments
+			loadLiveData(); // Load initial data immediately
+		}
+	}, [liveExperiment, device]);
+
+	// Clean up interval on unmount
+	useEffect(() => {
+		return () => {
+			if (dataRefreshInterval) {
+				clearInterval(dataRefreshInterval);
+			}
+		};
+	}, []);
+
+	const loadLiveData = async () => {
+		if (!device) return;
+
+		try {
+			// Load recent measurements for live data visualization
+			const measurementRes = await getAllMeasurements(
+				device.device_id,
+				50
+			);
+			if (measurementRes.success) {
+				setLiveData(measurementRes.data);
+			}
+		} catch (error) {
+			console.error("Error loading live data:", error);
+		}
+	};
 
 	const loadExperimentData = async () => {
 		try {
@@ -1080,7 +1141,6 @@ export default function ExperimentDetailPage() {
 							)}
 						</div>
 					</div>
-
 					{/* Device Management Section */}
 					<div className='border-t pt-4 mt-4'>
 						<div className='flex justify-between items-center'>
@@ -1160,8 +1220,148 @@ export default function ExperimentDetailPage() {
 								</Link>
 							</div>
 						</div>
-					</div>
+					</div>{" "}
 				</div>
+				{/* Live Experiment Overview */}
+				{liveExperiment && (
+					<div className='bg-gradient-to-r from-blue-50 via-purple-50 to-green-50 border-2 border-blue-200 rounded-lg p-6'>
+						<div className='flex items-center justify-between mb-6'>
+							<div className='flex items-center space-x-3'>
+								<div className='flex items-center space-x-2'>
+									<div className='w-4 h-4 bg-red-500 rounded-full animate-pulse'></div>
+									<h3 className='text-2xl font-bold text-gray-900'>
+										🔴 LIVE EXPERIMENT
+									</h3>
+								</div>
+								<span className='px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium'>
+									STREAMING
+								</span>
+							</div>
+							<button
+								onClick={handleStopExperiment}
+								className='px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium'
+							>
+								🛑 Stop Experiment
+							</button>
+						</div>
+
+						{/* Live Stats Grid */}
+						<div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
+							<div className='bg-white border border-blue-200 rounded-lg p-4'>
+								<div className='flex items-center space-x-3'>
+									<div className='w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center'>
+										<span className='text-2xl'>⏱️</span>
+									</div>
+									<div>
+										<div className='text-blue-600 text-2xl font-bold'>
+											{Math.floor(
+												liveExperiment.duration / 60
+											)}
+											m {liveExperiment.duration % 60}s
+										</div>
+										<div className='text-blue-800 text-sm font-medium'>
+											Session Duration
+										</div>
+									</div>
+								</div>
+							</div>
+							<div className='bg-white border border-green-200 rounded-lg p-4'>
+								<div className='flex items-center space-x-3'>
+									<div className='w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center'>
+										<span className='text-2xl'>🔬</span>
+									</div>
+									<div>
+										<div className='text-green-600 text-2xl font-bold'>
+											{liveExperiment.phenomena_count ||
+												0}
+										</div>
+										<div className='text-green-800 text-sm font-medium'>
+											Total Phenomena
+										</div>
+									</div>
+								</div>
+							</div>
+							<div className='bg-white border border-purple-200 rounded-lg p-4'>
+								<div className='flex items-center space-x-3'>
+									<div className='w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center'>
+										<span className='text-2xl'>📊</span>
+									</div>
+									<div>
+										<div className='text-purple-600 text-2xl font-bold'>
+											{liveData.length}
+										</div>
+										<div className='text-purple-800 text-sm font-medium'>
+											Data Points
+										</div>
+									</div>
+								</div>
+							</div>
+							<div className='bg-white border border-orange-200 rounded-lg p-4'>
+								<div className='flex items-center space-x-3'>
+									<div className='w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center'>
+										<span className='text-2xl'>🔋</span>
+									</div>
+									<div>
+										<div className='text-orange-600 text-2xl font-bold'>
+											{liveData.length > 0
+												? `${liveData[0].battery_level.toFixed(
+														0
+												  )}%`
+												: "N/A"}
+										</div>
+										<div className='text-orange-800 text-sm font-medium'>
+											Device Battery
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{/* Quick Status Info */}
+						<div className='bg-white rounded-lg border border-gray-200 p-4'>
+							<div className='flex items-center justify-between'>
+								<div className='flex items-center space-x-6'>
+									<div className='flex items-center space-x-2'>
+										<span className='text-sm font-medium text-gray-600'>
+											Current Status:
+										</span>
+										<span className='px-2 py-1 bg-green-100 text-green-800 rounded text-sm font-medium'>
+											{liveExperiment.current_phenomenon
+												? "Recording Data"
+												: "Ready for Phenomena"}
+										</span>
+									</div>
+									<div className='flex items-center space-x-2'>
+										<span className='text-sm font-medium text-gray-600'>
+											Device:
+										</span>
+										<span className='text-sm text-gray-900 font-mono'>
+											{device.device_name}
+										</span>
+									</div>
+									<div className='flex items-center space-x-2'>
+										<span className='text-sm font-medium text-gray-600'>
+											Started:
+										</span>
+										<span className='text-sm text-gray-900 font-mono'>
+											{new Date(
+												experiment.start_date
+											).toLocaleString()}
+										</span>
+									</div>
+								</div>
+								{autoRefresh && (
+									<div className='flex items-center space-x-2 text-green-600'>
+										<div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+										<span className='text-sm font-medium'>
+											Auto-refreshing data
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+					</div>
+				)}
 				{/* Live Phenomena Control */}
 				{liveExperiment && (
 					<div className='bg-white p-6 rounded-lg border border-gray-200'>
@@ -1179,75 +1379,700 @@ export default function ExperimentDetailPage() {
 									? "Cancel"
 									: "Add Phenomenon"}
 							</button>
-						</div>
-
-						{/* Current Active Phenomenon */}
+						</div>{" "}
+						{/* Current Active Phenomenon with Live Data */}
 						{liveExperiment.current_phenomenon && (
-							<div className='bg-green-50 border border-green-200 rounded-lg p-4 mb-4'>
-								<div className='flex justify-between items-center'>
-									<div>
-										<h4 className='font-medium text-green-800'>
-											🟢 Currently Active:{" "}
-											{
-												liveExperiment
-													.current_phenomenon.name
-											}
-										</h4>
-										<p className='text-sm text-green-700'>
-											Duration:{" "}
-											{Math.floor(
-												liveExperiment
+							<div className='bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-6 mb-6'>
+								{/* Phenomenon Header */}
+								<div className='flex justify-between items-start mb-4'>
+									<div className='flex-1'>
+										<div className='flex items-center space-x-3 mb-2'>
+											<div className='flex items-center space-x-2'>
+												<div className='w-3 h-3 bg-green-500 rounded-full animate-pulse'></div>
+												<h4 className='text-xl font-semibold text-green-800'>
+													{
+														liveExperiment
+															.current_phenomenon
+															.name
+													}
+												</h4>
+											</div>
+											<span className='px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium'>
+												LIVE
+											</span>
+										</div>
+										{liveExperiment.current_phenomenon
+											.description && (
+											<p className='text-sm text-green-700 mb-2'>
+												{
+													liveExperiment
+														.current_phenomenon
+														.description
+												}
+											</p>
+										)}
+										<div className='flex items-center space-x-4 text-sm text-green-600'>
+											<div>
+												<span className='font-medium'>
+													Duration:
+												</span>{" "}
+												{Math.floor(
+													liveExperiment
+														.current_phenomenon
+														.duration / 60
+												)}
+												m{" "}
+												{liveExperiment
 													.current_phenomenon
-													.duration / 60
+													.duration % 60}
+												s
+											</div>
+											<div>
+												<span className='font-medium'>
+													Data Points:
+												</span>{" "}
+												<span className='font-mono'>
+													{liveData.length}
+												</span>
+											</div>
+											<div>
+												<span className='font-medium'>
+													ID:
+												</span>{" "}
+												<code className='bg-green-100 px-1 py-0.5 rounded text-xs'>
+													{
+														liveExperiment
+															.current_phenomenon
+															.phenomenon_id
+													}
+												</code>
+											</div>
+										</div>
+									</div>
+
+									{/* Control Actions */}
+									<div className='flex items-center space-x-2 ml-4'>
+										<label className='flex items-center space-x-2 bg-white px-3 py-2 rounded-md border border-green-200'>
+											<input
+												type='checkbox'
+												checked={autoRefresh}
+												onChange={(e) =>
+													setAutoRefresh(
+														e.target.checked
+													)
+												}
+												className='rounded text-green-600'
+											/>
+											<span className='text-sm text-green-700 font-medium'>
+												Auto-refresh
+											</span>
+											{autoRefresh && (
+												<div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
 											)}
-											m{" "}
-											{liveExperiment.current_phenomenon
-												.duration % 60}
-											s
-										</p>
+										</label>
+
+										<div className='flex space-x-1'>
+											<button
+												onClick={() => {
+													navigator.clipboard.writeText(
+														liveExperiment.current_phenomenon!
+															.phenomenon_id
+													);
+													alert(
+														"Active phenomenon ID copied to clipboard!"
+													);
+												}}
+												className='px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 text-sm'
+												title='Copy active phenomenon ID'
+											>
+												📋 Copy ID
+											</button>
+											<Link
+												href={`/devices/${deviceId}/experiments/${experimentId}/phenomena/${
+													liveExperiment.current_phenomenon!
+														.phenomenon_id
+												}`}
+												className='px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 text-sm'
+												title='View detailed data analysis'
+											>
+												👁️ View Detail
+											</Link>
+											<button
+												onClick={() =>
+													handleStopPhenomenon(
+														liveExperiment.current_phenomenon!
+															.phenomenon_id
+													)
+												}
+												className='px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm'
+											>
+												⏹️ Stop
+											</button>
+										</div>
 									</div>
-									<div className='flex space-x-2'>
-										<button
-											onClick={() => {
-												navigator.clipboard.writeText(
-													liveExperiment.current_phenomenon!
-														.phenomenon_id
-												);
-												alert(
-													"Active phenomenon ID copied to clipboard!"
-												);
-											}}
-											className='px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200'
-											title='Copy active phenomenon ID'
-										>
-											📋 Copy ID
-										</button>
-										<Link
-											href={`/devices/${deviceId}/experiments/${experimentId}/phenomena/${
-												liveExperiment.current_phenomenon!
-													.phenomenon_id
-											}`}
-											className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200'
-											title='View live data stream'
-										>
-											👁️ View Live
-										</Link>
-										<button
-											onClick={() =>
-												handleStopPhenomenon(
-													liveExperiment.current_phenomenon!
-														.phenomenon_id
+								</div>
+
+								{/* Live Data Visualization */}
+								<div className='bg-white rounded-lg border border-green-200 p-4'>
+									<div className='flex justify-between items-center mb-4'>
+										<h5 className='text-lg font-medium text-gray-900'>
+											📊 Live Data Stream
+										</h5>
+										<div className='flex space-x-2'>
+											{["chart", "table", "stats"].map(
+												(mode) => (
+													<button
+														key={mode}
+														onClick={() =>
+															setChartViewMode(
+																mode as typeof chartViewMode
+															)
+														}
+														className={`px-3 py-1 rounded text-sm ${
+															chartViewMode ===
+															mode
+																? "bg-green-600 text-white"
+																: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+														}`}
+													>
+														{mode === "chart"
+															? "📈 Chart"
+															: mode === "table"
+															? "📋 Table"
+															: "📊 Stats"}
+													</button>
 												)
-											}
-											className='px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700'
-										>
-											⏹️ Stop
-										</button>
+											)}
+										</div>
 									</div>
+
+									{/* Chart View */}
+									{chartViewMode === "chart" && (
+										<div className='bg-gray-50 border border-gray-200 rounded-lg p-6'>
+											<div className='text-center'>
+												{liveData.length > 0 ? (
+													<>
+														<div className='text-4xl mb-4'>
+															📈
+														</div>
+														<h6 className='text-lg font-medium mb-2 text-gray-800'>
+															Real-time Sensor
+															Data
+														</h6>
+														<p className='text-gray-600 mb-4'>
+															Temperature,
+															humidity, pressure,
+															and battery over
+															time
+														</p>
+														<div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-4'>
+															{liveData.length >
+																0 && (
+																<>
+																	<div className='bg-blue-50 border border-blue-200 rounded-lg p-3'>
+																		<div className='text-blue-600 text-lg font-bold'>
+																			{liveData[0].temperature.toFixed(
+																				1
+																			)}
+																			°C
+																		</div>
+																		<div className='text-blue-800 text-xs font-medium'>
+																			Temperature
+																		</div>
+																	</div>
+																	<div className='bg-green-50 border border-green-200 rounded-lg p-3'>
+																		<div className='text-green-600 text-lg font-bold'>
+																			{liveData[0].humidity.toFixed(
+																				1
+																			)}
+																			%
+																		</div>
+																		<div className='text-green-800 text-xs font-medium'>
+																			Humidity
+																		</div>
+																	</div>
+																	<div className='bg-purple-50 border border-purple-200 rounded-lg p-3'>
+																		<div className='text-purple-600 text-lg font-bold'>
+																			{liveData[0].pressure.toFixed(
+																				1
+																			)}{" "}
+																			hPa
+																		</div>
+																		<div className='text-purple-800 text-xs font-medium'>
+																			Pressure
+																		</div>
+																	</div>
+																	<div className='bg-orange-50 border border-orange-200 rounded-lg p-3'>
+																		<div className='text-orange-600 text-lg font-bold'>
+																			{liveData[0].battery_level.toFixed(
+																				1
+																			)}
+																			%
+																		</div>
+																		<div className='text-orange-800 text-xs font-medium'>
+																			Battery
+																		</div>
+																	</div>
+																</>
+															)}
+														</div>
+														<p className='text-sm text-gray-500'>
+															Showing{" "}
+															{liveData.length}{" "}
+															recent data points
+															{autoRefresh && (
+																<span className='text-green-600 ml-2'>
+																	🔄
+																	Refreshing
+																	every 3
+																	seconds
+																</span>
+															)}
+														</p>
+													</>
+												) : (
+													<>
+														<div className='text-4xl mb-4 text-gray-400'>
+															�
+														</div>
+														<h6 className='text-lg font-medium mb-2 text-gray-600'>
+															Waiting for data...
+														</h6>
+														<p className='text-gray-500'>
+															Live data will
+															appear here once
+															measurements start
+															streaming
+														</p>
+														{autoRefresh && (
+															<div className='mt-4 text-green-600'>
+																🔄
+																Auto-refreshing
+																every 3 seconds
+															</div>
+														)}
+													</>
+												)}
+											</div>
+										</div>
+									)}
+
+									{/* Table View */}
+									{chartViewMode === "table" && (
+										<div className='overflow-x-auto'>
+											{liveData.length > 0 ? (
+												<table className='min-w-full divide-y divide-gray-200'>
+													<thead className='bg-gray-50'>
+														<tr>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Timestamp
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Temperature (°C)
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Humidity (%)
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Pressure (hPa)
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Battery (%)
+															</th>
+														</tr>
+													</thead>
+													<tbody className='bg-white divide-y divide-gray-200'>
+														{liveData
+															.slice(0, 10)
+															.map(
+																(
+																	measurement
+																) => (
+																	<tr
+																		key={
+																			measurement.id
+																		}
+																		className='hover:bg-gray-50'
+																	>
+																		<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono'>
+																			{
+																				measurement.measured_at
+																			}
+																		</td>
+																		<td className='px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium'>
+																			{measurement.temperature.toFixed(
+																				2
+																			)}
+																		</td>
+																		<td className='px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium'>
+																			{measurement.humidity.toFixed(
+																				2
+																			)}
+																		</td>
+																		<td className='px-6 py-4 whitespace-nowrap text-sm text-purple-600 font-medium'>
+																			{measurement.pressure.toFixed(
+																				2
+																			)}
+																		</td>
+																		<td className='px-6 py-4 whitespace-nowrap text-sm text-orange-600 font-medium'>
+																			{measurement.battery_level.toFixed(
+																				2
+																			)}
+																		</td>
+																	</tr>
+																)
+															)}
+													</tbody>
+												</table>
+											) : (
+												<div className='text-center py-8 text-gray-500'>
+													<div className='text-4xl mb-4'>
+														📊
+													</div>
+													<p>
+														No live data available
+														yet
+													</p>
+													<p className='text-sm mt-2'>
+														Data will appear as
+														measurements are
+														captured
+													</p>
+												</div>
+											)}
+										</div>
+									)}
+
+									{/* Stats View */}
+									{chartViewMode === "stats" && (
+										<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+											{liveData.length > 0 ? (
+												<>
+													<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
+														<h6 className='text-blue-800 font-medium mb-2'>
+															🌡️ Temperature
+														</h6>
+														<div className='space-y-1 text-sm'>
+															<div className='flex justify-between'>
+																<span>
+																	Current:
+																</span>
+																<span className='font-mono'>
+																	{liveData[0].temperature.toFixed(
+																		2
+																	)}
+																	°C
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Average:
+																</span>
+																<span className='font-mono'>
+																	{(
+																		liveData.reduce(
+																			(
+																				sum,
+																				d
+																			) =>
+																				sum +
+																				d.temperature,
+																			0
+																		) /
+																		liveData.length
+																	).toFixed(
+																		2
+																	)}
+																	°C
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Min:
+																</span>
+																<span className='font-mono'>
+																	{Math.min(
+																		...liveData.map(
+																			(
+																				d
+																			) =>
+																				d.temperature
+																		)
+																	).toFixed(
+																		2
+																	)}
+																	°C
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Max:
+																</span>
+																<span className='font-mono'>
+																	{Math.max(
+																		...liveData.map(
+																			(
+																				d
+																			) =>
+																				d.temperature
+																		)
+																	).toFixed(
+																		2
+																	)}
+																	°C
+																</span>
+															</div>
+														</div>
+													</div>
+													<div className='bg-green-50 border border-green-200 rounded-lg p-4'>
+														<h6 className='text-green-800 font-medium mb-2'>
+															💧 Humidity
+														</h6>
+														<div className='space-y-1 text-sm'>
+															<div className='flex justify-between'>
+																<span>
+																	Current:
+																</span>
+																<span className='font-mono'>
+																	{liveData[0].humidity.toFixed(
+																		2
+																	)}
+																	%
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Average:
+																</span>
+																<span className='font-mono'>
+																	{(
+																		liveData.reduce(
+																			(
+																				sum,
+																				d
+																			) =>
+																				sum +
+																				d.humidity,
+																			0
+																		) /
+																		liveData.length
+																	).toFixed(
+																		2
+																	)}
+																	%
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Min:
+																</span>
+																<span className='font-mono'>
+																	{Math.min(
+																		...liveData.map(
+																			(
+																				d
+																			) =>
+																				d.humidity
+																		)
+																	).toFixed(
+																		2
+																	)}
+																	%
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Max:
+																</span>
+																<span className='font-mono'>
+																	{Math.max(
+																		...liveData.map(
+																			(
+																				d
+																			) =>
+																				d.humidity
+																		)
+																	).toFixed(
+																		2
+																	)}
+																	%
+																</span>
+															</div>
+														</div>
+													</div>
+													<div className='bg-purple-50 border border-purple-200 rounded-lg p-4'>
+														<h6 className='text-purple-800 font-medium mb-2'>
+															🔲 Pressure
+														</h6>
+														<div className='space-y-1 text-sm'>
+															<div className='flex justify-between'>
+																<span>
+																	Current:
+																</span>
+																<span className='font-mono'>
+																	{liveData[0].pressure.toFixed(
+																		2
+																	)}{" "}
+																	hPa
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Average:
+																</span>
+																<span className='font-mono'>
+																	{(
+																		liveData.reduce(
+																			(
+																				sum,
+																				d
+																			) =>
+																				sum +
+																				d.pressure,
+																			0
+																		) /
+																		liveData.length
+																	).toFixed(
+																		2
+																	)}{" "}
+																	hPa
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Min:
+																</span>
+																<span className='font-mono'>
+																	{Math.min(
+																		...liveData.map(
+																			(
+																				d
+																			) =>
+																				d.pressure
+																		)
+																	).toFixed(
+																		2
+																	)}{" "}
+																	hPa
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Max:
+																</span>
+																<span className='font-mono'>
+																	{Math.max(
+																		...liveData.map(
+																			(
+																				d
+																			) =>
+																				d.pressure
+																		)
+																	).toFixed(
+																		2
+																	)}{" "}
+																	hPa
+																</span>
+															</div>
+														</div>
+													</div>
+													<div className='bg-orange-50 border border-orange-200 rounded-lg p-4'>
+														<h6 className='text-orange-800 font-medium mb-2'>
+															🔋 Battery
+														</h6>
+														<div className='space-y-1 text-sm'>
+															<div className='flex justify-between'>
+																<span>
+																	Current:
+																</span>
+																<span className='font-mono'>
+																	{liveData[0].battery_level.toFixed(
+																		2
+																	)}
+																	%
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Average:
+																</span>
+																<span className='font-mono'>
+																	{(
+																		liveData.reduce(
+																			(
+																				sum,
+																				d
+																			) =>
+																				sum +
+																				d.battery_level,
+																			0
+																		) /
+																		liveData.length
+																	).toFixed(
+																		2
+																	)}
+																	%
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Min:
+																</span>
+																<span className='font-mono'>
+																	{Math.min(
+																		...liveData.map(
+																			(
+																				d
+																			) =>
+																				d.battery_level
+																		)
+																	).toFixed(
+																		2
+																	)}
+																	%
+																</span>
+															</div>
+															<div className='flex justify-between'>
+																<span>
+																	Max:
+																</span>
+																<span className='font-mono'>
+																	{Math.max(
+																		...liveData.map(
+																			(
+																				d
+																			) =>
+																				d.battery_level
+																		)
+																	).toFixed(
+																		2
+																	)}
+																	%
+																</span>
+															</div>
+														</div>
+													</div>
+												</>
+											) : (
+												<div className='col-span-2 text-center py-8 text-gray-500'>
+													<div className='text-4xl mb-4'>
+														📊
+													</div>
+													<p>
+														No statistics available
+														yet
+													</p>
+													<p className='text-sm mt-2'>
+														Statistics will appear
+														once data is captured
+													</p>
+												</div>
+											)}
+										</div>
+									)}
 								</div>
 							</div>
 						)}
-
 						{/* Add New Phenomenon Form */}
 						{showPhenomenonForm && (
 							<div className='bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4'>
@@ -1307,7 +2132,6 @@ export default function ExperimentDetailPage() {
 								</div>
 							</div>
 						)}
-
 						{/* Phenomena History */}
 						<div>
 							<h4 className='font-medium text-gray-900 mb-3'>
