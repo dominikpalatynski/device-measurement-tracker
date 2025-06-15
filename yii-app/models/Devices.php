@@ -59,6 +59,7 @@ class Devices extends ActiveRecord
             [['status'], 'string'],
             [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_PENDING, self::STATUS_INACTIVE]],
             [['device_id'], 'unique'],
+            [['config'], 'safe'],
         ];
     }
 
@@ -74,6 +75,7 @@ class Devices extends ActiveRecord
             'registration_date' => 'Registration Date',
             'status' => 'Status',
             'last_updated' => 'Last Updated',
+            'config' => 'Config',
         ];
     }    /**
      * Gets query for [[Experiments]].

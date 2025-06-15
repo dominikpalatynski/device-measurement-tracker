@@ -3,7 +3,7 @@
  */
 
 // Get the API URL from environment variables
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = "http://localhost:8080";
 
 /**
  * Base API request function with error handling
@@ -253,7 +253,7 @@ export async function testApiConnection(message: string = "hello"): Promise<{suc
  */
 export async function getDevices(): Promise<Device[]> {
   try {
-    const response = await fetchApi<DeviceResponse>('device/list');
+    const response = await fetchApi<DeviceResponse>('api/device-register/list');
     if (response.success && response.data) {
       return response.data;
     }
@@ -285,7 +285,8 @@ export async function getDevice(deviceUuid: string): Promise<Device | null> {
  */
 export async function registerDevice(deviceData: {device_name: string, device_type: string}): Promise<Device | null> {
   try {
-    const response = await fetchApi<SingleDeviceResponse>('device/register', {
+    console.log('Registering device:', deviceData);
+    const response = await fetchApi<SingleDeviceResponse>('api/device-register/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -295,9 +296,11 @@ export async function registerDevice(deviceData: {device_name: string, device_ty
     if (response.success && response.data) {
       return response.data;
     }
+    console.log('API response:', response);
     return null;
   } catch (error) {
     console.error('Error registering device:', error);
+    console.log('API response:', error);
     return null;
   }
 }

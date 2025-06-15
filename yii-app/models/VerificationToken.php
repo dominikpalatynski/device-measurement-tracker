@@ -11,11 +11,12 @@ use app\models\Devices;
  * This is the model class for table "{{%verification_token}}".
  *
  * @property int $id
- * @property int $device_id
+ * @property string $device_id
  * @property string $token
  * @property int $expiration_date
  * @property int $created_at
  * @property int $updated_at
+ * @property bool $used
  *
  * @property Device $device
  */
@@ -45,7 +46,8 @@ class VerificationToken extends ActiveRecord
     {
         return [
             [['token', 'expiration_date', 'device_id'], 'required'],
-            [['expiration_date', 'created_at', 'updated_at', 'device_id'], 'integer'],
+            [['expiration_date', 'created_at', 'updated_at'], 'integer'],
+            [['device_id'], 'string', 'max' => 255],
             [['used'], 'boolean'],
             [['token'], 'string', 'max' => 255],
             [['token'], 'unique'],
