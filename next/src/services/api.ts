@@ -98,6 +98,23 @@ export interface MeasurementStatsResponse {
   error?: string;
 }
 
+/**
+ * Measurement Data from measurement_data table (for phenomena)
+ */
+export interface MeasurementData {
+  data_id: number;
+  device_id: string;
+  phenomenon_id: string | null;
+  data_payload: any; // JSON data
+  timestamp: string;
+}
+
+export interface MeasurementDataResponse {
+  success: boolean;
+  data: MeasurementData[];
+  error?: string;
+}
+
 // Device interfaces
 export interface Device {
   device_id: string;
@@ -251,6 +268,13 @@ export async function getLatestMeasurement(deviceUuid: string): Promise<SingleMe
  */
 export async function getMeasurementStats(deviceUuid: string): Promise<MeasurementStatsResponse> {
   return fetchApi<MeasurementStatsResponse>(`measurement/stats?deviceUuid=${deviceUuid}`);
+}
+
+/**
+ * Get measurement data for a specific phenomenon from measurement_data table
+ */
+export async function getPhenomenonMeasurements(phenomenonId: string): Promise<MeasurementDataResponse> {
+  return fetchApi<MeasurementDataResponse>(`measurement-data/phenomenon?phenomenonId=${phenomenonId}`);
 }
 
 /**
