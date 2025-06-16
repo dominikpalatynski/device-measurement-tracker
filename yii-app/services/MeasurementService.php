@@ -123,7 +123,7 @@ class MeasurementService extends Component
                     $measurement = new \app\models\MeasurementData();
                     $measurement->device_id = $deviceId;
                     $measurement->phenomenon_id = $activePhenomena[0]->phenomenon_id;
-                    $measurement->data_payload = $data;
+                    $measurement->data_payload = $data['data'];
                     $measurement->timestamp = date('Y-m-d H:i:s');
                     $measurement->save();
                     return $measurement;
@@ -133,7 +133,7 @@ class MeasurementService extends Component
             echo "\033[33m[MQTT] No active experiment or phenomena, saving to UnassignedData for device: $deviceId\033[0m\n";
             $measurement = new \app\models\MeasurementData();
             $measurement->device_id = $deviceId;
-            $measurement->data_payload = $data;
+            $measurement->data_payload = $data['data'];
             $measurement->timestamp = date('Y-m-d H:i:s');
             $measurement->save();
             return $measurement;

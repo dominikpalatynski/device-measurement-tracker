@@ -1,5 +1,16 @@
 {
     "host": "localhost", 
     "port": 1883,
-    "send_interval": 10
+    "send_interval": 10,
+    "deviceId": "vQvo6DEP0PkY",
+    "included_files": [
+      "w.dat",
+      "udc.dat", 
+      "uc.dat",
+      "ub.dat",
+      "ua.dat",
+      "ib.dat",
+      "ic.dat",
+      "idc.dat"
+    ]
   }

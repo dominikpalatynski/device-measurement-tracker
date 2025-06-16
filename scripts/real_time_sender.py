@@ -2,7 +2,7 @@
 """
 Basic MQTT Data Sender for IoT Devices
 Simple mechanism to send data to MQTT broker for server consumption.
-Usage: python mqtt_sender.py --device-id DEVICE001 --config mqtt_config.json
+Usage: python mqtt_sender.py --mqtt-config mqtt_config.json
 """
 
 import argparse
@@ -10,17 +10,47 @@ import json
 import time
 import sys
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Dict, Any, List
 import paho.mqtt.client as mqtt
+from pathlib import Path
 
+# --- File reading and mapping logic (from batch_processor.py) ---
+def read_file_data(file_path: Path) -> List[float]:
+    """Read numerical data from file, one value per line"""
+    try:
+        if not file_path.exists():
+            print(f"⚠ File not found: {file_path}")
+            return []
+        values = []
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line_num, line in enumerate(f, 1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    value = float(line)
+                    values.append(value)
+                except ValueError:
+                    print(f"⚠ Invalid number at line {line_num} in {file_path.name}: '{line}'")
+                    continue
+        print(f"✓ Read {len(values)} values from {file_path.name}")
+        return values
+    except Exception as e:
+        print(f"✗ Error reading file {file_path}: {e}")
+        return []
+
+
+# --- MQTT Sender ---
 class MQTTDataSender:
-    def __init__(self, device_id: str, mqtt_config: Dict[str, Any]):
+    def __init__(self, device_id: str, mqtt_config: Dict[str, Any], included_channels: List[str]):
         self.device_id = device_id
         self.mqtt_config = mqtt_config
         self.client = None
         self.running = False
         self.message_count = 0
-        
+        self.included_channels = included_channels  # list of channel names (file stems)
+        self.channel_counters = {ch: 1 for ch in included_channels}  # start from 1 for each channel
+    
     def setup_mqtt(self) -> bool:
         """Setup MQTT connection"""
         try:
@@ -68,22 +98,20 @@ class MQTTDataSender:
         """MQTT publish callback"""
         pass
     
-    def generate_raw_data(self) -> Dict[str, Any]:
-        """Generate raw data - server will decode based on device config"""
+    def generate_simulated_data(self, config: Dict[str, Any], values_per_channel: int = 10) -> Dict[str, Any]:
         self.message_count += 1
-        
-        # Raw data format - minimal, server handles interpretation
+        data = {}
+        for ch in self.included_channels:
+            # Generate a list of rosnące liczby, startując od aktualnego licznika
+            start = self.channel_counters[ch]
+            data[ch] = list(range(start, start + values_per_channel))
+            # Zwiększ licznik dla kolejnej wiadomości
+            self.channel_counters[ch] += values_per_channel
         return {
-            'deviceId': self.device_id,  # Only deviceId needed
+            'deviceId': self.device_id,
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'sequenceNumber': self.message_count,
-            'rawData': {
-                # Simplified raw sensor values - server decodes based on init_config
-                'sensor1': f"0x{self.message_count:04X}",  # Hex values like real sensors
-                'sensor2': f"RAW_{self.message_count:03d}",
-                'status': 0x01 if self.message_count % 2 == 0 else 0x00,
-                'checksum': f"0x{(self.message_count * 17) % 256:02X}"
-            }
+            'data': data,
         }
     
     def publish_data(self, data: Dict[str, Any]) -> bool:
@@ -110,37 +138,31 @@ class MQTTDataSender:
             print(f"✗ Error publishing data: {e}")
             return False
     
-    def send_single_message(self, custom_data: Dict[str, Any] = None):
-        """Send a single message and exit"""
+    def send_single_message(self, config: Dict[str, Any]):
         if not self.client or not self.client.is_connected():
             print("✗ MQTT not connected")
             return False
-        
-        data = custom_data if custom_data else self.generate_raw_data()
+        data = self.generate_simulated_data(config)
         return self.publish_data(data)
     
-    def run_continuous_sending(self, interval: int = 1):
-        """Send messages continuously with specified interval"""
+    def run_continuous_sending(self, config: Dict[str, Any], interval: int = 1):
         self.running = True
         print(f"🚀 Starting continuous data sending for device: {self.device_id}")
         print(f"⏱ Send interval: {interval} seconds")
-        print(f"📋 Topic: sensors/{self.device_id}/raw")
-        print("🔧 Server will decode rawData using device's init_config")
+        print(f"📋 Topic: device/{self.device_id}/raw")
+        print("🔧 Sending simulated, rosnące dane jako payload")
         print("Press Ctrl+C to stop\n")
-        
         try:
             while self.running:
                 if self.client and self.client.is_connected():
-                    data = self.generate_raw_data()
+                    data = self.generate_simulated_data(config)
                     self.publish_data(data)
                     print(f"⏳ Waiting {interval}s for next message...\n")
                 else:
                     print("⚠ MQTT not connected, attempting to reconnect...")
                     time.sleep(5)
                     continue
-                
-                time.sleep(1)
-                
+                time.sleep(interval)
         except KeyboardInterrupt:
             print(f"\n🛑 Stopping continuous sending...")
         except Exception as e:
@@ -190,94 +212,65 @@ def create_sample_config(filename: str = "mqtt_config.json"):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Basic MQTT data sender for IoT devices",
+        description="Basic MQTT data sender for IoT devices (simulated, config-driven)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --device-id SENSOR001 --config mqtt_config.json
-  %(prog)s --device-id DEVICE123 --config mqtt_config.json --single
-  %(prog)s --device-id TEST_DEVICE --config mqtt_config.json --interval 5
-  %(prog)s --create-sample-config
+  %(prog)s --mqtt-config mqtt_config.json
+  %(prog)s --mqtt-config mqtt_config.json --single
+  %(prog)s --mqtt-config mqtt_config.json --interval 5
         """
     )
-    
     parser.add_argument(
-        "--device-id",
-        required=False,
-        help="Unique device identifier"
-    )
-    
-    parser.add_argument(
-        "--config",
-        required=False,
+        "--mqtt-config",
+        required=True,
         help="Path to MQTT configuration JSON file"
     )
-    
     parser.add_argument(
         "--single",
         action="store_true",
         help="Send single message and exit"
     )
-    
     parser.add_argument(
         "--interval",
         type=int,
-        default=1,
-        help="Send interval in seconds for continuous mode (default: 10)"
+        default=None,
+        help="Send interval in seconds for continuous mode (default: from config or 1)"
     )
-    
-    parser.add_argument(
-        "--create-sample-config",
-        action="store_true",
-        help="Create sample configuration file and exit"
-    )
-    
     args = parser.parse_args()
-    
-    if args.create_sample_config:
-        create_sample_config()
-        return 0
-    
-    if not all([args.device_id, args.config]):
-        print("✗ Missing required arguments: --device-id and --config")
+    if not all([args.mqtt_config]):
+        print("✗ Missing required arguments: --mqtt-config")
         parser.print_help()
         return 1
-    
     try:
-        # Load configuration
-        config = load_config(args.config)
-        
-        # Create sender
-        sender = MQTTDataSender(args.device_id, config)
-        
-        # Setup MQTT connection
+        mqtt_config = load_config(args.mqtt_config)
+        device_id = mqtt_config.get('deviceId')
+        if not device_id:
+            print("✗ Device ID not specified in config")
+            return 1
+        included_files = mqtt_config.get('included_files', [])
+        included_channels = [Path(f).stem for f in included_files]
+        interval = args.interval if args.interval is not None else mqtt_config.get('send_interval', 1)
+        sender = MQTTDataSender(device_id, mqtt_config, included_channels)
         if not sender.setup_mqtt():
             print("✗ Failed to setup MQTT connection")
-            return 1
-        
-        # Wait for connection to establish
+            sys.exit(1)
         print("⏳ Waiting for MQTT connection...")
         time.sleep(2)
-        
         if not sender.client.is_connected():
             print("✗ MQTT connection failed")
-            return 1
-        
-        # Send data
+            sys.exit(1)
         if args.single:
             print("📤 Sending single message...")
-            success = sender.send_single_message()
+            success = sender.send_single_message(mqtt_config)
             sender.stop()
-            return 0 if success else 1
+            sys.exit(0 if success else 1)
         else:
-            # Use interval from config or command line
-            interval = config.get('send_interval', args.interval)
-            sender.run_continuous_sending(interval)
-            return 0
-        
+            sender.run_continuous_sending(mqtt_config, interval)
+            sys.exit(0)
     except Exception as e:
         print(f"✗ Fatal error: {e}")
         return 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
