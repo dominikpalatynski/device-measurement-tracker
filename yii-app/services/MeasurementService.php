@@ -112,7 +112,6 @@ class MeasurementService extends Component
                 ->one();
             echo "\033[32m[MQTT] Active experiment: " . $activeExperiment->experiment_id . "\033[0m\n";
             if ($activeExperiment) {
-                // 2. Pobierz aktywne phenomena dla tego eksperymentu
                 echo "\033[32m[MQTT] Found active experiment for device: $deviceId\033[0m\n";
                 $activePhenomena = $activeExperiment->getPhenomena()
                     ->where(['status' => 'Active'])

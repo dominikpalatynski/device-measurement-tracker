@@ -206,6 +206,32 @@ export interface PhenomenonControlResponse {
   error?: string;
 }
 
+// MeasurementChannel interfaces
+export interface MeasurementChannel {
+  id: number;
+  sensor_type?: string;
+  data_type?: string;
+  frame_offset?: number;
+  samples_per_frame?: number;
+  sampling_frequency?: number;
+  channel_name?: string;
+  physical_unit?: string;
+  measurement_range_min?: number;
+  measurement_range_max?: number;
+}
+
+export interface MeasurementChannelResponse {
+  success: boolean;
+  data: MeasurementChannel[];
+  error?: string;
+}
+
+export interface SingleMeasurementChannelResponse {
+  success: boolean;
+  data: MeasurementChannel;
+  error?: string;
+}
+
 /**
  * Get all measurements for a device
  */
@@ -800,4 +826,79 @@ export const phenomenaApi = {
       return false;
     }
   }
+};
+
+// MeasurementChannel API object
+export const measurementChannelApi = {
+  getChannels: async (): Promise<MeasurementChannel[]> => {
+    try {
+      const response = await fetchApi<MeasurementChannelResponse>('measurement-channel/list');
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching channels:', error);
+      return [];
+    }
+  },
+  getChannel: async (id: number): Promise<MeasurementChannel | null> => {
+    try {
+      const response = await fetchApi<SingleMeasurementChannelResponse>(`measurement-channel/view?id=${id}`);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching channel:', error);
+      return null;
+    }
+  },
+  createChannel: async (channelData: Partial<MeasurementChannel>): Promise<MeasurementChannel | null> => {
+    try {
+      const response = await fetchApi<SingleMeasurementChannelResponse>('measurement-channel/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(channelData),
+      });
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error creating channel:', error);
+      return null;
+    }
+  },
+  updateChannel: async (id: number, channelData: Partial<MeasurementChannel>): Promise<MeasurementChannel | null> => {
+    try {
+      const response = await fetchApi<SingleMeasurementChannelResponse>(`measurement-channel/update?id=${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(channelData),
+      });
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error updating channel:', error);
+      return null;
+    }
+  },
+  deleteChannel: async (id: number): Promise<boolean> => {
+    try {
+      const response = await fetchApi<{success: boolean}>(`measurement-channel/delete?id=${id}`, {
+        method: 'DELETE',
+      });
+      return response.success;
+    } catch (error) {
+      console.error('Error deleting channel:', error);
+      return false;
+    }
+  },
 };

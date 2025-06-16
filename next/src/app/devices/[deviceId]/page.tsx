@@ -17,6 +17,8 @@ import {
 	getMeasurementStats,
 	Measurement,
 	MeasurementStats,
+	measurementChannelApi,
+	MeasurementChannel,
 } from "@/services/api";
 
 export default function DeviceDetailPage() {
@@ -28,13 +30,15 @@ export default function DeviceDetailPage() {
 	const [measurements, setMeasurements] = useState<Measurement[]>([]);
 	const [latestMeasurement, setLatestMeasurement] =
 		useState<Measurement | null>(null);
-	const [stats, setStats] = useState<MeasurementStats | null>(null);	const [activeExperiments, setActiveExperiments] = useState<Experiment[]>(
+	const [stats, setStats] = useState<MeasurementStats | null>(null);
+	const [activeExperiments, setActiveExperiments] = useState<Experiment[]>(
 		[]
 	);
 	const [allExperiments, setAllExperiments] = useState<Experiment[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);const [activeTab, setActiveTab] = useState<
-		"overview" | "live-experiments" | "data-explorer" | "online"
+	const [error, setError] = useState<string | null>(null);
+	const [activeTab, setActiveTab] = useState<
+		"overview" | "live-experiments" | "data-explorer" | "online" | "channels"
 	>("overview");
 
 	// Online experiment creation state
@@ -46,6 +50,37 @@ export default function DeviceDetailPage() {
 	});
 	const [experimentLoading, setExperimentLoading] = useState(false);
 	const [experimentError, setExperimentError] = useState<string | null>(null);
+
+	// Real channels state
+	const [channels, setChannels] = useState<MeasurementChannel[]>([]);
+	const [channelsLoading, setChannelsLoading] = useState(false);
+
+	const [editingChannel, setEditingChannel] = useState<null | MeasurementChannel>(null);
+	const [editMode, setEditMode] = useState(false);
+	const [editChannelData, setEditChannelData] = useState<MeasurementChannel | null>(null);
+	const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
+	const [newChannelData, setNewChannelData] = useState<Partial<MeasurementChannel>>({
+		channel_name: '',
+		sensor_type: '',
+		data_type: '',
+		frame_offset: 0,
+		samples_per_frame: 1,
+		sampling_frequency: 1,
+		physical_unit: '',
+		measurement_range_min: 0,
+		measurement_range_max: 0,
+	});
+
+	// Fetch channels from backend
+	const fetchChannels = async () => {
+		setChannelsLoading(true);
+		const data = await measurementChannelApi.getChannels();
+		setChannels(data);
+		setChannelsLoading(false);
+	};
+	useEffect(() => {
+		fetchChannels();
+	}, []);
 
 	useEffect(() => {
 		if (deviceId) {
@@ -63,7 +98,8 @@ export default function DeviceDetailPage() {
 				setError("Device not found");
 				return;
 			}
-			setDevice(deviceData);			// Load active experiments for this device
+			setDevice(deviceData);
+			// Load active experiments for this device
 			const experimentsData = await experimentApi.getExperiments();
 			const deviceExperiments = experimentsData.filter(
 				(exp) => exp.device_id === deviceData.device_id
@@ -437,6 +473,7 @@ export default function DeviceDetailPage() {
 							"online",
 							"live-experiments",
 							"data-explorer",
+							"channels",
 						].map((tab) => (
 							<button
 								key={tab}
@@ -455,6 +492,8 @@ export default function DeviceDetailPage() {
 									? "🧪 Live Experiments"
 									: tab === "data-explorer"
 									? "📊 Data Explorer"
+									: tab === "channels"
+									? "📡 Channels"
 									: tab.charAt(0).toUpperCase() +
 									  tab.slice(1)}
 							</button>
@@ -990,6 +1029,221 @@ export default function DeviceDetailPage() {
 						)}
 					</div>
 				)}
+				{activeTab === "channels" && (
+					<div className="bg-white p-6 rounded-lg border border-gray-200">
+						<div className="flex items-center justify-between mb-4">
+							<h3 className="text-lg font-medium text-gray-900">Measurement Channels</h3>
+							<button
+								onClick={() => setShowCreateChannelModal(true)}
+								className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+							>
+								+ Create Channel
+							</button>
+						</div>
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+							{channels.map((channel) => (
+								<div
+									key={channel.id}
+									className="cursor-pointer p-4 border border-blue-200 rounded-lg shadow-sm hover:bg-blue-50 transition"
+									onClick={() => {
+										setEditingChannel(channel);
+										setEditMode(false);
+										setEditChannelData(channel);
+									}}
+								>
+									<div className="text-xl font-bold text-blue-700 mb-2">{channel.channel_name}</div>
+									<div className="text-xs text-gray-500">Channel ID: {channel.id}</div>
+								</div>
+							))}
+						</div>
+
+						{/* Create Channel Modal */}
+						{showCreateChannelModal && (
+							<div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+								<div className="bg-white rounded-lg max-w-md w-full p-6">
+									<div className="flex justify-between items-center mb-4">
+										<h4 className="text-lg font-bold text-gray-900">Create Channel</h4>
+										<button
+											onClick={() => setShowCreateChannelModal(false)}
+											className="text-gray-500 hover:text-gray-700"
+										>
+											✕
+										</button>
+									</div>
+									<form
+										onSubmit={async e => {
+											e.preventDefault();
+											await measurementChannelApi.createChannel(newChannelData);
+											setShowCreateChannelModal(false);
+											setNewChannelData({
+												channel_name: '',
+												sensor_type: '',
+												data_type: '',
+												frame_offset: 0,
+												samples_per_frame: 1,
+												sampling_frequency: 1,
+												physical_unit: '',
+												measurement_range_min: 0,
+												measurement_range_max: 0,
+											});
+											fetchChannels();
+										}}
+									>
+										<div className="space-y-3 mb-4">
+											<label className="block text-sm font-medium text-gray-700">Channel Name
+												<input type="text" className="w-full px-2 py-1 border rounded" value={newChannelData.channel_name || ''} onChange={e => setNewChannelData(d => ({ ...d, channel_name: e.target.value }))} required />
+											</label>
+											<label className="block text-sm font-medium text-gray-700">Sensor Type
+												<input type="text" className="w-full px-2 py-1 border rounded" value={newChannelData.sensor_type} onChange={e => setNewChannelData(d => ({ ...d, sensor_type: e.target.value }))} />
+											</label>
+											<label className="block text-sm font-medium text-gray-700">Data Type
+												<input type="text" className="w-full px-2 py-1 border rounded" value={newChannelData.data_type} onChange={e => setNewChannelData(d => ({ ...d, data_type: e.target.value }))} />
+											</label>
+											<label className="block text-sm font-medium text-gray-700">Frame Offset
+												<input type="number" className="w-full px-2 py-1 border rounded" value={newChannelData.frame_offset} onChange={e => setNewChannelData(d => ({ ...d, frame_offset: Number(e.target.value) }))} />
+											</label>
+											<label className="block text-sm font-medium text-gray-700">Samples/Frame
+												<input type="number" className="w-full px-2 py-1 border rounded" value={newChannelData.samples_per_frame} onChange={e => setNewChannelData(d => ({ ...d, samples_per_frame: Number(e.target.value) }))} />
+											</label>
+											<label className="block text-sm font-medium text-gray-700">Sampling Frequency
+												<input type="number" className="w-full px-2 py-1 border rounded" value={newChannelData.sampling_frequency} onChange={e => setNewChannelData(d => ({ ...d, sampling_frequency: Number(e.target.value) }))} />
+											</label>
+											<label className="block text-sm font-medium text-gray-700">Physical Unit
+												<input type="text" className="w-full px-2 py-1 border rounded" value={newChannelData.physical_unit} onChange={e => setNewChannelData(d => ({ ...d, physical_unit: e.target.value }))} />
+											</label>
+											<label className="block text-sm font-medium text-gray-700">Range Min
+												<input type="number" className="w-full px-2 py-1 border rounded" value={newChannelData.measurement_range_min} onChange={e => setNewChannelData(d => ({ ...d, measurement_range_min: Number(e.target.value) }))} />
+											</label>
+											<label className="block text-sm font-medium text-gray-700">Range Max
+												<input type="number" className="w-full px-2 py-1 border rounded" value={newChannelData.measurement_range_max} onChange={e => setNewChannelData(d => ({ ...d, measurement_range_max: Number(e.target.value) }))} />
+											</label>
+										</div>
+										<div className="flex justify-end space-x-2">
+											<button
+												type="button"
+												onClick={() => setShowCreateChannelModal(false)}
+												className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+											>
+												Cancel
+											</button>
+											<button
+												type="submit"
+												className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+											>
+												Create
+											</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						)}
+
+						{/* Channel Details/Edit Modal */}
+						{editingChannel && (
+							<div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+								<div className="bg-white rounded-lg max-w-md w-full p-6">
+									<div className="flex justify-between items-center mb-4">
+										<h4 className="text-lg font-bold text-gray-900">{editMode ? "Edit Channel" : "Channel Details"}</h4>
+										<button
+											onClick={() => { setEditingChannel(null); setEditMode(false); }}
+											className="text-gray-500 hover:text-gray-700"
+										>
+											✕
+										</button>
+									</div>
+									{!editMode ? (
+										<div>
+											<dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mb-4">
+												<dt className="font-medium text-gray-500">Channel Name</dt>
+												<dd className="text-gray-900">{editingChannel.channel_name}</dd>
+												<dt className="font-medium text-gray-500">Sensor Type</dt>
+												<dd className="text-gray-900">{editingChannel.sensor_type}</dd>
+												<dt className="font-medium text-gray-500">Data Type</dt>
+												<dd className="text-gray-900">{editingChannel.data_type}</dd>
+												<dt className="font-medium text-gray-500">Frame Offset</dt>
+												<dd className="text-gray-900">{editingChannel.frame_offset}</dd>
+												<dt className="font-medium text-gray-500">Samples/Frame</dt>
+												<dd className="text-gray-900">{editingChannel.samples_per_frame}</dd>
+												<dt className="font-medium text-gray-500">Sampling Frequency</dt>
+												<dd className="text-gray-900">{editingChannel.sampling_frequency}</dd>
+												<dt className="font-medium text-gray-500">Physical Unit</dt>
+												<dd className="text-gray-900">{editingChannel.physical_unit}</dd>
+												<dt className="font-medium text-gray-500">Range Min</dt>
+												<dd className="text-gray-900">{editingChannel.measurement_range_min}</dd>
+												<dt className="font-medium text-gray-500">Range Max</dt>
+												<dd className="text-gray-900">{editingChannel.measurement_range_max}</dd>
+											</dl>
+											<div className="flex justify-end">
+												<button
+													onClick={() => { setEditMode(true); setEditChannelData(editingChannel); }}
+													className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+												>
+													Edit
+												</button>
+											</div>
+										</div>
+									) : (
+										<form
+											onSubmit={async e => {
+												e.preventDefault();
+												if (!editChannelData) return;
+												await measurementChannelApi.updateChannel(editChannelData.id, editChannelData);
+												setEditingChannel({ ...editChannelData });
+												setEditMode(false);
+												fetchChannels();
+											}}
+										>
+											<div className="space-y-3 mb-4">
+												<label className="block text-sm font-medium text-gray-700">Channel Name
+													<input type="text" className="w-full px-2 py-1 border rounded" value={editChannelData?.channel_name || ""} onChange={e => setEditChannelData(d => d ? { ...d, channel_name: e.target.value } : d)} required />
+												</label>
+												<label className="block text-sm font-medium text-gray-700">Sensor Type
+													<input type="text" className="w-full px-2 py-1 border rounded" value={editChannelData?.sensor_type || ""} onChange={e => setEditChannelData(d => d ? { ...d, sensor_type: e.target.value } : d)} />
+												</label>
+												<label className="block text-sm font-medium text-gray-700">Data Type
+													<input type="text" className="w-full px-2 py-1 border rounded" value={editChannelData?.data_type || ""} onChange={e => setEditChannelData(d => d ? { ...d, data_type: e.target.value } : d)} />
+												</label>
+												<label className="block text-sm font-medium text-gray-700">Frame Offset
+													<input type="number" className="w-full px-2 py-1 border rounded" value={editChannelData?.frame_offset ?? 0} onChange={e => setEditChannelData(d => d ? { ...d, frame_offset: Number(e.target.value) } : d)} />
+												</label>
+												<label className="block text-sm font-medium text-gray-700">Samples/Frame
+													<input type="number" className="w-full px-2 py-1 border rounded" value={editChannelData?.samples_per_frame ?? 0} onChange={e => setEditChannelData(d => d ? { ...d, samples_per_frame: Number(e.target.value) } : d)} />
+												</label>
+												<label className="block text-sm font-medium text-gray-700">Sampling Frequency
+													<input type="number" className="w-full px-2 py-1 border rounded" value={editChannelData?.sampling_frequency ?? 0} onChange={e => setEditChannelData(d => d ? { ...d, sampling_frequency: Number(e.target.value) } : d)} />
+												</label>
+												<label className="block text-sm font-medium text-gray-700">Physical Unit
+													<input type="text" className="w-full px-2 py-1 border rounded" value={editChannelData?.physical_unit || ""} onChange={e => setEditChannelData(d => d ? { ...d, physical_unit: e.target.value } : d)} />
+												</label>
+												<label className="block text-sm font-medium text-gray-700">Range Min
+													<input type="number" className="w-full px-2 py-1 border rounded" value={editChannelData?.measurement_range_min ?? 0} onChange={e => setEditChannelData(d => d ? { ...d, measurement_range_min: Number(e.target.value) } : d)} />
+												</label>
+												<label className="block text-sm font-medium text-gray-700">Range Max
+													<input type="number" className="w-full px-2 py-1 border rounded" value={editChannelData?.measurement_range_max ?? 0} onChange={e => setEditChannelData(d => d ? { ...d, measurement_range_max: Number(e.target.value) } : d)} />
+												</label>
+											</div>
+											<div className="flex justify-end space-x-2">
+												<button
+													type="button"
+													onClick={() => { setEditMode(false); setEditChannelData(editingChannel); }}
+													className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+												>
+													Cancel
+												</button>
+												<button
+													type="submit"
+													className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+												>
+													Save
+												</button>
+											</div>
+										</form>
+									)}
+								</div>
+							</div>
+						)}
+					</div>
+				)}
 				{/* Remove old experiments tab - replaced with live-experiments and data-explorer */}
 					<div className='space-y-6'>
 						{/* Active Experiments */}
@@ -1323,7 +1577,7 @@ export default function DeviceDetailPage() {
 											: "Start Experiment"}
 									</button>
 								</div>
-							</form>{" "}
+							</form>
 						</div>
 					</div>
 				)}
