@@ -192,8 +192,8 @@ class DevicesController extends Controller
             // Stop the experiment
             $experiment = Experiments::findOne($liveExperiment->experiment_id);
             if ($experiment) {
-                $experiment->status = 'Completed';
-                $experiment->end_date = date('Y-m-d H:i:s');
+                $experiment->status = Experiments::STATUS_COMPLETED;
+                $experiment->end_time = date('Y-m-d H:i:s');
                 $experiment->save();
             }
 

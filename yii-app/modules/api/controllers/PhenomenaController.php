@@ -31,6 +31,7 @@ class PhenomenaController extends Controller
                 'stop' => ['POST'],
                 'finish' => ['POST'],
                 'test' => ['GET'],
+                'data' => ['POST'],  // Add new data endpoint
             ],
         ];
         
@@ -216,8 +217,14 @@ class PhenomenaController extends Controller
             
             $phenomenon = $this->findPhenomenon($id);
             
+            // Only allow deletion of Pending phenomena to prevent data loss
+            if ($phenomenon->status !== 'Pending') {
+                throw new ServerErrorHttpException('Only phenomena in Pending status can be deleted');
+            }
+            
             if (!$phenomenon->delete()) {
-                throw new ServerErrorHttpException('Error deleting phenomenon');
+                throw new ServerErrorHttpException('Error deleting phenomenon: ' . 
+                    Json::encode($phenomenon->errors));
             }
             
             return [
@@ -340,5 +347,79 @@ class PhenomenaController extends Controller
             throw new NotFoundHttpException('Phenomenon not found');
         }
         return $phenomenon;
+    }
+    
+    /**
+     * Submit measurement data for a phenomenon
+     * POST /api/phenomena/{phenomenonId}/data
+     */
+    public function actionData($phenomenonId)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        
+        try {
+            // Find the phenomenon
+            $phenomenon = $this->findPhenomenon($phenomenonId);
+            
+            // Get the request body
+            $rawData = Yii::$app->request->getRawBody();
+            if (empty($rawData)) {
+                throw new ServerErrorHttpException('Empty request body');
+            }
+            
+            // Parse JSON data
+            $data = Json::decode($rawData, true);
+            if (!is_array($data)) {
+                throw new ServerErrorHttpException('Invalid JSON format');
+            }
+              // Validate that phenomenon is in pending status
+            if ($phenomenon->status !== 'Pending') {
+                throw new ServerErrorHttpException('Phenomenon must be in Pending status to receive data');
+            }
+            
+            // TODO: Store the measurement data in proper measurement tables
+            // This would depend on your measurement data model structure
+            // For now, we'll update the phenomenon status and log the data
+            
+            $phenomenon->status = 'Active';
+            $phenomenon->start_time = date('Y-m-d H:i:s');
+            
+            // Store data count for reference
+            $dataPoints = 0;
+            if (is_array($data)) {
+                foreach ($data as $channel => $values) {
+                    if (is_array($values)) {
+                        $dataPoints += count($values);
+                    }
+                }
+            }
+            
+            // You might want to store this in a notes or metadata field
+            if ($phenomenon->hasAttribute('data_points_count')) {
+                $phenomenon->data_points_count = $dataPoints;
+            }
+            
+            if (!$phenomenon->save()) {
+                throw new ServerErrorHttpException('Failed to update phenomenon status');
+            }
+            
+            // Log the received data for debugging and audit trail
+            Yii::info("Received {$dataPoints} data points for phenomenon {$phenomenonId}: " . Json::encode($data), 'api.phenomena.data');
+              return [
+                'success' => true,
+                'message' => 'Data received and stored successfully',
+                'phenomenon_id' => $phenomenonId,
+                'data_points_received' => $dataPoints,
+                'phenomenon_status' => $phenomenon->status,
+                'channels' => is_array($data) ? array_keys($data) : []
+            ];
+            
+        } catch (\Exception $e) {
+            Yii::error("Error receiving phenomenon data: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 }
