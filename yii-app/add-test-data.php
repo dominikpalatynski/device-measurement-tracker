@@ -33,26 +33,25 @@ try {
         if (!$device->save()) {
             throw new \Exception("Failed to save device: " . json_encode($device->errors));
         }
-        
-        echo "Device created successfully with ID: " . $device->id . "\n";
+          echo "Device created successfully with ID: " . $device->device_id . "\n";
     } else {
-        echo "Device already exists with ID: " . $device->id . "\n";
+        echo "Device already exists with ID: " . $device->device_id . "\n";
     }
     
     // Add some test measurements
-    $measurementCount = \app\models\Measurement::find()->where(['device_id' => $device->id])->count();
+    $measurementCount = \app\models\Measurement::find()->where(['device_id' => $device->device_id])->count();
     
     if ($measurementCount > 0) {
         echo "Device already has $measurementCount measurements. Skipping measurement creation.\n";
     } else {
-        echo "Adding 5 test measurements for device ID: " . $device->id . "\n";
+        echo "Adding 5 test measurements for device ID: " . $device->device_id . "\n";
         
         // Create 5 measurements with different timestamps
         for ($i = 0; $i < 5; $i++) {
             $timestamp = time() - (3600 * $i); // 1 hour apart
             
             $measurement = new \app\models\Measurement();
-            $measurement->device_id = $device->id;
+            $measurement->device_id = $device->device_id;
             $measurement->temperature = 20 + rand(0, 100) / 10; // Between 20 and 30
             $measurement->humidity = 40 + rand(0, 200) / 10; // Between 40 and 60
             $measurement->pressure = 1000 + rand(0, 200) / 10; // Between 1000 and 1020

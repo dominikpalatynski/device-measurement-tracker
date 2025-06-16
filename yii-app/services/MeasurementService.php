@@ -42,10 +42,9 @@ class MeasurementService extends Component
             // Update device last seen timestamp
             $device->last_seen_at = time();
             $device->save();
-            
-            // Create new measurement
+              // Create new measurement
             $measurement = new Measurement();
-            $measurement->device_id = $device->id;
+            $measurement->device_id = $device->device_id;
             $measurement->temperature = $data['temperature'] ?? null;
             $measurement->humidity = $data['humidity'] ?? null;
             $measurement->pressure = $data['pressure'] ?? null;

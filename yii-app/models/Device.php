@@ -93,7 +93,7 @@ class Device extends ActiveRecord
     public function getLatestMeasurement()
     {
         return $this->hasOne(Measurement::class, ['device_id' => 'device_id'])
-            ->orderBy(['measured_at' => SORT_DESC]);
+            ->orderBy(['timestamp' => SORT_DESC]);
     }
     
     /**

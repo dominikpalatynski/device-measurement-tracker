@@ -35,20 +35,12 @@ class DeviceMeasurementHandler
     {
         $query = $this->getBaseQuery();
         $query->limit($limit);
-        $query->orderBy(['measured_at' => $orderBy === 'asc' ? SORT_ASC : SORT_DESC]);
+        $query->orderBy(['timestamp' => $orderBy === 'asc' ? SORT_ASC : SORT_DESC]);
 
         $measurements = $query->all();
         
         return array_map(function($measurement) {
-            return [
-                'id' => $measurement->id,
-                'temperature' => $measurement->temperature,
-                'humidity' => $measurement->humidity,
-                'pressure' => $measurement->pressure,
-                'battery_level' => $measurement->battery_level,
-                'measured_at' => date('Y-m-d H:i:s', $measurement->measured_at),
-                'created_at' => date('Y-m-d H:i:s', $measurement->created_at),
-            ];
+            return $measurement->data_payload;
         }, $measurements);
     }
 
@@ -60,22 +52,14 @@ class DeviceMeasurementHandler
     public function getLatestMeasurement(): ?array
     {
         $measurement = $this->getBaseQuery()
-            ->orderBy(['measured_at' => SORT_DESC])
+            ->orderBy(['timestamp' => SORT_DESC])
             ->one();
 
         if (!$measurement) {
             return null;
         }
 
-        return [
-            'id' => $measurement->id,
-            'temperature' => $measurement->temperature,
-            'humidity' => $measurement->humidity,
-            'pressure' => $measurement->pressure,
-            'battery_level' => $measurement->battery_level,
-            'measured_at' => date('Y-m-d H:i:s', $measurement->measured_at),
-            'created_at' => date('Y-m-d H:i:s', $measurement->created_at),
-        ];
+        return $measurement->data_payload;
     }
 
     /**
@@ -88,22 +72,14 @@ class DeviceMeasurementHandler
     public function getMeasurementsInTimeRange(int $startTimestamp, int $endTimestamp): array
     {
         $query = $this->getBaseQuery();
-        $query->andWhere(['between', 'measured_at', $startTimestamp, $endTimestamp]);
-        $query->orderBy(['measured_at' => SORT_ASC]);
+        $query->andWhere(['between', 'timestamp', $startTimestamp, $endTimestamp]);
+        $query->orderBy(['timestamp' => SORT_ASC]);
 
         $measurements = $query->all();
         
-        return array_map(function($measurement) {
-            return [
-                'id' => $measurement->id,
-                'temperature' => $measurement->temperature,
-                'humidity' => $measurement->humidity,
-                'pressure' => $measurement->pressure,
-                'battery_level' => $measurement->battery_level,
-                'measured_at' => date('Y-m-d H:i:s', $measurement->measured_at),
-                'created_at' => date('Y-m-d H:i:s', $measurement->created_at),
-            ];
-        }, $measurements);
+        return $measurements ? array_map(function($measurement) {
+            return $measurement->data_payload;
+        }, $measurements) : [];
     }
 
     /**
@@ -133,10 +109,9 @@ class DeviceMeasurementHandler
      * Tworzy podstawowe zapytanie dla pomiarów
      * 
      * @return ActiveQuery
-     */
-    private function getBaseQuery(): ActiveQuery
+     */    private function getBaseQuery(): ActiveQuery
     {
         return Measurement::find()
-            ->where(['device_id' => $this->device->id]);
+            ->where(['device_id' => $this->device->device_id]);
     }
 } 

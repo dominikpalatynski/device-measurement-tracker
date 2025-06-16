@@ -53,7 +53,7 @@ $deviceUuid = 'test-device-001';
 try {
     $device = \app\models\Device::findOne(['device_uuid' => $deviceUuid]);
     if ($device) {
-        echo "Using existing device: $deviceUuid (ID: {$device->id})\n";
+        echo "Using existing device: $deviceUuid (ID: {$device->device_id})\n";
     } else {
         echo "Device $deviceUuid not found, will likely fail.\n";
     }

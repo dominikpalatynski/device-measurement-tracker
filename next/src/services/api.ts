@@ -250,10 +250,10 @@ export interface SingleMeasurementChannelResponse {
 }
 
 /**
- * Get all measurements for a device
+ * Get all measurements for a device from measurement_data table
  */
-export async function getAllMeasurements(deviceUuid: string, limit: number = 10): Promise<MeasurementResponse> {
-  return fetchApi<MeasurementResponse>(`measurement/index?deviceUuid=${deviceUuid}&limit=${limit}`);
+export async function getAllMeasurements(deviceUuid: string, limit: number = 50): Promise<MeasurementDataResponse> {
+  return fetchApi<MeasurementDataResponse>(`measurement/index?deviceUuid=${deviceUuid}&limit=${limit}`);
 }
 
 /**
@@ -926,3 +926,45 @@ export const measurementChannelApi = {
     }
   },
 };
+
+/**
+ * Get live measurement data for a specific phenomenon from measurement_data table
+ * with optional limit and sorting by timestamp DESC for real-time updates
+ */
+export async function getLivePhenomenonMeasurements(
+  phenomenonId: string, 
+  limit: number = 50,
+  since?: string
+): Promise<MeasurementDataResponse> {
+  let endpoint = `measurement-data/phenomenon/live?phenomenonId=${phenomenonId}&limit=${limit}`;
+  if (since) {
+    endpoint += `&since=${encodeURIComponent(since)}`;
+  }
+  return fetchApi<MeasurementDataResponse>(endpoint);
+}
+
+/**
+ * Get the latest measurement data for a specific phenomenon
+ * (just the most recent entry)
+ */
+export async function getLatestPhenomenonMeasurement(phenomenonId: string): Promise<MeasurementDataResponse> {
+  return fetchApi<MeasurementDataResponse>(`measurement-data/phenomenon/latest?phenomenonId=${phenomenonId}`);
+}
+
+/**
+ * Get the latest measurement data from measurement_data table with real-time support
+ */
+export async function getLatestMeasurementData(
+  limit: number = 50,
+  deviceId?: string,
+  phenomenonId?: string
+): Promise<MeasurementDataResponse> {
+  let endpoint = `measurement-data/latest-all?limit=${limit}`;
+  if (deviceId) {
+    endpoint += `&deviceId=${encodeURIComponent(deviceId)}`;
+  }
+  if (phenomenonId) {
+    endpoint += `&phenomenonId=${encodeURIComponent(phenomenonId)}`;
+  }
+  return fetchApi<MeasurementDataResponse>(endpoint);
+}

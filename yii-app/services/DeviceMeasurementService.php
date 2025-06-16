@@ -63,9 +63,8 @@ class DeviceMeasurementService
      * 
      * @return array|null
      */    public function getLatestMeasurement(): ?array
-    {
-        Yii::beginProfile('db-fetch-latest', 'api.performance');
-        Yii::info("Fetching latest measurement for device ID: {$this->device->id}", 'api.device-measurement');
+    {        Yii::beginProfile('db-fetch-latest', 'api.performance');
+        Yii::info("Fetching latest measurement for device ID: {$this->device->device_id}", 'api.device-measurement');
         
         try {
             $query = $this->getBaseQuery()->orderBy(['measured_at' => SORT_DESC]);
@@ -73,9 +72,8 @@ class DeviceMeasurementService
             
             $measurement = $query->one();
             Yii::endProfile('db-fetch-latest', 'api.performance');
-            
-            if (!$measurement) {
-                Yii::info("No measurements found for device ID: {$this->device->id}", 'api.device-measurement');
+              if (!$measurement) {
+                Yii::info("No measurements found for device ID: {$this->device->device_id}", 'api.device-measurement');
                 return null;
             }
             
@@ -153,9 +151,8 @@ class DeviceMeasurementService
      * 
      * @return ActiveQuery
      */
-    private function getBaseQuery(): ActiveQuery
-    {
+    private function getBaseQuery(): ActiveQuery    {
         return Measurement::find()
-            ->where(['device_id' => $this->device->id]);
+            ->where(['device_id' => $this->device->device_id]);
     }
 }

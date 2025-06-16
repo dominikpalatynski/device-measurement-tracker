@@ -7,7 +7,7 @@ class Measurement extends ActiveRecord
 {
     public static function tableName()
     {
-        return 'measurement';
+        return 'measurement_data';
     }
     
     public function rules()

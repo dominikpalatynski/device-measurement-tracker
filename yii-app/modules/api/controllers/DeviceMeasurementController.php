@@ -30,13 +30,13 @@ class DeviceMeasurementController extends Controller
         ];
         
         return $behaviors;
-    }/**
-     * Pobiera wszystkie pomiary dla urządzenia
+    }    /**
+     * Pobiera wszystkie pomiary dla urządzenia z tabeli measurement_data
      * 
      * @param string $deviceUuid UUID urządzenia
      * @param int $limit Limit pomiarów
      * @return array
-     */    public function actionIndex($deviceUuid, $limit = 10)
+     */    public function actionIndex($deviceUuid, $limit = 50)
     {
         Yii::info("Received request for measurements list for device: {$deviceUuid}, limit: {$limit}", 'api.device-measurement');
         
@@ -45,22 +45,40 @@ class DeviceMeasurementController extends Controller
             Yii::$app->response->format = Response::FORMAT_JSON;
             
             Yii::beginProfile('all-measurements', 'api.performance');
-            $handler = new DeviceMeasurementService($deviceUuid);
-            $measurements = $handler->getAllMeasurements($limit);
+            
+            // Fetch data directly from measurement_data table
+            $measurements = \app\models\MeasurementData::find()
+                ->where(['device_id' => $deviceUuid])
+                ->orderBy(['timestamp' => SORT_DESC])
+                ->limit((int)$limit)
+                ->all();
+            
+            // Format the data for response
+            $data = array_map(function($measurement) {
+                return [
+                    'data_id' => (int)$measurement->data_id,
+                    'device_id' => $measurement->device_id,
+                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'data_payload' => $measurement->data_payload,
+                    'timestamp' => $measurement->timestamp,
+                ];
+            }, $measurements);
+            
             Yii::endProfile('all-measurements', 'api.performance');
             
-            Yii::info("Successfully retrieved " . count($measurements) . " measurements for device: {$deviceUuid}", 'api.device-measurement');
+            Yii::info("Successfully retrieved " . count($data) . " measurements for device: {$deviceUuid}", 'api.device-measurement');
             
             return [
                 'success' => true,
-                'data' => $measurements
+                'data' => $data,
+                'count' => count($data)
             ];
         } catch (\Throwable $e) {
             Yii::error("Error retrieving measurements for device {$deviceUuid}: " . $e->getMessage() . "\n" . $e->getTraceAsString(), 'api.device-measurement');
-            Yii::$app->response->statusCode = 404;
+            Yii::$app->response->statusCode = 500;
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => "Error retrieving measurements for device {$deviceUuid}"
             ];
         }
     }/**

@@ -29,6 +29,9 @@ import {
 	ActivePhenomenon,
 	getAllMeasurements,
 	getPhenomenonMeasurements,
+	getLivePhenomenonMeasurements,
+	getLatestPhenomenonMeasurement,
+	getLatestMeasurementData,
 	Measurement,
 	MeasurementData,
 } from "@/services/api";
@@ -48,20 +51,60 @@ export default function PhenomenonDetailPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null); // Real-time data viewing
 	const [autoRefresh, setAutoRefresh] = useState(false);
+	const [liveMode, setLiveMode] = useState(false); // New live mode toggle
+	const [latestMeasurement, setLatestMeasurement] =
+		useState<MeasurementData | null>(null);
+	const [liveDataBuffer, setLiveDataBuffer] = useState<MeasurementData[]>([]);
+	const [lastUpdateTime, setLastUpdateTime] = useState<string | null>(null);
 	const [viewMode, setViewMode] = useState<
-		"chart" | "table" | "json" | "phenomenon-data" | "charts"
+		"chart" | "table" | "json" | "phenomenon-data" | "charts" | "live"
 	>("phenomenon-data");
 	const [activeChartTab, setActiveChartTab] = useState<string>("");
 	const [chartType, setChartType] = useState<
 		"line" | "area" | "bar" | "scatter"
 	>("line");
 	const [autoZoom, setAutoZoom] = useState(true);
-
 	useEffect(() => {
 		if (deviceId && experimentId && phenomenonId) {
 			loadPhenomenonData();
 		}
 	}, [deviceId, experimentId, phenomenonId]);
+	// Define loadMeasurements function before using it in effects
+	const loadMeasurements = async () => {
+		try {
+			// Load recent measurements for this device using the latest measurement data API
+			const measurementRes = await getLatestMeasurementData(
+				100,
+				deviceId
+			);
+			if (measurementRes.success) {
+				// Convert MeasurementData to Measurement format for backward compatibility
+				const convertedMeasurements: Measurement[] =
+					measurementRes.data.map(
+						(data: MeasurementData, index: number) => ({
+							id: data.data_id,
+							temperature: 0, // Default values since MeasurementData doesn't have these
+							humidity: 0,
+							pressure: 0,
+							battery_level: 0,
+							measured_at: data.timestamp,
+							created_at: data.timestamp,
+						})
+					);
+				setMeasurements(convertedMeasurements);
+			}
+
+			// Load phenomenon-specific measurements from measurement_data table
+			const phenomenonMeasurementRes = await getPhenomenonMeasurements(
+				phenomenonId
+			);
+			if (phenomenonMeasurementRes.success) {
+				setPhenomenonMeasurements(phenomenonMeasurementRes.data);
+			}
+		} catch (error) {
+			console.error("Error loading measurements:", error);
+		}
+	};
 
 	// Auto-refresh for live data
 	useEffect(() => {
@@ -70,6 +113,68 @@ export default function PhenomenonDetailPage() {
 		const interval = setInterval(loadMeasurements, 2000);
 		return () => clearInterval(interval);
 	}, [autoRefresh, phenomenon]);
+
+	// Live data polling for real-time measurements
+	useEffect(() => {
+		if (!liveMode || !phenomenon) return;
+
+		const pollLiveData = async () => {
+			try {
+				// Get the latest measurement data since last update
+				const response = await getLivePhenomenonMeasurements(
+					phenomenonId,
+					100, // Get last 100 measurements
+					lastUpdateTime || undefined
+				);
+
+				if (response.success && response.data.length > 0) {
+					// Sort by timestamp to ensure chronological order
+					const sortedData = response.data.sort(
+						(a, b) =>
+							new Date(a.timestamp).getTime() -
+							new Date(b.timestamp).getTime()
+					);
+
+					// Update latest measurement
+					setLatestMeasurement(sortedData[sortedData.length - 1]);
+
+					// Add new data to buffer, keeping only recent data (last 1000 points)
+					setLiveDataBuffer((prev) => {
+						const combined = [...prev, ...sortedData];
+						return combined
+							.sort(
+								(a, b) =>
+									new Date(a.timestamp).getTime() -
+									new Date(b.timestamp).getTime()
+							)
+							.slice(-1000); // Keep only last 1000 measurements
+					});
+
+					// Update last update time
+					setLastUpdateTime(
+						sortedData[sortedData.length - 1].timestamp
+					);
+				}
+			} catch (error) {
+				console.error("Error polling live data:", error);
+			}
+		};
+
+		// Initial load
+		pollLiveData();
+		// Poll every 5 seconds (adjust based on your data frequency)
+		const interval = setInterval(pollLiveData, 5000);
+		return () => clearInterval(interval);
+	}, [liveMode, phenomenonId, lastUpdateTime]);
+
+	// Automatically enable/disable live mode when switching view modes
+	useEffect(() => {
+		if (viewMode === "live" && !liveMode) {
+			setLiveMode(true);
+		} else if (viewMode !== "live" && liveMode) {
+			setLiveMode(false);
+		}
+	}, [viewMode, liveMode]);
 
 	const loadPhenomenonData = async () => {
 		try {
@@ -107,9 +212,7 @@ export default function PhenomenonDetailPage() {
 				start_time: new Date().toISOString(),
 				duration: 300, // 5 minutes
 			};
-			setPhenomenon(mockPhenomenon);
-
-			// Load measurements
+			setPhenomenon(mockPhenomenon); // Load measurements
 			await loadMeasurements();
 		} catch (err) {
 			setError(
@@ -119,25 +222,6 @@ export default function PhenomenonDetailPage() {
 			);
 		} finally {
 			setLoading(false);
-		}
-	};
-	const loadMeasurements = async () => {
-		try {
-			// Load recent measurements for this device (general measurements)
-			const measurementRes = await getAllMeasurements(deviceId, 100);
-			if (measurementRes.success) {
-				setMeasurements(measurementRes.data);
-			}
-
-			// Load phenomenon-specific measurements from measurement_data table
-			const phenomenonMeasurementRes = await getPhenomenonMeasurements(
-				phenomenonId
-			);
-			if (phenomenonMeasurementRes.success) {
-				setPhenomenonMeasurements(phenomenonMeasurementRes.data);
-			}
-		} catch (error) {
-			console.error("Error loading measurements:", error);
 		}
 	};
 
@@ -736,6 +820,7 @@ export default function PhenomenonDetailPage() {
 						</h3>{" "}
 						<div className='flex space-x-2'>
 							{[
+								"live",
 								"phenomenon-data",
 								"charts",
 								"chart",
@@ -753,7 +838,9 @@ export default function PhenomenonDetailPage() {
 											: "bg-gray-200 text-gray-700 hover:bg-gray-300"
 									}`}
 								>
-									{mode === "phenomenon-data"
+									{mode === "live"
+										? "🔴 Live Data"
+										: mode === "phenomenon-data"
 										? "🔬 Phenomenon Data"
 										: mode === "charts"
 										? "📊 Interactive Charts"
@@ -764,9 +851,439 @@ export default function PhenomenonDetailPage() {
 										: "🔧 JSON"}
 								</button>
 							))}{" "}
-						</div>
+						</div>{" "}
 					</div>
 					{/* Data Display */}
+					{viewMode === "live" && (
+						<div className='space-y-6'>
+							{/* Live Data Header */}
+							<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
+								<div className='flex items-center justify-between'>
+									<div>
+										<h4 className='text-lg font-medium text-red-800 mb-2'>
+											🔴 Live Data Stream
+										</h4>
+										<p className='text-red-700 text-sm'>
+											Real-time measurement data from the
+											measurement_data table. Updates
+											every 5 seconds.
+										</p>
+									</div>
+									<div className='text-right'>
+										<div className='text-sm text-red-600'>
+											<div>
+												Status:{" "}
+												{liveMode
+													? "🟢 Active"
+													: "🔴 Inactive"}
+											</div>
+											<div>
+												Buffer: {liveDataBuffer.length}{" "}
+												measurements
+											</div>
+											{lastUpdateTime && (
+												<div>
+													Last Update:{" "}
+													{new Date(
+														lastUpdateTime
+													).toLocaleTimeString()}
+												</div>
+											)}
+										</div>
+									</div>
+								</div>
+							</div>
+
+							{/* Latest Measurement Display */}
+							{latestMeasurement && (
+								<div className='bg-white border border-gray-200 rounded-lg p-6'>
+									<h5 className='text-lg font-medium text-gray-900 mb-4'>
+										⏱️ Latest Measurement
+									</h5>
+									<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+										<div>
+											<div className='text-sm text-gray-600 mb-2'>
+												<strong>Data ID:</strong>{" "}
+												{latestMeasurement.data_id}
+											</div>
+											<div className='text-sm text-gray-600 mb-2'>
+												<strong>Device:</strong>{" "}
+												{latestMeasurement.device_id}
+											</div>
+											<div className='text-sm text-gray-600 mb-2'>
+												<strong>Timestamp:</strong>{" "}
+												{new Date(
+													latestMeasurement.timestamp
+												).toLocaleString()}
+											</div>
+										</div>
+										<div>
+											<div className='text-sm text-gray-600 mb-2'>
+												<strong>
+													Data Payload Keys:
+												</strong>
+											</div>
+											{typeof latestMeasurement.data_payload ===
+												"object" &&
+												latestMeasurement.data_payload && (
+													<div className='flex flex-wrap gap-2'>
+														{Object.keys(
+															latestMeasurement.data_payload
+														).map((key) => (
+															<span
+																key={key}
+																className='px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs'
+															>
+																{key}:{" "}
+																{Array.isArray(
+																	latestMeasurement
+																		.data_payload[
+																		key
+																	]
+																)
+																	? `${latestMeasurement.data_payload[key].length} values`
+																	: typeof latestMeasurement
+																			.data_payload[
+																			key
+																	  ]}
+															</span>
+														))}
+													</div>
+												)}
+										</div>
+									</div>
+
+									{/* Data Payload Preview */}
+									<div className='mt-4'>
+										<h6 className='text-md font-medium text-gray-800 mb-2'>
+											Data Preview:
+										</h6>
+										<pre className='bg-gray-100 p-3 rounded text-xs overflow-x-auto'>
+											{JSON.stringify(
+												latestMeasurement.data_payload,
+												null,
+												2
+											)}
+										</pre>
+									</div>
+								</div>
+							)}
+
+							{/* Live Data Stream */}
+							<div className='bg-white border border-gray-200 rounded-lg p-6'>
+								<h5 className='text-lg font-medium text-gray-900 mb-4'>
+									📊 Live Data Stream ({liveDataBuffer.length}{" "}
+									measurements)
+								</h5>
+
+								{liveDataBuffer.length > 0 ? (
+									<div className='space-y-4'>
+										{/* Data Parameters Overview */}
+										<div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
+											{(() => {
+												const allKeys =
+													new Set<string>();
+												liveDataBuffer.forEach(
+													(measurement) => {
+														if (
+															typeof measurement.data_payload ===
+																"object" &&
+															measurement.data_payload
+														) {
+															Object.keys(
+																measurement.data_payload
+															).forEach((key) =>
+																allKeys.add(key)
+															);
+														}
+													}
+												);
+
+												return Array.from(allKeys).map(
+													(key) => (
+														<div
+															key={key}
+															className='bg-gray-50 p-3 rounded border'
+														>
+															<div className='text-sm font-medium text-gray-800'>
+																{key}
+															</div>
+															<div className='text-xs text-gray-600'>
+																{(() => {
+																	const latestValue =
+																		latestMeasurement
+																			?.data_payload?.[
+																			key
+																		];
+																	if (
+																		Array.isArray(
+																			latestValue
+																		)
+																	) {
+																		return `Array of ${latestValue.length} values`;
+																	} else if (
+																		typeof latestValue ===
+																		"number"
+																	) {
+																		return `Latest: ${latestValue}`;
+																	} else {
+																		return `Type: ${typeof latestValue}`;
+																	}
+																})()}
+															</div>
+														</div>
+													)
+												);
+											})()}										</div>
+
+										{/* Live Data Chart */}
+										<div className='bg-white border border-gray-200 rounded-lg p-6 mb-6'>
+											<h5 className='text-lg font-medium text-gray-900 mb-4'>
+												📈 Live Data Chart
+											</h5>
+											{(() => {
+												// Prepare chart data from liveDataBuffer
+												if (liveDataBuffer.length === 0) {
+													return (
+														<div className='text-center py-8 text-gray-500'>
+															No data available for chart
+														</div>
+													);
+												}
+
+												// Extract all numeric data from payloads
+												const chartData: Record<string, Array<{
+													timestamp: string;
+													value: number;
+													timestampFormatted: string;
+												}>> = {};
+
+												// Collect all possible keys
+												const allKeys = new Set<string>();
+												liveDataBuffer.forEach((measurement) => {
+													if (typeof measurement.data_payload === "object" && measurement.data_payload) {
+														Object.keys(measurement.data_payload).forEach(key => allKeys.add(key));
+													}
+												});
+
+												// Process data for each key
+												allKeys.forEach(key => {
+													chartData[key] = [];
+													liveDataBuffer.forEach((measurement) => {
+														if (measurement.data_payload && measurement.data_payload[key] !== undefined) {
+															const value = measurement.data_payload[key];
+															if (Array.isArray(value)) {
+																// For arrays, take the first value or average
+																const numericValue = value.length > 0 ? value[0] : 0;
+																if (typeof numericValue === 'number') {
+																	chartData[key].push({
+																		timestamp: measurement.timestamp,
+																		value: numericValue,
+																		timestampFormatted: new Date(measurement.timestamp).toLocaleTimeString()
+																	});
+																}
+															} else if (typeof value === 'number') {
+																chartData[key].push({
+																	timestamp: measurement.timestamp,
+																	value: value,
+																	timestampFormatted: new Date(measurement.timestamp).toLocaleTimeString()
+																});
+															}
+														}
+													});
+												});
+
+												// Get the first key with data for display
+												const firstKeyWithData = Object.keys(chartData).find(key => chartData[key].length > 0);
+												
+												if (!firstKeyWithData) {
+													return (
+														<div className='text-center py-8 text-gray-500'>
+															No numeric data available for charting
+														</div>
+													);
+												}
+
+												return (
+													<div className='space-y-4'>
+														{/* Chart for first data parameter */}
+														<ResponsiveContainer width="100%" height={300}>
+															<LineChart data={chartData[firstKeyWithData]}>
+																<CartesianGrid strokeDasharray="3 3" />
+																<XAxis 
+																	dataKey="timestampFormatted" 
+																	tick={{ fontSize: 12 }}
+																	interval="preserveStartEnd"
+																/>
+																<YAxis tick={{ fontSize: 12 }} />
+																<Tooltip 
+																	labelFormatter={(label) => `Time: ${label}`}
+																	formatter={(value: any) => [value, firstKeyWithData]}
+																/>
+																<Legend />
+																<Line 
+																	type="monotone" 
+																	dataKey="value" 
+																	stroke="#3B82F6" 
+																	strokeWidth={2}
+																	dot={{ r: 4 }}
+																	name={firstKeyWithData}
+																/>
+															</LineChart>
+														</ResponsiveContainer>
+
+														{/* Chart info */}
+														<div className='flex justify-between items-center text-sm text-gray-600'>
+															<span>Showing: {firstKeyWithData} ({chartData[firstKeyWithData].length} data points)</span>
+															<span>Total parameters available: {Object.keys(chartData).length}</span>
+														</div>
+
+														{/* Additional charts for other parameters */}
+														{Object.keys(chartData).slice(1, 3).map(key => (
+															<div key={key} className='mt-6'>
+																<h6 className='text-md font-medium text-gray-800 mb-2'>
+																	{key} Parameter
+																</h6>
+																<ResponsiveContainer width="100%" height={200}>
+																	<LineChart data={chartData[key]}>
+																		<CartesianGrid strokeDasharray="3 3" />
+																		<XAxis 
+																			dataKey="timestampFormatted" 
+																			tick={{ fontSize: 10 }}
+																			interval="preserveStartEnd"
+																		/>
+																		<YAxis tick={{ fontSize: 10 }} />
+																		<Tooltip 
+																			labelFormatter={(label) => `Time: ${label}`}
+																			formatter={(value: any) => [value, key]}
+																		/>
+																		<Line 
+																			type="monotone" 
+																			dataKey="value" 
+																			stroke="#10B981" 
+																			strokeWidth={2}
+																			dot={{ r: 3 }}
+																			name={key}
+																		/>
+																	</LineChart>
+																</ResponsiveContainer>
+															</div>
+														))}
+													</div>
+												);
+											})()}
+										</div>
+
+										{/* Recent Measurements Table */}
+										<div className='overflow-x-auto'>
+											<table className='min-w-full divide-y divide-gray-200'>
+												<thead className='bg-gray-50'>
+													<tr>
+														<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+															Data ID
+														</th>
+														<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+															Timestamp
+														</th>
+														<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+															Data Keys
+														</th>
+														<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+															Data Summary
+														</th>
+													</tr>
+												</thead>
+												<tbody className='bg-white divide-y divide-gray-200'>
+													{liveDataBuffer
+														.slice(-20)
+														.reverse()
+														.map((measurement) => (
+															<tr
+																key={
+																	measurement.data_id
+																}
+																className={
+																	measurement.data_id ===
+																	latestMeasurement?.data_id
+																		? "bg-green-50"
+																		: ""
+																}
+															>
+																<td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+																	{
+																		measurement.data_id
+																	}
+																</td>
+																<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+																	{new Date(
+																		measurement.timestamp
+																	).toLocaleTimeString()}
+																</td>
+																<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+																	{typeof measurement.data_payload ===
+																		"object" &&
+																	measurement.data_payload
+																		? Object.keys(
+																				measurement.data_payload
+																		  ).join(
+																				", "
+																		  )
+																		: "No data"}
+																</td>
+																<td className='px-6 py-4 text-sm text-gray-500'>
+																	{typeof measurement.data_payload ===
+																		"object" &&
+																		measurement.data_payload && (
+																			<div className='max-w-xs truncate'>
+																				{Object.entries(
+																					measurement.data_payload
+																				).map(
+																					([
+																						key,
+																						value,
+																					]) => (
+																						<span
+																							key={
+																								key
+																							}
+																							className='inline-block mr-2'
+																						>
+																							{
+																								key
+																							}
+
+																							:{" "}
+																							{Array.isArray(
+																								value
+																							)
+																								? `[${value.length}]`
+																								: String(
+																										value
+																								  ).substring(
+																										0,
+																										10
+																								  )}
+																						</span>
+																					)
+																				)}
+																			</div>
+																		)}
+																</td>
+															</tr>
+														))}
+												</tbody>
+											</table>
+										</div>
+									</div>
+								) : (
+									<div className='text-center py-8 text-gray-500'>
+										No live data available. Waiting for
+										measurements...
+									</div>
+								)}
+							</div>
+						</div>
+					)}
 					{viewMode === "charts" && (
 						<div className='space-y-6'>
 							<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>

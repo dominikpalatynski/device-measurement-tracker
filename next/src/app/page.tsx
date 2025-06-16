@@ -474,7 +474,21 @@ export default function Dashboard() {
 				<h2 className='text-xl font-bold text-gray-900 mb-4'>
 					Quick Actions
 				</h2>
-				<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+					<Link
+						href='/live-data'
+						className='flex items-center p-4 bg-white rounded-lg border border-gray-200 hover:border-red-300 hover:shadow-md transition-all'
+					>
+						<span className='text-3xl mr-4'>🔴</span>
+						<div>
+							<h3 className='font-medium text-gray-900'>
+								Live Data
+							</h3>
+							<p className='text-sm text-gray-500'>
+								Real-time measurement data
+							</p>
+						</div>
+					</Link>
 					<Link
 						href='/devices/register'
 						className='flex items-center p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all'

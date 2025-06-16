@@ -3,6 +3,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+	LineChart,
+	Line,
+	XAxis,
+	YAxis,
+	CartesianGrid,
+	Tooltip,
+	Legend,
+	ResponsiveContainer,
+} from "recharts";
 import PageLayout from "@/components/PageLayout";
 import {
 	deviceApi,
@@ -10,12 +20,15 @@ import {
 	onlineModeApi,
 	phenomenaApi,
 	getAllMeasurements,
+	getPhenomenonMeasurements,
+	getLatestMeasurementData,
 	Device,
 	Experiment,
 	LiveExperiment,
 	ActivePhenomenon,
 	Phenomenon,
 	Measurement,
+	MeasurementData,
 } from "@/services/api";
 
 export default function ExperimentDetailPage() {
@@ -33,9 +46,9 @@ export default function ExperimentDetailPage() {
 	const [offlinePhenomena, setOfflinePhenomena] = useState<Phenomenon[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-
 	// Live data chart functionality
 	const [liveData, setLiveData] = useState<Measurement[]>([]);
+	const [phenomenaData, setPhenomenaData] = useState<MeasurementData[]>([]);
 	const [autoRefresh, setAutoRefresh] = useState(false);
 	const [chartViewMode, setChartViewMode] = useState<
 		"chart" | "table" | "stats"
@@ -121,18 +134,19 @@ export default function ExperimentDetailPage() {
 			}
 		};
 	}, []);
-
 	const loadLiveData = async () => {
 		if (!device) return;
 
 		try {
-			// Load recent measurements for live data visualization
-			const measurementRes = await getAllMeasurements(
-				device.device_id,
-				50
+			// Load latest measurement data for phenomena visualization
+			const phenomenaRes = await getLatestMeasurementData(
+				50,
+				device.device_id
 			);
-			if (measurementRes.success) {
-				setLiveData(measurementRes.data);
+			if (phenomenaRes.success) {
+				setPhenomenaData(phenomenaRes.data);
+				// Also update liveData for backward compatibility
+				setLiveData(phenomenaRes.data as any);
 			}
 		} catch (error) {
 			console.error("Error loading live data:", error);
@@ -731,7 +745,11 @@ export default function ExperimentDetailPage() {
 											}
 											className='px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-400'
 											disabled={anyPhenomenonActive}
-											title={anyPhenomenonActive ? 'Cannot add new phenomenon while another is Active' : ''}
+											title={
+												anyPhenomenonActive
+													? "Cannot add new phenomenon while another is Active"
+													: ""
+											}
 										>
 											➕ Add Phenomenon
 										</button>
@@ -795,7 +813,6 @@ export default function ExperimentDetailPage() {
 								>
 									📋 Copy Exp ID
 								</button>
-
 							</div>
 						</div>
 
@@ -1073,7 +1090,6 @@ export default function ExperimentDetailPage() {
 									</div>{" "}
 									{/* Navigation Actions */}
 									<div className='flex flex-col space-y-1'>
-
 										<Link
 											href={`/devices/${deviceId}`}
 											className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 text-center'
@@ -1265,7 +1281,6 @@ export default function ExperimentDetailPage() {
 									</div>
 								</div>
 							</div>
-							
 						</div>
 
 						{/* Quick Status Info */}
@@ -1321,12 +1336,20 @@ export default function ExperimentDetailPage() {
 								🔬 Live Phenomena Control
 							</h3>
 							<button
-								onClick={() => setShowPhenomenonForm(!showPhenomenonForm)}
-								className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+								onClick={() =>
+									setShowPhenomenonForm(!showPhenomenonForm)
+								}
+								className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400'
 								disabled={anyPhenomenonActive}
-								title={anyPhenomenonActive ? 'Cannot add new phenomenon while another is Active' : ''}
+								title={
+									anyPhenomenonActive
+										? "Cannot add new phenomenon while another is Active"
+										: ""
+								}
 							>
-								{showPhenomenonForm ? "Cancel" : "Add Phenomenon"}
+								{showPhenomenonForm
+									? "Cancel"
+									: "Add Phenomenon"}
 							</button>
 						</div>{" "}
 						{/* Current Active Phenomenon with Live Data */}
@@ -1513,53 +1536,54 @@ export default function ExperimentDetailPage() {
 															humidity, pressure,
 															and battery over
 															time
-														</p>
+														</p>{" "}
 														<div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-4'>
 															{liveData.length >
 																0 && (
 																<>
 																	<div className='bg-blue-50 border border-blue-200 rounded-lg p-3'>
 																		<div className='text-blue-600 text-lg font-bold'>
-																			{liveData[0].temperature.toFixed(
-																				1
+																			{String(
+																				liveData[0]
 																			)}
-																			°C
 																		</div>
 																		<div className='text-blue-800 text-xs font-medium'>
-																			Temperature
+																			Live
+																			Data
 																		</div>
 																	</div>
 																	<div className='bg-green-50 border border-green-200 rounded-lg p-3'>
 																		<div className='text-green-600 text-lg font-bold'>
-																			{liveData[0].humidity.toFixed(
-																				1
-																			)}
-																			%
+																			{
+																				liveData.length
+																			}
 																		</div>
 																		<div className='text-green-800 text-xs font-medium'>
-																			Humidity
+																			Data
+																			Points
 																		</div>
 																	</div>
 																	<div className='bg-purple-50 border border-purple-200 rounded-lg p-3'>
 																		<div className='text-purple-600 text-lg font-bold'>
-																			{liveData[0].pressure.toFixed(
-																				1
-																			)}{" "}
-																			hPa
+																			{liveData.length >
+																			1
+																				? String(
+																						liveData[1]
+																				  )
+																				: "N/A"}
 																		</div>
 																		<div className='text-purple-800 text-xs font-medium'>
-																			Pressure
+																			Previous
+																			Data
 																		</div>
 																	</div>
 																	<div className='bg-orange-50 border border-orange-200 rounded-lg p-3'>
 																		<div className='text-orange-600 text-lg font-bold'>
-																			{liveData[0].battery_level.toFixed(
-																				1
-																			)}
-																			%
+																			{new Date().toLocaleTimeString()}
 																		</div>
 																		<div className='text-orange-800 text-xs font-medium'>
-																			Battery
+																			Last
+																			Update
 																		</div>
 																	</div>
 																</>
@@ -2684,98 +2708,152 @@ export default function ExperimentDetailPage() {
 						<div className='text-red-800'>{error}</div>
 					</div>
 				)}
-				{offlinePhenomena.filter(p => p.status === 'Stopped').length > 0 ? (
+				{offlinePhenomena.filter((p) => p.status === "Stopped").length >
+				0 ? (
 					<div className='mt-8'>
 						<h4 className='font-medium text-green-900 mb-3'>
 							Stopped Phenomena
 						</h4>
 						<div className='space-y-2'>
-							{offlinePhenomena.filter(p => p.status === 'Stopped').map(phenomenon => (
-								<div key={phenomenon.phenomenon_id} className='bg-green-50 border border-green-200 rounded-lg p-3'>
-									<div className='flex justify-between items-center'>
-										<div>
-											<h5 className='font-medium text-green-900'>{phenomenon.name}</h5>
-											{phenomenon.description && (
-												<p className='text-sm text-green-700'>{phenomenon.description}</p>
-											)}
-											<p className='text-xs text-gray-500'>
-												Started: {phenomenon.start_time ? new Date(phenomenon.start_time).toLocaleString() : 'N/A'}<br/>
-												Ended: {phenomenon.end_time ? new Date(phenomenon.end_time).toLocaleString() : 'N/A'}
-											</p>
-										</div>
-										<div className='flex space-x-2'>
-											<button
-												onClick={() => {
-													navigator.clipboard.writeText(phenomenon.phenomenon_id);
-													alert('Phenomenon ID copied to clipboard!');
-												}}
-												className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200'
-												title='Copy phenomenon ID'
-											>
-												📋 Copy ID
-											</button>
-											<Link
-												href={`/devices/${deviceId}/experiments/${experimentId}/phenomena/${phenomenon.phenomenon_id}`}
-												className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200'
-												title='View detailed data and analytics'
-											>
-												👁️ View Data
-											</Link>
+							{offlinePhenomena
+								.filter((p) => p.status === "Stopped")
+								.map((phenomenon) => (
+									<div
+										key={phenomenon.phenomenon_id}
+										className='bg-green-50 border border-green-200 rounded-lg p-3'
+									>
+										<div className='flex justify-between items-center'>
+											<div>
+												<h5 className='font-medium text-green-900'>
+													{phenomenon.name}
+												</h5>
+												{phenomenon.description && (
+													<p className='text-sm text-green-700'>
+														{phenomenon.description}
+													</p>
+												)}
+												<p className='text-xs text-gray-500'>
+													Started:{" "}
+													{phenomenon.start_time
+														? new Date(
+																phenomenon.start_time
+														  ).toLocaleString()
+														: "N/A"}
+													<br />
+													Ended:{" "}
+													{phenomenon.end_time
+														? new Date(
+																phenomenon.end_time
+														  ).toLocaleString()
+														: "N/A"}
+												</p>
+											</div>
+											<div className='flex space-x-2'>
+												<button
+													onClick={() => {
+														navigator.clipboard.writeText(
+															phenomenon.phenomenon_id
+														);
+														alert(
+															"Phenomenon ID copied to clipboard!"
+														);
+													}}
+													className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200'
+													title='Copy phenomenon ID'
+												>
+													📋 Copy ID
+												</button>
+												<Link
+													href={`/devices/${deviceId}/experiments/${experimentId}/phenomena/${phenomenon.phenomenon_id}`}
+													className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200'
+													title='View detailed data and analytics'
+												>
+													👁️ View Data
+												</Link>
+											</div>
 										</div>
 									</div>
-								</div>
-							))}
+								))}
 						</div>
 					</div>
 				) : (
-					<div className='mt-8 text-center text-gray-500'>No stopped phenomena yet.</div>
+					<div className='mt-8 text-center text-gray-500'>
+						No stopped phenomena yet.
+					</div>
 				)}
 				{/* Finished Phenomena List */}
-				{offlinePhenomena.filter(p => p.status === 'Finished').length > 0 ? (
+				{offlinePhenomena.filter((p) => p.status === "Finished")
+					.length > 0 ? (
 					<div className='mt-8'>
 						<h4 className='font-medium text-green-900 mb-3'>
 							Finished Phenomena
 						</h4>
 						<div className='space-y-2'>
-							{offlinePhenomena.filter(p => p.status === 'Stopped').map(phenomenon => (
-								<div key={phenomenon.phenomenon_id} className='bg-green-50 border border-green-200 rounded-lg p-3'>
-									<div className='flex justify-between items-center'>
-										<div>
-											<h5 className='font-medium text-green-900'>{phenomenon.name}</h5>
-											{phenomenon.description && (
-												<p className='text-sm text-green-700'>{phenomenon.description}</p>
-											)}
-											<p className='text-xs text-gray-500'>
-												Started: {phenomenon.start_time ? new Date(phenomenon.start_time).toLocaleString() : 'N/A'}<br/>
-												Ended: {phenomenon.end_time ? new Date(phenomenon.end_time).toLocaleString() : 'N/A'}
-											</p>
-										</div>
-										<div className='flex space-x-2'>
-											<button
-												onClick={() => {
-													navigator.clipboard.writeText(phenomenon.phenomenon_id);
-													alert('Phenomenon ID copied to clipboard!');
-												}}
-												className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200'
-												title='Copy phenomenon ID'
-											>
-												📋 Copy ID
-											</button>
-											<Link
-												href={`/devices/${deviceId}/experiments/${experimentId}/phenomena/${phenomenon.phenomenon_id}`}
-												className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200'
-												title='View detailed data and analytics'
-											>
-												👁️ View Data
-											</Link>
+							{offlinePhenomena
+								.filter((p) => p.status === "Stopped")
+								.map((phenomenon) => (
+									<div
+										key={phenomenon.phenomenon_id}
+										className='bg-green-50 border border-green-200 rounded-lg p-3'
+									>
+										<div className='flex justify-between items-center'>
+											<div>
+												<h5 className='font-medium text-green-900'>
+													{phenomenon.name}
+												</h5>
+												{phenomenon.description && (
+													<p className='text-sm text-green-700'>
+														{phenomenon.description}
+													</p>
+												)}
+												<p className='text-xs text-gray-500'>
+													Started:{" "}
+													{phenomenon.start_time
+														? new Date(
+																phenomenon.start_time
+														  ).toLocaleString()
+														: "N/A"}
+													<br />
+													Ended:{" "}
+													{phenomenon.end_time
+														? new Date(
+																phenomenon.end_time
+														  ).toLocaleString()
+														: "N/A"}
+												</p>
+											</div>
+											<div className='flex space-x-2'>
+												<button
+													onClick={() => {
+														navigator.clipboard.writeText(
+															phenomenon.phenomenon_id
+														);
+														alert(
+															"Phenomenon ID copied to clipboard!"
+														);
+													}}
+													className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200'
+													title='Copy phenomenon ID'
+												>
+													📋 Copy ID
+												</button>
+												<Link
+													href={`/devices/${deviceId}/experiments/${experimentId}/phenomena/${phenomenon.phenomenon_id}`}
+													className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200'
+													title='View detailed data and analytics'
+												>
+													👁️ View Data
+												</Link>
+											</div>
 										</div>
 									</div>
-								</div>
-							))}
+								))}
 						</div>
 					</div>
 				) : (
-					<div className='mt-8 text-center text-gray-500'>No finished phenomena yet.</div>
+					<div className='mt-8 text-center text-gray-500'>
+						No finished phenomena yet.
+					</div>
 				)}
 			</div>
 		</PageLayout>

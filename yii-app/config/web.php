@@ -141,9 +141,16 @@ $config = [
                 'api/measurement/range' => 'api/device-measurement/range',
                 'api/measurement/test' => 'api/device-measurement/test',
                 'api/measurement/echo' => 'api/device-measurement/echo',
-                
-                // Generic rule for other actions
+                  // Generic rule for other actions
                 'api/measurement/<action>' => 'api/device-measurement/<action>',
+                  // Measurement Data endpoints (from measurement_data table)
+                // More specific routes must come first
+                'api/measurement-data/phenomenon/live' => 'api/measurement-data/phenomenon-live',
+                'api/measurement-data/phenomenon/latest' => 'api/measurement-data/phenomenon-latest',
+                'api/measurement-data/phenomenon/<phenomenonId>' => 'api/measurement-data/phenomenon',
+                'api/measurement-data/device/<deviceId>' => 'api/measurement-data/device',
+                'api/measurement-data/latest-all' => 'api/measurement-data/latest-all',
+                'api/measurement-data/<action>' => 'api/measurement-data/<action>',
                 
                 // Other existing rules
                 'api/measurements/device/<id:\w+>' => 'api/measurement/device',

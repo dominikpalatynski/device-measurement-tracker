@@ -52,13 +52,7 @@ class MeasurementDataController extends Controller
                 ->all();
             
             $data = array_map(function($measurement) {
-                return [
-                    'data_id' => (int)$measurement->data_id,
-                    'device_id' => $measurement->device_id,
-                    'phenomenon_id' => $measurement->phenomenon_id,
-                    'data_payload' => $measurement->data_payload,
-                    'timestamp' => $measurement->timestamp,
-                ];
+                return $measurement->data_payload; // Assuming data_payload is already in the desired format
             }, $measurements);
             
             Yii::info("Successfully retrieved " . count($data) . " measurement data records for phenomenon: {$phenomenonId}", 'api.measurement-data');
@@ -188,5 +182,184 @@ class MeasurementDataController extends Controller
             'time' => date('Y-m-d H:i:s'),
             'controller' => 'MeasurementDataController'
         ];
+    }
+
+    /**
+     * Get live measurement data for a specific phenomenon with real-time polling support
+     * 
+     * @param string $phenomenonId Phenomenon ID
+     * @param int $limit Maximum number of records to return (default: 50)
+     * @param string|null $since Timestamp to get measurements since (optional)
+     * @return array
+     */
+    public function actionPhenomenonLive($phenomenonId, $limit = 50, $since = null)
+    {
+        try {
+            // Force proper JSON response type
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            
+            Yii::info("Fetching live measurement data for phenomenon: {$phenomenonId}, limit: {$limit}, since: {$since}", 'api.measurement-data');
+            
+            $query = MeasurementData::find()
+                ->where(['phenomenon_id' => $phenomenonId]);
+            
+            // If 'since' timestamp is provided, filter for newer records
+            if ($since) {
+                $query->andWhere(['>', 'timestamp', $since]);
+            }
+            
+            $measurements = $query
+                ->orderBy(['timestamp' => SORT_DESC])
+                ->limit((int)$limit)
+                ->all();
+              // Convert to array with proper data types
+            $data = array_map(function($measurement) {
+                return [
+                    'data_id' => (int)$measurement->data_id,
+                    'device_id' => $measurement->device_id,
+                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'data_payload' => $measurement->data_payload,
+                    'timestamp' => $measurement->timestamp,
+                ];
+            }, $measurements);
+            
+            Yii::info("Successfully retrieved " . count($data) . " live measurement data records", 'api.measurement-data');
+            
+            return [
+                'success' => true,
+                'data' => $data,
+                'count' => count($data),
+                'since' => $since,
+                'query_time' => date('Y-m-d H:i:s')
+            ];
+            
+        } catch (\Throwable $e) {
+            Yii::error("Error retrieving live measurement data: " . $e->getMessage() . "\n" . $e->getTraceAsString(), 'api.measurement-data');
+            Yii::$app->response->statusCode = 500;
+            return [
+                'success' => false,
+                'error' => "Error retrieving live measurement data"
+            ];
+        }
+    }
+
+    /**
+     * Get the latest measurement data for a specific phenomenon
+     * 
+     * @param string $phenomenonId Phenomenon ID
+     * @return array
+     */
+    public function actionPhenomenonLatest($phenomenonId)
+    {
+        try {
+            // Force proper JSON response type
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            
+            Yii::info("Fetching latest measurement data for phenomenon: {$phenomenonId}", 'api.measurement-data');
+            
+            $measurement = MeasurementData::find()
+                ->where(['phenomenon_id' => $phenomenonId])
+                ->orderBy(['timestamp' => SORT_DESC])
+                ->one();
+            
+            if (!$measurement) {
+                return [
+                    'success' => true,
+                    'data' => [],
+                    'message' => 'No measurement data found for this phenomenon'
+                ];
+            }
+            
+            $data = [
+                'data_id' => (int)$measurement->data_id,
+                'device_id' => $measurement->device_id,
+                'phenomenon_id' => $measurement->phenomenon_id,
+                'data_payload' => $measurement->data_payload,
+                'timestamp' => $measurement->timestamp,
+            ];
+            
+            Yii::info("Successfully retrieved latest measurement data record", 'api.measurement-data');
+            
+            return [
+                'success' => true,
+                'data' => [$data], // Return as array for consistency with other endpoints
+                'count' => 1,
+                'query_time' => date('Y-m-d H:i:s')
+            ];
+            
+        } catch (\Throwable $e) {
+            Yii::error("Error retrieving latest measurement data: " . $e->getMessage() . "\n" . $e->getTraceAsString(), 'api.measurement-data');
+            Yii::$app->response->statusCode = 500;
+            return [
+                'success' => false,
+                'error' => "Error retrieving latest measurement data"
+            ];
+        }
+    }
+
+    /**
+     * Get the latest measurements from measurement_data table with auto-refresh support
+     * 
+     * @param int $limit Maximum number of records to return (default: 50)
+     * @param string|null $deviceId Optional device filter
+     * @param string|null $phenomenonId Optional phenomenon filter
+     * @return array
+     */
+    public function actionLatestAll($limit = 50, $deviceId = null, $phenomenonId = null)
+    {
+        try {
+            // Force proper JSON response type
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            
+            Yii::info("Fetching latest {$limit} measurement data records", 'api.measurement-data');
+            
+            $query = MeasurementData::find();
+            
+            // Apply filters if provided
+            if ($deviceId) {
+                $query->andWhere(['device_id' => $deviceId]);
+            }
+            if ($phenomenonId) {
+                $query->andWhere(['phenomenon_id' => $phenomenonId]);
+            }
+            
+            $measurements = $query
+                ->orderBy(['timestamp' => SORT_DESC])
+                ->limit((int)$limit)
+                ->all();
+            
+            // Convert to array with proper data types
+            $data = array_map(function($measurement) {
+                return [
+                    'data_id' => (int)$measurement->data_id,
+                    'device_id' => $measurement->device_id,
+                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'data_payload' => $measurement->data_payload,
+                    'timestamp' => $measurement->timestamp,
+                ];
+            }, $measurements);
+            
+            Yii::info("Successfully retrieved " . count($data) . " latest measurement data records", 'api.measurement-data');
+            
+            return [
+                'success' => true,
+                'data' => $data,
+                'count' => count($data),
+                'query_time' => date('Y-m-d H:i:s'),
+                'filters' => [
+                    'device_id' => $deviceId,
+                    'phenomenon_id' => $phenomenonId,
+                    'limit' => $limit
+                ]
+            ];
+            
+        } catch (\Throwable $e) {
+            Yii::error("Error retrieving latest measurement data: " . $e->getMessage() . "\n" . $e->getTraceAsString(), 'api.measurement-data');
+            Yii::$app->response->statusCode = 500;
+            return [
+                'success' => false,
+                'error' => "Error retrieving latest measurement data"
+            ];
+        }
     }
 }
