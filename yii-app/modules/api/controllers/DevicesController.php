@@ -128,11 +128,17 @@ class DevicesController extends Controller
         $experimentName = $data['name'] ?? 'Live Experiment - ' . date('Y-m-d H:i:s');        $transaction = Yii::$app->db->beginTransaction();
         try {
             // Create the experiment
+
+            $experiment = Experiments::findOne(['device_id' => $deviceId, 'type' => Experiments::STREAM, 'status' => Experiments::STATUS_RUNNING]);
+            if ($experiment) {
+                throw new BadRequestHttpException('Device already has an active live experiment');
+            }
             $experiment = new Experiments();
             $experiment->experiment_id = uniqid('exp_');
             $experiment->experiment_name = $experimentName;
             $experiment->description = 'Live experiment for real-time data collection';
             $experiment->device_id = $deviceId;
+            $experiment->type = Experiments::STREAM;
             $experiment->status = 'Running'; // This is key for frontend access
             $experiment->start_time = date('Y-m-d H:i:s');
 

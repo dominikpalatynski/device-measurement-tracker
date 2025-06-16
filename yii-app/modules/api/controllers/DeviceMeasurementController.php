@@ -5,6 +5,8 @@ use Yii;
 use yii\rest\Controller;
 use yii\web\Response;
 use app\services\DeviceMeasurementService;
+use app\models\Phenomena;
+use app\models\Experiments;
 
 class DeviceMeasurementController extends Controller
 {    /**
@@ -253,6 +255,49 @@ class DeviceMeasurementController extends Controller
                 'error' => 'Missing required fields: timestamp'
             ];
         }
+
+        $phenomenon = Phenomena::findOne(['phenomenon_id' => $phenomenonId, 'status' => Phenomena::STATUS_ACTIVE]);
+        if (!$phenomenon) {
+            Yii::$app->response->statusCode = 422;
+            return [
+                'success' => false,
+                'error' => 'Phenomenon not found'
+            ];
+        }
+
+        if (!$phenomenon) {
+            Yii::$app->response->statusCode = 422;
+            return [
+                'success' => false,
+                'error' => 'Phenomenon not found'
+            ];
+        }
+
+        $experiment = Experiments::findOne(['experiment_id' => $phenomenon->experiment_id]);
+        if (!$experiment) {
+            Yii::$app->response->statusCode = 422;
+            return [
+                'success' => false,
+                'error' => 'Experiment not found'
+            ];
+        }
+
+        if ($experiment->type === Experiments::STREAM) {
+            Yii::$app->response->statusCode = 422;
+            return [
+                'success' => false,
+                'error' => 'Stream experiment can not receive data from batch experiment'
+            ];
+        }
+
+        if ($experiment->status !== Experiments::STATUS_RUNNING) {
+            Yii::$app->response->statusCode = 422;
+            return [
+                'success' => false,
+                'error' => 'Experiment is not running'
+            ];
+        }
+
         try {
             $measurement = new \app\models\MeasurementData();
             $measurement->device_id = $deviceId;

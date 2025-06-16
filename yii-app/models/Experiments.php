@@ -19,6 +19,7 @@ use yii\db\Expression;
  * @property string $status
  * @property string $created_at
  * @property string $updated_at
+ * @property string $type
  * 
  * @property Devices $device
  * @property Phenomena[] $phenomena
@@ -28,7 +29,12 @@ class Experiments extends ActiveRecord
     const STATUS_RUNNING = 'Running';
     const STATUS_COMPLETED = 'Completed';
     const STATUS_SCHEDULED = 'Scheduled';
-    const STATUS_FAILED = 'Failed';/**
+    const STATUS_FAILED = 'Failed';
+
+    const BATCH = 'batch';
+    const STREAM = 'stream';
+
+    /**
      * {@inheritdoc}
      */
     public static function tableName()
@@ -63,12 +69,13 @@ class Experiments extends ActiveRecord
     public function rules()
     {
         return [
-            [['experiment_id', 'experiment_name', 'device_id', 'status', 'start_time'], 'required'],
+            [['experiment_id', 'experiment_name', 'device_id', 'status', 'start_time', 'type'], 'required'],
             [['description'], 'string'],
             [['start_time', 'end_time', 'created_at', 'updated_at'], 'safe'],
-            [['experiment_id', 'device_id', 'experiment_name'], 'string', 'max' => 255],
+            [['experiment_id', 'device_id', 'experiment_name', 'type'], 'string', 'max' => 255],
             [['status'], 'string'],
             [['status'], 'in', 'range' => [self::STATUS_RUNNING, self::STATUS_COMPLETED, self::STATUS_SCHEDULED, self::STATUS_FAILED]],
+            [['type'], 'in', 'range' => [self::BATCH, self::STREAM]],
             [['experiment_id'], 'unique'],
             [['device_id'], 'exist', 'skipOnError' => true, 'targetClass' => Devices::class, 'targetAttribute' => ['device_id' => 'device_id']],
         ];
@@ -82,6 +89,7 @@ class Experiments extends ActiveRecord
             'description' => 'Description',
             'device_id' => 'Device ID',
             'status' => 'Status',
+            'type' => 'Type',
             'start_time' => 'Start Time',
             'end_time' => 'End Time',
             'created_at' => 'Created At',

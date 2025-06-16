@@ -7,7 +7,7 @@ use app\models\Measurement;
 use yii\base\Component;
 use yii\helpers\Json;
 use yii\web\ServerErrorHttpException;
-
+use app\models\Experiments;
 class MeasurementService extends Component
 {
     /**
@@ -108,7 +108,7 @@ class MeasurementService extends Component
             }
 
             $activeExperiment = $device->getExperiments()
-                ->where(['status' => ['Running', 'Scheduled']])
+                ->where(['type' => Experiments::STREAM, 'status' => Experiments::STATUS_RUNNING])
                 ->one();
             echo "\033[32m[MQTT] Active experiment: " . $activeExperiment->experiment_id . "\033[0m\n";
             if ($activeExperiment) {

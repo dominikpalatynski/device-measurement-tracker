@@ -635,7 +635,7 @@ export default function DeviceDetailPage() {
 								</div>
 								
 								{/* Quick Actions */}
-								<div className='mt-6 flex flex-wrap gap-3'>
+								{/* <div className='mt-6 flex flex-wrap gap-3'>
 									<Link
 										href={`/devices/${deviceId}/experiments/create`}
 										className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
@@ -650,7 +650,7 @@ export default function DeviceDetailPage() {
 											👁️ View Active Experiment
 										</Link>
 									)}
-								</div>
+								</div> */}
 							</div>
 						)}
 					</div>

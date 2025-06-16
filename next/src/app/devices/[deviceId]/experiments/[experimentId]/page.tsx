@@ -270,7 +270,6 @@ export default function ExperimentDetailPage() {
 				name: newOfflinePhenomenonName.trim(),
 				description:
 					newOfflinePhenomenonDescription.trim() || undefined,
-				status: "Pending",
 			});
 
 			if (phenomenon) {
@@ -552,6 +551,11 @@ export default function ExperimentDetailPage() {
 		});
 	};
 
+	// Utility to check if any phenomenon is active
+	const anyPhenomenonActive =
+		phenomena.some((p) => p.status === "Active") ||
+		offlinePhenomena.some((p) => p.status === "Active");
+
 	if (loading) {
 		return (
 			<div className='flex items-center justify-center min-h-screen'>
@@ -725,7 +729,9 @@ export default function ExperimentDetailPage() {
 													!showOfflinePhenomenonForm
 												)
 											}
-											className='px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700'
+											className='px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-400'
+											disabled={anyPhenomenonActive}
+											title={anyPhenomenonActive ? 'Cannot add new phenomenon while another is Active' : ''}
 										>
 											➕ Add Phenomenon
 										</button>
@@ -789,12 +795,7 @@ export default function ExperimentDetailPage() {
 								>
 									📋 Copy Exp ID
 								</button>
-								<Link
-									href={`/experiments/${experimentId}`}
-									className='px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700'
-								>
-									🌐 Global View
-								</Link>
+
 							</div>
 						</div>
 
@@ -1072,24 +1073,14 @@ export default function ExperimentDetailPage() {
 									</div>{" "}
 									{/* Navigation Actions */}
 									<div className='flex flex-col space-y-1'>
-										<Link
-											href={`/experiments/${experimentId}`}
-											className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 text-center'
-										>
-											📊 Global View
-										</Link>
+
 										<Link
 											href={`/devices/${deviceId}`}
 											className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 text-center'
 										>
 											🔧 Device View
 										</Link>
-										<Link
-											href={`/experiments/${experimentId}/edit`}
-											className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200 text-center'
-										>
-											✏️ Edit
-										</Link>
+
 										{experiment.mode === "Offline" && (
 											<Link
 												href={`/devices/${deviceId}/experiments/create`}
@@ -1098,28 +1089,6 @@ export default function ExperimentDetailPage() {
 												➕ Create New
 											</Link>
 										)}
-										<button
-											onClick={() =>
-												copyToClipboard(
-													`Device: ${
-														device.device_name
-													}\nExperiment: ${
-														experiment.name ||
-														experiment.experiment_id
-													}\nStatus: ${
-														experiment.status
-													}\nMode: ${
-														experiment.mode
-													}\nStarted: ${new Date(
-														experiment.start_date
-													).toLocaleString()}`,
-													"Experiment Summary"
-												)
-											}
-											className='px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200'
-										>
-											📋 Copy Summary
-										</button>
 									</div>
 									{/* Danger Zone */}
 									<div className='border-t pt-2'>
@@ -1296,25 +1265,7 @@ export default function ExperimentDetailPage() {
 									</div>
 								</div>
 							</div>
-							<div className='bg-white border border-orange-200 rounded-lg p-4'>
-								<div className='flex items-center space-x-3'>
-									<div className='w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center'>
-										<span className='text-2xl'>🔋</span>
-									</div>
-									<div>
-										<div className='text-orange-600 text-2xl font-bold'>
-											{liveData.length > 0
-												? `${liveData[0].battery_level.toFixed(
-														0
-												  )}%`
-												: "N/A"}
-										</div>
-										<div className='text-orange-800 text-sm font-medium'>
-											Device Battery
-										</div>
-									</div>
-								</div>
-							</div>
+							
 						</div>
 
 						{/* Quick Status Info */}
@@ -1370,14 +1321,12 @@ export default function ExperimentDetailPage() {
 								🔬 Live Phenomena Control
 							</h3>
 							<button
-								onClick={() =>
-									setShowPhenomenonForm(!showPhenomenonForm)
-								}
-								className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+								onClick={() => setShowPhenomenonForm(!showPhenomenonForm)}
+								className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+								disabled={anyPhenomenonActive}
+								title={anyPhenomenonActive ? 'Cannot add new phenomenon while another is Active' : ''}
 							>
-								{showPhenomenonForm
-									? "Cancel"
-									: "Add Phenomenon"}
+								{showPhenomenonForm ? "Cancel" : "Add Phenomenon"}
 							</button>
 						</div>{" "}
 						{/* Current Active Phenomenon with Live Data */}
@@ -2224,7 +2173,7 @@ export default function ExperimentDetailPage() {
 					<div className='bg-white p-6 rounded-lg border border-gray-200'>
 						<div className='flex justify-between items-center mb-4'>
 							<h3 className='text-lg font-medium text-gray-900'>
-								📦 Offline Phenomena Management
+								📦 Live Phenomena Management
 							</h3>
 							<button
 								onClick={() =>
@@ -2734,6 +2683,99 @@ export default function ExperimentDetailPage() {
 					<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
 						<div className='text-red-800'>{error}</div>
 					</div>
+				)}
+				{offlinePhenomena.filter(p => p.status === 'Stopped').length > 0 ? (
+					<div className='mt-8'>
+						<h4 className='font-medium text-green-900 mb-3'>
+							Stopped Phenomena
+						</h4>
+						<div className='space-y-2'>
+							{offlinePhenomena.filter(p => p.status === 'Stopped').map(phenomenon => (
+								<div key={phenomenon.phenomenon_id} className='bg-green-50 border border-green-200 rounded-lg p-3'>
+									<div className='flex justify-between items-center'>
+										<div>
+											<h5 className='font-medium text-green-900'>{phenomenon.name}</h5>
+											{phenomenon.description && (
+												<p className='text-sm text-green-700'>{phenomenon.description}</p>
+											)}
+											<p className='text-xs text-gray-500'>
+												Started: {phenomenon.start_time ? new Date(phenomenon.start_time).toLocaleString() : 'N/A'}<br/>
+												Ended: {phenomenon.end_time ? new Date(phenomenon.end_time).toLocaleString() : 'N/A'}
+											</p>
+										</div>
+										<div className='flex space-x-2'>
+											<button
+												onClick={() => {
+													navigator.clipboard.writeText(phenomenon.phenomenon_id);
+													alert('Phenomenon ID copied to clipboard!');
+												}}
+												className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200'
+												title='Copy phenomenon ID'
+											>
+												📋 Copy ID
+											</button>
+											<Link
+												href={`/devices/${deviceId}/experiments/${experimentId}/phenomena/${phenomenon.phenomenon_id}`}
+												className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200'
+												title='View detailed data and analytics'
+											>
+												👁️ View Data
+											</Link>
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				) : (
+					<div className='mt-8 text-center text-gray-500'>No stopped phenomena yet.</div>
+				)}
+				{/* Finished Phenomena List */}
+				{offlinePhenomena.filter(p => p.status === 'Finished').length > 0 ? (
+					<div className='mt-8'>
+						<h4 className='font-medium text-green-900 mb-3'>
+							Finished Phenomena
+						</h4>
+						<div className='space-y-2'>
+							{offlinePhenomena.filter(p => p.status === 'Stopped').map(phenomenon => (
+								<div key={phenomenon.phenomenon_id} className='bg-green-50 border border-green-200 rounded-lg p-3'>
+									<div className='flex justify-between items-center'>
+										<div>
+											<h5 className='font-medium text-green-900'>{phenomenon.name}</h5>
+											{phenomenon.description && (
+												<p className='text-sm text-green-700'>{phenomenon.description}</p>
+											)}
+											<p className='text-xs text-gray-500'>
+												Started: {phenomenon.start_time ? new Date(phenomenon.start_time).toLocaleString() : 'N/A'}<br/>
+												Ended: {phenomenon.end_time ? new Date(phenomenon.end_time).toLocaleString() : 'N/A'}
+											</p>
+										</div>
+										<div className='flex space-x-2'>
+											<button
+												onClick={() => {
+													navigator.clipboard.writeText(phenomenon.phenomenon_id);
+													alert('Phenomenon ID copied to clipboard!');
+												}}
+												className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200'
+												title='Copy phenomenon ID'
+											>
+												📋 Copy ID
+											</button>
+											<Link
+												href={`/devices/${deviceId}/experiments/${experimentId}/phenomena/${phenomenon.phenomenon_id}`}
+												className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200'
+												title='View detailed data and analytics'
+											>
+												👁️ View Data
+											</Link>
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				) : (
+					<div className='mt-8 text-center text-gray-500'>No finished phenomena yet.</div>
 				)}
 			</div>
 		</PageLayout>

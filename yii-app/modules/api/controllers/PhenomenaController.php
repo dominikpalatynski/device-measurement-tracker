@@ -9,6 +9,7 @@ use yii\web\NotFoundHttpException;
 use yii\web\ServerErrorHttpException;
 use yii\helpers\Json;
 use app\models\Phenomena;
+use app\models\Experiments;
 
 class PhenomenaController extends Controller
 {    /**
@@ -136,6 +137,18 @@ class PhenomenaController extends Controller
                 throw new ServerErrorHttpException('Missing required fields: name and experiment_id are required');
             }
             
+            $experiment = Experiments::findOne(['experiment_id' => $data['experiment_id']]);
+            if (!$experiment) {
+                throw new ServerErrorHttpException('Experiment not found');
+            }
+
+            if ($experiment->type === Experiments::STREAM) {
+                $streamPhenomena = Phenomena::find()->where(['experiment_id' => $data['experiment_id'], 'status' => Phenomena::STATUS_ACTIVE])->all();
+                if ($streamPhenomena) {
+                    throw new ServerErrorHttpException('Stream experiment already has an active phenomenon');
+                }
+            }
+
             $phenomenon = Phenomena::createPhenomenon(
                 $data['experiment_id'],
                 $data['name'],
