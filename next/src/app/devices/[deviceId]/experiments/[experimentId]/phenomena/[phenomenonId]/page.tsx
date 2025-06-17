@@ -265,18 +265,13 @@ export default function PhenomenonDetailPage() {
 
 		// First pass: collect all possible keys from all payloads
 		phenomenonMeasurements.forEach((measurement) => {
-			if (
-				measurement.data_payload &&
-				typeof measurement.data_payload === "object"
-			) {
-				Object.keys(measurement.data_payload).forEach((key) => {
-					const value = measurement.data_payload[key];
-					// Check if the value is an array or a single numeric value
-					if (Array.isArray(value) || typeof value === "number") {
-						availableKeys.add(key);
-					}
-				});
-			}
+			Object.keys(measurement).forEach((key) => {
+				const value = measurement[key];
+				// Check if the value is an array or a single numeric value
+				if (Array.isArray(value) || typeof value === "number") {
+					availableKeys.add(key);
+				}
+			});
 		});
 
 		// Second pass: extract data for each key
@@ -284,11 +279,8 @@ export default function PhenomenonDetailPage() {
 			chartData[key] = [];
 
 			phenomenonMeasurements.forEach((measurement, measurementIndex) => {
-				if (
-					measurement.data_payload &&
-					measurement.data_payload[key] !== undefined
-				) {
-					const value = measurement.data_payload[key];
+				if (measurement && measurement[key] !== undefined) {
+					const value = measurement[key];
 					const timestamp = measurement.timestamp;
 					const timestampFormatted = new Date(
 						timestamp
@@ -1034,7 +1026,8 @@ export default function PhenomenonDetailPage() {
 														</div>
 													)
 												);
-											})()}										</div>
+											})()}{" "}
+										</div>
 
 										{/* Live Data Chart */}
 										<div className='bg-white border border-gray-200 rounded-lg p-6 mb-6'>
@@ -1043,63 +1036,125 @@ export default function PhenomenonDetailPage() {
 											</h5>
 											{(() => {
 												// Prepare chart data from liveDataBuffer
-												if (liveDataBuffer.length === 0) {
+												if (
+													liveDataBuffer.length === 0
+												) {
 													return (
 														<div className='text-center py-8 text-gray-500'>
-															No data available for chart
+															No data available
+															for chart
 														</div>
 													);
 												}
 
 												// Extract all numeric data from payloads
-												const chartData: Record<string, Array<{
-													timestamp: string;
-													value: number;
-													timestampFormatted: string;
-												}>> = {};
+												const chartData: Record<
+													string,
+													Array<{
+														timestamp: string;
+														value: number;
+														timestampFormatted: string;
+													}>
+												> = {};
 
 												// Collect all possible keys
-												const allKeys = new Set<string>();
-												liveDataBuffer.forEach((measurement) => {
-													if (typeof measurement.data_payload === "object" && measurement.data_payload) {
-														Object.keys(measurement.data_payload).forEach(key => allKeys.add(key));
+												const allKeys =
+													new Set<string>();
+												liveDataBuffer.forEach(
+													(measurement) => {
+														if (
+															typeof measurement.data_payload ===
+																"object" &&
+															measurement.data_payload
+														) {
+															Object.keys(
+																measurement.data_payload
+															).forEach((key) =>
+																allKeys.add(key)
+															);
+														}
 													}
-												});
+												);
 
 												// Process data for each key
-												allKeys.forEach(key => {
+												allKeys.forEach((key) => {
 													chartData[key] = [];
-													liveDataBuffer.forEach((measurement) => {
-														if (measurement.data_payload && measurement.data_payload[key] !== undefined) {
-															const value = measurement.data_payload[key];
-															if (Array.isArray(value)) {
-																// For arrays, take the first value or average
-																const numericValue = value.length > 0 ? value[0] : 0;
-																if (typeof numericValue === 'number') {
-																	chartData[key].push({
-																		timestamp: measurement.timestamp,
-																		value: numericValue,
-																		timestampFormatted: new Date(measurement.timestamp).toLocaleTimeString()
+													liveDataBuffer.forEach(
+														(measurement) => {
+															if (
+																measurement.data_payload &&
+																measurement
+																	.data_payload[
+																	key
+																] !== undefined
+															) {
+																const value =
+																	measurement
+																		.data_payload[
+																		key
+																	];
+																if (
+																	Array.isArray(
+																		value
+																	)
+																) {
+																	// For arrays, take the first value or average
+																	const numericValue =
+																		value.length >
+																		0
+																			? value[0]
+																			: 0;
+																	if (
+																		typeof numericValue ===
+																		"number"
+																	) {
+																		chartData[
+																			key
+																		].push({
+																			timestamp:
+																				measurement.timestamp,
+																			value: numericValue,
+																			timestampFormatted:
+																				new Date(
+																					measurement.timestamp
+																				).toLocaleTimeString(),
+																		});
+																	}
+																} else if (
+																	typeof value ===
+																	"number"
+																) {
+																	chartData[
+																		key
+																	].push({
+																		timestamp:
+																			measurement.timestamp,
+																		value: value,
+																		timestampFormatted:
+																			new Date(
+																				measurement.timestamp
+																			).toLocaleTimeString(),
 																	});
 																}
-															} else if (typeof value === 'number') {
-																chartData[key].push({
-																	timestamp: measurement.timestamp,
-																	value: value,
-																	timestampFormatted: new Date(measurement.timestamp).toLocaleTimeString()
-																});
 															}
 														}
-													});
+													);
 												});
 
 												// Get the first key with data for display
-												const firstKeyWithData = Object.keys(chartData).find(key => chartData[key].length > 0);
-												
+												const firstKeyWithData =
+													Object.keys(chartData).find(
+														(key) =>
+															chartData[key]
+																.length > 0
+													);
+
 												if (!firstKeyWithData) {
 													return (
 														<div className='text-center py-8 text-gray-500'>
-															No numeric data available for charting
+															No numeric data
+															available for
+															charting
 														</div>
 													);
 												}
@@ -1107,68 +1162,156 @@ export default function PhenomenonDetailPage() {
 												return (
 													<div className='space-y-4'>
 														{/* Chart for first data parameter */}
-														<ResponsiveContainer width="100%" height={300}>
-															<LineChart data={chartData[firstKeyWithData]}>
-																<CartesianGrid strokeDasharray="3 3" />
-																<XAxis 
-																	dataKey="timestampFormatted" 
-																	tick={{ fontSize: 12 }}
-																	interval="preserveStartEnd"
+														<ResponsiveContainer
+															width='100%'
+															height={300}
+														>
+															<LineChart
+																data={
+																	chartData[
+																		firstKeyWithData
+																	]
+																}
+															>
+																<CartesianGrid strokeDasharray='3 3' />
+																<XAxis
+																	dataKey='timestampFormatted'
+																	tick={{
+																		fontSize: 12,
+																	}}
+																	interval='preserveStartEnd'
 																/>
-																<YAxis tick={{ fontSize: 12 }} />
-																<Tooltip 
-																	labelFormatter={(label) => `Time: ${label}`}
-																	formatter={(value: any) => [value, firstKeyWithData]}
+																<YAxis
+																	tick={{
+																		fontSize: 12,
+																	}}
+																/>
+																<Tooltip
+																	labelFormatter={(
+																		label
+																	) =>
+																		`Time: ${label}`
+																	}
+																	formatter={(
+																		value: any
+																	) => [
+																		value,
+																		firstKeyWithData,
+																	]}
 																/>
 																<Legend />
-																<Line 
-																	type="monotone" 
-																	dataKey="value" 
-																	stroke="#3B82F6" 
-																	strokeWidth={2}
-																	dot={{ r: 4 }}
-																	name={firstKeyWithData}
+																<Line
+																	type='monotone'
+																	dataKey='value'
+																	stroke='#3B82F6'
+																	strokeWidth={
+																		2
+																	}
+																	dot={{
+																		r: 4,
+																	}}
+																	name={
+																		firstKeyWithData
+																	}
 																/>
 															</LineChart>
 														</ResponsiveContainer>
 
 														{/* Chart info */}
 														<div className='flex justify-between items-center text-sm text-gray-600'>
-															<span>Showing: {firstKeyWithData} ({chartData[firstKeyWithData].length} data points)</span>
-															<span>Total parameters available: {Object.keys(chartData).length}</span>
+															<span>
+																Showing:{" "}
+																{
+																	firstKeyWithData
+																}{" "}
+																(
+																{
+																	chartData[
+																		firstKeyWithData
+																	].length
+																}{" "}
+																data points)
+															</span>
+															<span>
+																Total parameters
+																available:{" "}
+																{
+																	Object.keys(
+																		chartData
+																	).length
+																}
+															</span>
 														</div>
 
 														{/* Additional charts for other parameters */}
-														{Object.keys(chartData).slice(1, 3).map(key => (
-															<div key={key} className='mt-6'>
-																<h6 className='text-md font-medium text-gray-800 mb-2'>
-																	{key} Parameter
-																</h6>
-																<ResponsiveContainer width="100%" height={200}>
-																	<LineChart data={chartData[key]}>
-																		<CartesianGrid strokeDasharray="3 3" />
-																		<XAxis 
-																			dataKey="timestampFormatted" 
-																			tick={{ fontSize: 10 }}
-																			interval="preserveStartEnd"
-																		/>
-																		<YAxis tick={{ fontSize: 10 }} />
-																		<Tooltip 
-																			labelFormatter={(label) => `Time: ${label}`}
-																			formatter={(value: any) => [value, key]}
-																		/>
-																		<Line 
-																			type="monotone" 
-																			dataKey="value" 
-																			stroke="#10B981" 
-																			strokeWidth={2}
-																			dot={{ r: 3 }}
-																			name={key}
-																		/>
-																	</LineChart>
-																</ResponsiveContainer>
-															</div>
-														))}
+														{Object.keys(chartData)
+															.slice(1, 3)
+															.map((key) => (
+																<div
+																	key={key}
+																	className='mt-6'
+																>
+																	<h6 className='text-md font-medium text-gray-800 mb-2'>
+																		{key}{" "}
+																		Parameter
+																	</h6>
+																	<ResponsiveContainer
+																		width='100%'
+																		height={
+																			200
+																		}
+																	>
+																		<LineChart
+																			data={
+																				chartData[
+																					key
+																				]
+																			}
+																		>
+																			<CartesianGrid strokeDasharray='3 3' />
+																			<XAxis
+																				dataKey='timestampFormatted'
+																				tick={{
+																					fontSize: 10,
+																				}}
+																				interval='preserveStartEnd'
+																			/>
+																			<YAxis
+																				tick={{
+																					fontSize: 10,
+																				}}
+																			/>
+																			<Tooltip
+																				labelFormatter={(
+																					label
+																				) =>
+																					`Time: ${label}`
+																				}
+																				formatter={(
+																					value: any
+																				) => [
+																					value,
+																					key,
+																				]}
+																			/>
+																			<Line
+																				type='monotone'
+																				dataKey='value'
+																				stroke='#10B981'
+																				strokeWidth={
+																					2
+																				}
+																				dot={{
+																					r: 3,
+																				}}
+																				name={
+																					key
+																				}
+																			/>
+																		</LineChart>
+																	</ResponsiveContainer>
+																</div>
+															))}
 													</div>
 												);
 											})()}
