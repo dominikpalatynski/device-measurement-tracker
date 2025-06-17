@@ -265,8 +265,10 @@ export default function ExperimentDetailPage() {
 
 		try {
 			await onlineModeApi.stopLiveExperiment(deviceId);
+			console.log("Experiment stopped");
 			router.push(`/devices/${deviceId}`);
 		} catch (error) {
+			console.log("Error stopping experiment:", error);
 			setError(
 				error instanceof Error
 					? error.message
@@ -790,7 +792,7 @@ export default function ExperimentDetailPage() {
 										)}
 									</>
 								)}
-								{liveExperiment && (
+								{experiment.status === "Running" && (
 									<button
 										onClick={() =>
 											setShowPhenomenonForm(

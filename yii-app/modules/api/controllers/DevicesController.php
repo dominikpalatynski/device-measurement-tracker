@@ -11,7 +11,6 @@ use yii\web\BadRequestHttpException;
 use yii\helpers\Json;
 use app\models\Devices;
 use app\models\Experiments;
-use app\models\LiveExperiments;
 use app\models\Phenomena;
 
 class DevicesController extends Controller
@@ -73,7 +72,7 @@ class DevicesController extends Controller
     {
         $device = $this->findDevice($deviceId);
         
-        $liveExperiment = LiveExperiments::findActiveByDevice($deviceId);
+        $liveExperiment = Experiments::findActiveByDevice($deviceId);
 
         if (!$liveExperiment) {
             return [
@@ -90,9 +89,6 @@ class DevicesController extends Controller
             'data' => [
                 'experiment_id' => $liveExperiment->experiment_id,
                 'device_id' => $liveExperiment->device_id,
-                'live_experiment_id' => $liveExperiment->live_experiment_id,
-                'stream_url' => $liveExperiment->stream_url,
-                'is_active' => $liveExperiment->is_active,
                 'duration' => $liveExperiment->getDuration(),
                 'phenomena_count' => Phenomena::find()->where(['experiment_id' => $liveExperiment->experiment_id])->count(),                'current_phenomenon' => $currentPhenomenon ? [
                     'phenomenon_id' => $currentPhenomenon->phenomenon_id,
@@ -118,7 +114,7 @@ class DevicesController extends Controller
         if ($device->status !== 'Active') {
             throw new BadRequestHttpException('Device must be active to start a live experiment');
         }        // Check if there's already an active live experiment
-        $existingLive = LiveExperiments::findActiveByDevice($deviceId);
+        $existingLive = Experiments::findActiveByDevice($deviceId);
 
         if ($existingLive) {
             throw new BadRequestHttpException('Device already has an active live experiment');
@@ -146,26 +142,16 @@ class DevicesController extends Controller
                 throw new ServerErrorHttpException('Failed to create experiment: ' . Json::encode($experiment->errors));
             }
 
-            // Create the live experiment record
-            $liveExperiment = LiveExperiments::createLiveExperiment($experiment->experiment_id, $deviceId);
-            
-            if (!$liveExperiment) {
-                throw new ServerErrorHttpException('Failed to create live experiment');
-            }
-
             $transaction->commit();            return [
                 'success' => true,
                 'data' => [
                     'experiment_id' => $experiment->experiment_id,
                     'device_id' => $deviceId,
-                    'live_experiment_id' => $liveExperiment->live_experiment_id,
-                    'stream_url' => $liveExperiment->stream_url,
-                    'is_active' => $liveExperiment->is_active,
                     'duration' => 0,
                     'phenomena_count' => 0,
                     'current_phenomenon' => null,
-                    'start_time' => $liveExperiment->start_time,
-                    'end_time' => $liveExperiment->end_time,
+                    'start_time' => $experiment->start_time,
+                    'end_time' => $experiment->end_time,
                 ]
             ];
 
@@ -181,7 +167,7 @@ class DevicesController extends Controller
     protected function stopLiveExperiment($deviceId)
     {
         $device = $this->findDevice($deviceId);
-          $liveExperiment = LiveExperiments::findActiveByDevice($deviceId);
+          $liveExperiment = Experiments::findActiveByDevice($deviceId);
 
         if (!$liveExperiment) {
             throw new NotFoundHttpException('No active live experiment found for this device');
@@ -192,7 +178,7 @@ class DevicesController extends Controller
             // Stop any active phenomena
             Phenomena::updateAll(
                 ['status' => 'Completed', 'end_time' => date('Y-m-d H:i:s')],
-                ['experiment_id' => $liveExperiment->experiment_id, 'status' => 'Active']
+                ['experiment_id' => $liveExperiment->experiment_id, 'status' => Phenomena::STATUS_FINISHED]
             );
 
             // Stop the experiment
@@ -202,9 +188,6 @@ class DevicesController extends Controller
                 $experiment->end_time = date('Y-m-d H:i:s');
                 $experiment->save();
             }
-
-            // Mark live experiment as completed
-            $liveExperiment->stopLiveExperiment();
 
             $transaction->commit();
 
@@ -226,7 +209,7 @@ class DevicesController extends Controller
     public function actionStartPhenomenon($deviceId)
     {
         $device = $this->findDevice($deviceId);
-          $liveExperiment = LiveExperiments::findActiveByDevice($deviceId);
+          $liveExperiment = Experiments::findActiveByDevice($deviceId);
 
         if (!$liveExperiment) {
             throw new BadRequestHttpException('No active live experiment found for this device');

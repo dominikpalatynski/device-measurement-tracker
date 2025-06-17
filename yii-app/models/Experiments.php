@@ -145,4 +145,23 @@ class Experiments extends ActiveRecord
         
         return null;
     }
+
+    /**
+     * Get duration in seconds
+     */
+    public function getDuration()
+    {
+        $startTime = strtotime($this->start_time);
+        $endTime = $this->end_time ? strtotime($this->end_time) : time();
+        return $endTime - $startTime;
+    }
+
+   /**
+     * Find active live experiment for device
+     */
+    public static function findActiveByDevice($deviceId)
+    {
+        return self::find()
+            ->where(['device_id' => $deviceId, 'status' => self::STATUS_RUNNING])
+            ->one();    }
 }

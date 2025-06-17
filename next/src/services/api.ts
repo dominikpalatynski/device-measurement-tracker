@@ -190,11 +190,8 @@ export interface PhenomenonResponse {
 
 // Online Mode interfaces
 export interface LiveExperiment {
-  live_experiment_id: number;
   experiment_id: string;
   device_id: string;
-  stream_url?: string;
-  is_active: boolean;
   start_time: string;
   end_time?: string;
   current_phenomenon?: ActivePhenomenon;
@@ -579,6 +576,7 @@ export const onlineModeApi = {
       }
       throw new Error(response.error || 'Failed to start live experiment');
     } catch (error) {
+      console.log('Starting live experiment:', error);
       console.error('Error starting live experiment:', error);
       throw error;
     }
@@ -593,8 +591,10 @@ export const onlineModeApi = {
       if (response.success && response.data) {
         return response.data;
       }
+      console.log('Error getting live experiment:', response);
       return null;
     } catch (error) {
+      console.log('Error getting live experiment:', error);
       console.error('Error getting live experiment:', error);
       return null;
     }

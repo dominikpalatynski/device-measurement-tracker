@@ -98,16 +98,6 @@ class Devices extends ActiveRecord
     }
 
     /**
-     * Gets query for [[LiveExperiments]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getLiveExperiments()
-    {
-        return $this->hasMany(LiveExperiments::class, ['device_id' => 'device_id']);
-    }
-
-    /**
      * Get device by ID
      * 
      * @param string $id
