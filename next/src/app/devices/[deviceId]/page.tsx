@@ -687,7 +687,7 @@ export default function DeviceDetailPage() {
 													</h4>
 													{activeExperiments.filter(exp => exp.status === "Running").map(exp => (
 														<div key={exp.experiment_id} className='text-sm text-green-700 mt-1'>
-															<div>Name: {exp.name || exp.experiment_id}</div>
+															<div>Name: {exp.experiment_name || exp.experiment_id}</div>
 															<div>Started: {new Date(exp.start_date).toLocaleString()}</div>
 														</div>
 													))}
@@ -764,7 +764,7 @@ export default function DeviceDetailPage() {
 															<tr key={experiment.experiment_id}>
 																<td className='px-6 py-4 whitespace-nowrap'>
 																	<div className='text-sm font-medium text-gray-900'>
-																		{experiment.name || experiment.experiment_id}
+																		{experiment.experiment_name || experiment.experiment_id}
 																	</div>
 																	<div className='text-sm text-gray-500'>
 																		{experiment.description || "No description"}
@@ -835,7 +835,7 @@ export default function DeviceDetailPage() {
 															<tr key={experiment.experiment_id} className='opacity-75'>
 																<td className='px-6 py-4 whitespace-nowrap'>
 																	<div className='text-sm font-medium text-gray-900'>
-																		{experiment.name || experiment.experiment_id}
+																		{experiment.experiment_name || experiment.experiment_id}
 																	</div>
 																	<div className='text-sm text-gray-500'>
 																		{experiment.description || "No description"}
@@ -1291,7 +1291,7 @@ export default function DeviceDetailPage() {
 														<td className='px-6 py-4 whitespace-nowrap'>
 															<div className='text-sm font-medium text-gray-900'>
 																{
-																	experiment.name
+																	experiment.experiment_name
 																}
 															</div>
 															{experiment.description && (

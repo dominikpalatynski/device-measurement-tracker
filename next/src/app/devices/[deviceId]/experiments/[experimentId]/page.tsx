@@ -335,7 +335,7 @@ export default function ExperimentDetailPage() {
 		if (
 			!confirm(
 				`Are you sure you want to delete experiment "${
-					experiment.name || experiment.experiment_id
+					experiment.experiment_name || experiment.experiment_id
 				}"? This action cannot be undone and will delete all associated phenomena.`
 			)
 		)
@@ -615,13 +615,13 @@ export default function ExperimentDetailPage() {
 
 	return (
 		<PageLayout
-			title={experiment.name || experiment.experiment_id}
-			breadcrumbs={[
+				title={experiment.experiment_name || experiment.experiment_id}
+				breadcrumbs={[
 				{ label: "Home", href: "/" },
 				{ label: "Devices", href: "/devices" },
 				{ label: device.device_name, href: `/devices/${deviceId}` },
 				{
-					label: experiment.name || experiment.experiment_id,
+					label: experiment.experiment_name || experiment.experiment_id,
 					href: `/devices/${deviceId}/experiments/${experimentId}`,
 				},
 			]}
@@ -759,7 +759,7 @@ export default function ExperimentDetailPage() {
 													const exportData = {
 														experiment: {
 															id: experiment.experiment_id,
-															name: experiment.name,
+															name: experiment.experiment_name,
 															device: device.device_name,
 															mode: experiment.mode,
 														},
@@ -834,7 +834,7 @@ export default function ExperimentDetailPage() {
 						<div className='flex-1'>
 							<div className='flex items-center space-x-4 mb-2'>
 								<h2 className='text-2xl font-bold text-gray-900'>
-									{experiment.name ||
+									{experiment.experiment_name ||
 										`Experiment ${experiment.experiment_id}`}
 								</h2>
 								<div className='flex space-x-2'>

@@ -144,7 +144,7 @@ export interface SingleDeviceResponse {
 export interface Experiment {
   id: number;
   experiment_id: string;
-  name: string;
+  experiment_name: string;
   description?: string;
   device_id: string;
   mode: "Online" | "Offline";
