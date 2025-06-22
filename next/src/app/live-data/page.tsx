@@ -288,14 +288,9 @@ export default function LiveMeasurementDataPage() {
 											<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
 												{measurement.phenomenon_id ||
 													"N/A"}
-											</td>
+											</td>{" "}
 											<td className='px-6 py-4 text-sm text-gray-500 max-w-md'>
-												<div
-													className='truncate'
-													title={JSON.stringify(
-														measurement.data_payload
-													)}
-												>
+												<div className='truncate text-blue-600 font-mono text-xs'>
 													{formatDataPayload(
 														measurement.data_payload
 													)}

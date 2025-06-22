@@ -50,9 +50,9 @@ export default function ExperimentDetailPage() {
 	const [liveData, setLiveData] = useState<Measurement[]>([]);
 	const [phenomenaData, setPhenomenaData] = useState<MeasurementData[]>([]);
 	const [autoRefresh, setAutoRefresh] = useState(false);
-	const [chartViewMode, setChartViewMode] = useState<
-		"chart" | "table" | "stats"
-	>("chart");
+	const [chartViewMode, setChartViewMode] = useState<"chart" | "stats">(
+		"chart"
+	);
 	const [dataRefreshInterval, setDataRefreshInterval] =
 		useState<NodeJS.Timeout | null>(null);
 
@@ -617,13 +617,14 @@ export default function ExperimentDetailPage() {
 
 	return (
 		<PageLayout
-				title={experiment.experiment_name || experiment.experiment_id}
-				breadcrumbs={[
+			title={experiment.experiment_name || experiment.experiment_id}
+			breadcrumbs={[
 				{ label: "Home", href: "/" },
 				{ label: "Devices", href: "/devices" },
 				{ label: device.device_name, href: `/devices/${deviceId}` },
 				{
-					label: experiment.experiment_name || experiment.experiment_id,
+					label:
+						experiment.experiment_name || experiment.experiment_id,
 					href: `/devices/${deviceId}/experiments/${experimentId}`,
 				},
 			]}
@@ -838,7 +839,7 @@ export default function ExperimentDetailPage() {
 								<h2 className='text-2xl font-bold text-gray-900'>
 									{experiment.experiment_name ||
 										`Experiment ${experiment.experiment_id}`}
-								</h2>
+								</h2>{" "}
 								<div className='flex space-x-2'>
 									<button
 										onClick={() =>
@@ -865,6 +866,18 @@ export default function ExperimentDetailPage() {
 										}`}
 									>
 										{experiment.status}
+									</span>
+									<span
+										className={`px-2 py-1 rounded-full text-xs font-medium ${
+											experiment.type === "stream"
+												? "bg-purple-100 text-purple-800"
+												: "bg-orange-100 text-orange-800"
+										}`}
+										title={`This is a ${experiment.type} experiment`}
+									>
+										{experiment.type === "stream"
+											? "🔄 Stream"
+											: "📦 Batch"}
 									</span>
 								</div>
 							</div>
@@ -899,7 +912,7 @@ export default function ExperimentDetailPage() {
 											experiment.end_date
 										).toLocaleString()}
 									</div>
-								)}
+								)}{" "}
 								<div>
 									<span className='font-medium'>Mode:</span>
 									<span
@@ -910,6 +923,20 @@ export default function ExperimentDetailPage() {
 										}`}
 									>
 										{experiment.mode || "Unknown"}
+									</span>
+								</div>
+								<div>
+									<span className='font-medium'>Type:</span>
+									<span
+										className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${
+											experiment.type === "stream"
+												? "bg-purple-100 text-purple-800"
+												: "bg-orange-100 text-orange-800"
+										}`}
+									>
+										{experiment.type === "stream"
+											? "Stream"
+											: "Batch"}
 									</span>
 								</div>
 								<div>
@@ -1491,32 +1518,27 @@ export default function ExperimentDetailPage() {
 									<div className='flex justify-between items-center mb-4'>
 										<h5 className='text-lg font-medium text-gray-900'>
 											📊 Live Data Stream
-										</h5>
+										</h5>{" "}
 										<div className='flex space-x-2'>
-											{["chart", "table", "stats"].map(
-												(mode) => (
-													<button
-														key={mode}
-														onClick={() =>
-															setChartViewMode(
-																mode as typeof chartViewMode
-															)
-														}
-														className={`px-3 py-1 rounded text-sm ${
-															chartViewMode ===
-															mode
-																? "bg-green-600 text-white"
-																: "bg-gray-200 text-gray-700 hover:bg-gray-300"
-														}`}
-													>
-														{mode === "chart"
-															? "📈 Chart"
-															: mode === "table"
-															? "📋 Table"
-															: "📊 Stats"}
-													</button>
-												)
-											)}
+											{["chart", "stats"].map((mode) => (
+												<button
+													key={mode}
+													onClick={() =>
+														setChartViewMode(
+															mode as typeof chartViewMode
+														)
+													}
+													className={`px-3 py-1 rounded text-sm ${
+														chartViewMode === mode
+															? "bg-green-600 text-white"
+															: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+													}`}
+												>
+													{mode === "chart"
+														? "📈 Chart"
+														: "📊 Stats"}
+												</button>
+											))}
 										</div>
 									</div>
 
@@ -1629,92 +1651,6 @@ export default function ExperimentDetailPage() {
 													</>
 												)}
 											</div>
-										</div>
-									)}
-
-									{/* Table View */}
-									{chartViewMode === "table" && (
-										<div className='overflow-x-auto'>
-											{liveData.length > 0 ? (
-												<table className='min-w-full divide-y divide-gray-200'>
-													<thead className='bg-gray-50'>
-														<tr>
-															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Timestamp
-															</th>
-															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Temperature (°C)
-															</th>
-															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Humidity (%)
-															</th>
-															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Pressure (hPa)
-															</th>
-															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Battery (%)
-															</th>
-														</tr>
-													</thead>
-													<tbody className='bg-white divide-y divide-gray-200'>
-														{liveData
-															.slice(0, 10)
-															.map(
-																(
-																	measurement
-																) => (
-																	<tr
-																		key={
-																			measurement.id
-																		}
-																		className='hover:bg-gray-50'
-																	>
-																		<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono'>
-																			{
-																				measurement.measured_at
-																			}
-																		</td>
-																		<td className='px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium'>
-																			{measurement.temperature.toFixed(
-																				2
-																			)}
-																		</td>
-																		<td className='px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium'>
-																			{measurement.humidity.toFixed(
-																				2
-																			)}
-																		</td>
-																		<td className='px-6 py-4 whitespace-nowrap text-sm text-purple-600 font-medium'>
-																			{measurement.pressure.toFixed(
-																				2
-																			)}
-																		</td>
-																		<td className='px-6 py-4 whitespace-nowrap text-sm text-orange-600 font-medium'>
-																			{measurement.battery_level.toFixed(
-																				2
-																			)}
-																		</td>
-																	</tr>
-																)
-															)}
-													</tbody>
-												</table>
-											) : (
-												<div className='text-center py-8 text-gray-500'>
-													<div className='text-4xl mb-4'>
-														📊
-													</div>
-													<p>
-														No live data available
-														yet
-													</p>
-													<p className='text-sm mt-2'>
-														Data will appear as
-														measurements are
-														captured
-													</p>
-												</div>
-											)}
 										</div>
 									)}
 

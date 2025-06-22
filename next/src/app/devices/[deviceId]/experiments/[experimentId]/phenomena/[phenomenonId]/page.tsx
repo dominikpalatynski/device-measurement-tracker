@@ -57,7 +57,7 @@ export default function PhenomenonDetailPage() {
 	const [liveDataBuffer, setLiveDataBuffer] = useState<MeasurementData[]>([]);
 	const [lastUpdateTime, setLastUpdateTime] = useState<string | null>(null);
 	const [viewMode, setViewMode] = useState<
-		"chart" | "table" | "json" | "phenomenon-data" | "charts" | "live"
+		"chart" | "phenomenon-data" | "charts" | "live"
 	>("phenomenon-data");
 	const [activeChartTab, setActiveChartTab] = useState<string>("");
 	const [chartType, setChartType] = useState<
@@ -223,29 +223,6 @@ export default function PhenomenonDetailPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
-
-	const downloadJSON = () => {
-		const dataToDownload = {
-			device: device,
-			experiment: experiment,
-			phenomenon: phenomenon,
-			measurements: measurements,
-			exported_at: new Date().toISOString(),
-		};
-
-		const blob = new Blob([JSON.stringify(dataToDownload, null, 2)], {
-			type: "application/json",
-		});
-
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = `${device?.device_name}_${experiment?.name}_${phenomenon?.name}_data.json`;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
 	};
 
 	// Extract and process chart data from phenomenon measurements for Recharts
@@ -705,7 +682,10 @@ export default function PhenomenonDetailPage() {
 						href: `/devices/${deviceId}`,
 					},
 					{
-						label: experiment?.name || "Experiment",
+						label:
+							experiment?.experiment_name ||
+							experiment?.experiment_id ||
+							"Experiment",
 						href: `/devices/${deviceId}/experiments/${experimentId}`,
 					},
 					{
@@ -740,7 +720,8 @@ export default function PhenomenonDetailPage() {
 				{ label: "Devices", href: "/devices" },
 				{ label: device.device_name, href: `/devices/${deviceId}` },
 				{
-					label: experiment.name || experiment.experiment_id,
+					label:
+						experiment.experiment_name || experiment.experiment_id,
 					href: `/devices/${deviceId}/experiments/${experimentId}`,
 				},
 				{
@@ -762,10 +743,10 @@ export default function PhenomenonDetailPage() {
 									"No description provided"}
 							</p>
 							<div className='flex space-x-4 text-sm text-gray-500'>
-								<span>Device: {device.device_name}</span>
+								<span>Device: {device.device_name}</span>{" "}
 								<span>
 									Experiment:{" "}
-									{experiment.name ||
+									{experiment.experiment_name ||
 										experiment.experiment_id}
 								</span>
 								<span>
@@ -783,6 +764,7 @@ export default function PhenomenonDetailPage() {
 						</div>
 
 						<div className='flex space-x-2'>
+							{" "}
 							<label className='flex items-center space-x-2'>
 								<input
 									type='checkbox'
@@ -794,12 +776,6 @@ export default function PhenomenonDetailPage() {
 								/>
 								<span className='text-sm'>Auto-refresh</span>
 							</label>
-							<button
-								onClick={downloadJSON}
-								className='px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700'
-							>
-								📥 Download JSON
-							</button>
 						</div>
 					</div>
 				</div>
@@ -811,38 +787,29 @@ export default function PhenomenonDetailPage() {
 							📊 Measurement Data
 						</h3>{" "}
 						<div className='flex space-x-2'>
-							{[
-								"live",
-								"phenomenon-data",
-								"charts",
-								"chart",
-								"table",
-								"json",
-							].map((mode) => (
-								<button
-									key={mode}
-									onClick={() =>
-										setViewMode(mode as typeof viewMode)
-									}
-									className={`px-3 py-1 rounded text-sm ${
-										viewMode === mode
-											? "bg-blue-600 text-white"
-											: "bg-gray-200 text-gray-700 hover:bg-gray-300"
-									}`}
-								>
-									{mode === "live"
-										? "🔴 Live Data"
-										: mode === "phenomenon-data"
-										? "🔬 Phenomenon Data"
-										: mode === "charts"
-										? "📊 Interactive Charts"
-										: mode === "chart"
-										? "📈 Device Chart"
-										: mode === "table"
-										? "📋 Device Table"
-										: "🔧 JSON"}
-								</button>
-							))}{" "}
+							{["live", "phenomenon-data", "charts", "chart"].map(
+								(mode) => (
+									<button
+										key={mode}
+										onClick={() =>
+											setViewMode(mode as typeof viewMode)
+										}
+										className={`px-3 py-1 rounded text-sm ${
+											viewMode === mode
+												? "bg-blue-600 text-white"
+												: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+										}`}
+									>
+										{mode === "live"
+											? "🔴 Live Data"
+											: mode === "phenomenon-data"
+											? "🔬 Phenomenon Data"
+											: mode === "charts"
+											? "📊 Interactive Charts"
+											: "📈 Device Chart"}
+									</button>
+								)
+							)}{" "}
 						</div>{" "}
 					</div>
 					{/* Data Display */}
@@ -943,21 +910,7 @@ export default function PhenomenonDetailPage() {
 													</div>
 												)}
 										</div>
-									</div>
-
-									{/* Data Payload Preview */}
-									<div className='mt-4'>
-										<h6 className='text-md font-medium text-gray-800 mb-2'>
-											Data Preview:
-										</h6>
-										<pre className='bg-gray-100 p-3 rounded text-xs overflow-x-auto'>
-											{JSON.stringify(
-												latestMeasurement.data_payload,
-												null,
-												2
-											)}
-										</pre>
-									</div>
+									</div>{" "}
 								</div>
 							)}
 
@@ -1921,71 +1874,11 @@ export default function PhenomenonDetailPage() {
 																better
 																visualization of
 																concentrated
-																data
+																data{" "}
 															</div>
 														</div>
 													</div>
 												)}
-												{/* Raw Data Table for Active Chart */}
-												<div className='mt-6'>
-													<h6 className='text-md font-medium text-gray-800 mb-3'>
-														Raw Data for{" "}
-														{activeChartTab} (
-														{
-															chartData[
-																activeChartTab
-															].length
-														}{" "}
-														points)
-													</h6>
-													<div className='max-h-64 overflow-y-auto border border-gray-200 rounded'>
-														<table className='min-w-full text-sm'>
-															<thead className='bg-gray-50 sticky top-0'>
-																<tr>
-																	<th className='px-4 py-2 text-left font-medium text-gray-700'>
-																		Timestamp
-																	</th>
-																	<th className='px-4 py-2 text-left font-medium text-gray-700'>
-																		Value
-																	</th>
-																</tr>
-															</thead>
-															<tbody className='divide-y divide-gray-200'>
-																{chartData[
-																	activeChartTab
-																]
-																	.slice(
-																		0,
-																		100
-																	)
-																	.map(
-																		(
-																			point,
-																			index
-																		) => (
-																			<tr
-																				key={
-																					index
-																				}
-																				className='hover:bg-gray-50'
-																			>
-																				<td className='px-4 py-2 text-gray-600'>
-																					{
-																						point.timestampFormatted
-																					}
-																				</td>
-																				<td className='px-4 py-2 font-medium text-gray-900'>
-																					{
-																						point.value
-																					}
-																				</td>
-																			</tr>
-																		)
-																	)}
-															</tbody>
-														</table>
-													</div>
-												</div>
 											</div>
 										)}
 								</div>
@@ -2044,69 +1937,6 @@ export default function PhenomenonDetailPage() {
 							</div>
 						</div>
 					)}
-					{viewMode === "table" && (
-						<div className='overflow-x-auto'>
-							{measurements.length > 0 ? (
-								<table className='min-w-full divide-y divide-gray-200'>
-									<thead className='bg-gray-50'>
-										<tr>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Timestamp
-											</th>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Temperature (°C)
-											</th>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Humidity (%)
-											</th>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Pressure (hPa)
-											</th>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Battery (%)
-											</th>
-										</tr>
-									</thead>
-									<tbody className='bg-white divide-y divide-gray-200'>
-										{measurements
-											.slice(0, 50)
-											.map((measurement) => (
-												<tr
-													key={measurement.id}
-													className='hover:bg-gray-50'
-												>
-													<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-														{
-															measurement.measured_at
-														}
-													</td>
-													<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-														{
-															measurement.temperature
-														}
-													</td>
-													<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-														{measurement.humidity}
-													</td>
-													<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-														{measurement.pressure}
-													</td>
-													<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-														{
-															measurement.battery_level
-														}
-													</td>
-												</tr>
-											))}
-									</tbody>
-								</table>
-							) : (
-								<div className='text-center py-8 text-gray-500'>
-									No measurement data available
-								</div>
-							)}
-						</div>
-					)}{" "}
 					{viewMode === "phenomenon-data" && (
 						<div className='space-y-4'>
 							<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
@@ -2139,64 +1969,24 @@ export default function PhenomenonDetailPage() {
 										measurement_data table
 									</div>
 								</div>
-							</div>
-
+							</div>{" "}
 							{phenomenonMeasurements.length > 0 ? (
-								<div className='overflow-x-auto'>
-									<table className='min-w-full divide-y divide-gray-200'>
-										<thead className='bg-gray-50'>
-											<tr>
-												<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-													Timestamp
-												</th>
-												<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-													Data ID
-												</th>
-												<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-													Device ID
-												</th>
-												<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-													Data Payload
-												</th>
-											</tr>
-										</thead>
-										<tbody className='bg-white divide-y divide-gray-200'>
-											{phenomenonMeasurements
-												.slice(0, 50)
-												.map((measurement, index) => (
-													<tr
-														key={`${measurement.data_id}-${index}`}
-														className='hover:bg-gray-50'
-													>
-														<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-															{new Date(
-																measurement.timestamp
-															).toLocaleString()}
-														</td>
-														<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium'>
-															{
-																measurement.data_id
-															}
-														</td>
-														<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-															{
-																measurement.device_id
-															}
-														</td>
-														<td className='px-6 py-4 text-sm text-gray-600 max-w-xs'>
-															<div className='truncate'>
-																{typeof measurement.data_payload ===
-																"object"
-																	? JSON.stringify(
-																			measurement.data_payload
-																	  )
-																	: measurement.data_payload}
-															</div>
-														</td>
-													</tr>
-												))}
-										</tbody>
-									</table>
+								<div className='text-center py-8 bg-green-50 rounded-lg'>
+									<div className='text-green-600 text-4xl mb-4'>
+										📊
+									</div>
+									<h4 className='text-lg font-medium text-green-800 mb-2'>
+										Phenomenon Data Available
+									</h4>
+									<p className='text-green-700 mb-4'>
+										{phenomenonMeasurements.length}{" "}
+										measurements recorded for this
+										phenomenon
+									</p>
+									<p className='text-sm text-green-600'>
+										View this data in the "Interactive
+										Charts" tab above for detailed analysis
+									</p>
 								</div>
 							) : (
 								<div className='text-center py-12 bg-gray-50 rounded-lg'>
@@ -2229,7 +2019,6 @@ export default function PhenomenonDetailPage() {
 									</div>
 								</div>
 							)}
-
 							{/* Phenomenon Data Summary */}
 							{phenomenonMeasurements.length > 0 && (
 								<div className='bg-gray-50 border border-gray-200 rounded-lg p-4'>
@@ -2309,67 +2098,6 @@ export default function PhenomenonDetailPage() {
 									</div>
 								</div>
 							)}
-
-							{/* Detailed Data Payload View */}
-							{phenomenonMeasurements.length > 0 && (
-								<div className='bg-white border border-gray-200 rounded-lg p-4'>
-									<h4 className='text-lg font-medium text-gray-800 mb-3'>
-										🔍 Detailed Data Payloads (Latest 5
-										Records)
-									</h4>
-									<div className='space-y-3'>
-										{phenomenonMeasurements
-											.slice(-5)
-											.reverse()
-											.map((measurement, index) => (
-												<div
-													key={`detail-${measurement.data_id}-${index}`}
-													className='bg-gray-50 border border-gray-200 rounded p-3'
-												>
-													<div className='flex justify-between items-start mb-2'>
-														<span className='text-sm font-medium text-gray-700'>
-															Data ID:{" "}
-															{
-																measurement.data_id
-															}
-														</span>
-														<span className='text-xs text-gray-500'>
-															{new Date(
-																measurement.timestamp
-															).toLocaleString()}
-														</span>
-													</div>
-													<pre className='text-xs bg-gray-900 text-green-400 p-2 rounded overflow-x-auto'>
-														{JSON.stringify(
-															measurement.data_payload,
-															null,
-															2
-														)}
-													</pre>
-												</div>
-											))}
-									</div>
-								</div>
-							)}
-						</div>
-					)}
-					{viewMode === "json" && (
-						<div className='bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96'>
-							<pre className='text-sm'>
-								{JSON.stringify(
-									{
-										phenomenon: phenomenon,
-										measurements: measurements.slice(0, 10), // Show first 10 for preview
-										phenomenonMeasurements:
-											phenomenonMeasurements.slice(0, 10),
-										total_measurements: measurements.length,
-										total_phenomenon_measurements:
-											phenomenonMeasurements.length,
-									},
-									null,
-									2
-								)}
-							</pre>
 						</div>
 					)}
 				</div>

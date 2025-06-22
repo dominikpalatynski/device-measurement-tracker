@@ -106,7 +106,9 @@ export interface MeasurementData {
   device_id: string;
   phenomenon_id: string | null;
   data_payload: any; // JSON data
+  upload_type?: string; // 'batch' or 'stream'
   timestamp: string;
+  [key: string]: any; // Allow string indexing for dynamic field access
 }
 
 export interface MeasurementDataResponse {
@@ -149,6 +151,7 @@ export interface Experiment {
   device_id: string;
   mode: "Online" | "Offline";
   status: "Created" | "Running" | "Paused" | "Completed" | "Failed";
+  type: "batch" | "stream";
   start_date: string;
   end_date?: string;
   created_at: string;
@@ -272,6 +275,13 @@ export async function getMeasurementStats(deviceUuid: string): Promise<Measureme
  */
 export async function getPhenomenonMeasurements(phenomenonId: string): Promise<MeasurementDataResponse> {
   return fetchApi<MeasurementDataResponse>(`measurement-data/phenomenon?phenomenonId=${phenomenonId}`);
+}
+
+/**
+ * Get unassigned measurement data for a device (where phenomenon_id is null)
+ */
+export async function getUnassignedMeasurements(deviceUuid: string, limit: number = 100): Promise<MeasurementDataResponse> {
+  return fetchApi<MeasurementDataResponse>(`device-measurement/unassigned?deviceUuid=${deviceUuid}&limit=${limit}`);
 }
 
 /**

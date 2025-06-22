@@ -314,14 +314,13 @@ class DeviceMeasurementController extends Controller
                 'success' => false,
                 'error' => 'Experiment is not running'
             ];
-        }
-
-        try {
+        }        try {
             $measurement = new \app\models\MeasurementData();
             $measurement->device_id = $deviceId;
             $measurement->phenomenon_id = $phenomenonId;
             $measurement->timestamp = $timestamp;
             $measurement->data_payload = $payload;
+            $measurement->upload_type = 'batch'; // Set upload type for batch data
 
             if ($measurement->save()) {
                 return [
@@ -341,6 +340,61 @@ class DeviceMeasurementController extends Controller
             return [
                 'success' => false,
                 'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Pobiera nieprzypiaane pomiary dla urządzenia (phenomenon_id = null)
+     * 
+     * @param string $deviceUuid UUID urządzenia
+     * @param int $limit Limit pomiarów
+     * @return array
+     */
+    public function actionUnassigned($deviceUuid, $limit = 100)
+    {
+        Yii::info("Received request for unassigned measurements for device: {$deviceUuid}, limit: {$limit}", 'api.device-measurement');
+        
+        try {
+            // Force proper JSON response type
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            
+            Yii::beginProfile('unassigned-measurements', 'api.performance');
+            
+            // Fetch unassigned data from measurement_data table where phenomenon_id is null
+            $measurements = \app\models\MeasurementData::find()
+                ->where(['device_id' => $deviceUuid, 'phenomenon_id' => null])
+                ->orderBy(['timestamp' => SORT_DESC])
+                ->limit((int)$limit)
+                ->all();
+            
+            // Format the data for response
+            $data = array_map(function($measurement) {
+                return [
+                    'data_id' => (int)$measurement->data_id,
+                    'device_id' => $measurement->device_id,
+                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'data_payload' => $measurement->data_payload,
+                    'upload_type' => $measurement->upload_type ?? 'batch',
+                    'timestamp' => $measurement->timestamp,
+                ];
+            }, $measurements);
+            
+            Yii::endProfile('unassigned-measurements', 'api.performance');
+            
+            Yii::info("Successfully retrieved " . count($data) . " unassigned measurements for device: {$deviceUuid}", 'api.device-measurement');
+            
+            return [
+                'success' => true,
+                'data' => $data,
+                'count' => count($data)
+            ];
+        } catch (\Throwable $e) {
+            Yii::error("Error retrieving unassigned measurements for device {$deviceUuid}: " . $e->getMessage() . "\n" . $e->getTraceAsString(), 'api.device-measurement');
+            Yii::$app->response->statusCode = 500;
+            return [
+                'success' => false,
+                'error' => "Error retrieving unassigned measurements for device {$deviceUuid}"
             ];
         }
     }

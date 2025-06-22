@@ -7,11 +7,11 @@ use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "measurement_data".
- *
- * @property int $data_id
+ * * @property int $data_id
  * @property string $device_id
  * @property string|null $phenomenon_id
  * @property array|null $data_payload
+ * @property string $upload_type
  * @property string $timestamp
  *
  * @property Devices $device
@@ -28,28 +28,28 @@ class MeasurementData extends ActiveRecord
 
     /**
      * {@inheritdoc}
-     */
-    public function rules()
+     */    public function rules()
     {
         return [
             [['device_id'], 'required'],
             [['data_payload'], 'safe'],
             [['timestamp'], 'safe'],
             [['device_id', 'phenomenon_id'], 'string', 'max' => 255],
+            [['upload_type'], 'in', 'range' => ['batch', 'stream']],
             [['device_id'], 'exist', 'skipOnError' => true, 'targetClass' => Devices::class, 'targetAttribute' => ['device_id' => 'device_id']],
         ];
     }
 
     /**
      * {@inheritdoc}
-     */
-    public function attributeLabels()
+     */    public function attributeLabels()
     {
         return [
             'data_id' => 'Data ID',
             'device_id' => 'Device ID',
             'phenomenon_id' => 'Phenomenon ID',
             'data_payload' => 'Data Payload',
+            'upload_type' => 'Upload Type',
             'timestamp' => 'Timestamp',
         ];
     }

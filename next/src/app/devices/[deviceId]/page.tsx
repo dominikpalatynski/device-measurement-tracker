@@ -12,11 +12,29 @@ import {
 	getAllMeasurements,
 	getLatestMeasurement,
 	getMeasurementStats,
+	getUnassignedMeasurements,
 	Measurement,
 	MeasurementStats,
+	MeasurementData,
 	measurementChannelApi,
 	MeasurementChannel,
 } from "@/services/api";
+import {
+	LineChart,
+	Line,
+	XAxis,
+	YAxis,
+	CartesianGrid,
+	Tooltip,
+	Legend,
+	ResponsiveContainer,
+	AreaChart,
+	Area,
+	BarChart,
+	Bar,
+	ScatterChart,
+	Scatter,
+} from "recharts";
 
 export default function DeviceDetailPage() {
 	const params = useParams();
@@ -37,6 +55,15 @@ export default function DeviceDetailPage() {
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "live-experiments" | "data-explorer" | "channels"
 	>("overview");
+
+	// Unassigned data state
+	const [unassignedData, setUnassignedData] = useState<MeasurementData[]>([]);
+	const [unassignedDataLoading, setUnassignedDataLoading] = useState(false);
+	const [chartType, setChartType] = useState<
+		"line" | "area" | "bar" | "scatter"
+	>("line");
+	const [activeChartTab, setActiveChartTab] = useState<string>("");
+
 	// Real channels state
 	const [channels, setChannels] = useState<MeasurementChannel[]>([]);
 	const [channelsLoading, setChannelsLoading] = useState(false);
@@ -68,6 +95,26 @@ export default function DeviceDetailPage() {
 		setChannels(data);
 		setChannelsLoading(false);
 	};
+
+	// Fetch unassigned measurement data
+	const fetchUnassignedData = async () => {
+		if (!device) return;
+
+		setUnassignedDataLoading(true);
+		try {
+			const response = await getUnassignedMeasurements(
+				device.device_id,
+				100
+			);
+			if (response.success) {
+				setUnassignedData(response.data);
+			}
+		} catch (error) {
+			console.error("Error fetching unassigned data:", error);
+		} finally {
+			setUnassignedDataLoading(false);
+		}
+	};
 	useEffect(() => {
 		fetchChannels();
 	}, []);
@@ -77,6 +124,91 @@ export default function DeviceDetailPage() {
 			loadDeviceData();
 		}
 	}, [deviceId]);
+
+	// Load unassigned data when device changes or when switching to data-explorer tab
+	useEffect(() => {
+		if (device && activeTab === "data-explorer") {
+			fetchUnassignedData();
+		}
+	}, [device, activeTab]);
+
+	// Extract and process chart data from unassigned measurements
+	const getUnassignedChartData = () => {
+		if (!unassignedData.length) return {};
+
+		const chartData: Record<
+			string,
+			Array<{
+				timestamp: string;
+				value: number;
+				timestampFormatted: string;
+				index: number;
+			}>
+		> = {};
+		const availableKeys = new Set<string>();
+
+		// First pass: collect all possible keys from all payloads
+		unassignedData.forEach((measurement) => {
+			if (measurement.data_payload) {
+				Object.keys(measurement.data_payload).forEach((key) => {
+					const value = measurement.data_payload[key];
+					// Check if the value is an array or a single numeric value
+					if (Array.isArray(value) || typeof value === "number") {
+						availableKeys.add(key);
+					}
+				});
+			}
+		});
+
+		// Second pass: extract data for each key
+		availableKeys.forEach((key) => {
+			chartData[key] = [];
+
+			unassignedData.forEach((measurement, measurementIndex) => {
+				if (
+					measurement.data_payload &&
+					measurement.data_payload[key] !== undefined
+				) {
+					const value = measurement.data_payload[key];
+					const timestamp = measurement.timestamp;
+					const timestampFormatted = new Date(
+						timestamp
+					).toLocaleString();
+
+					if (Array.isArray(value)) {
+						// If it's an array, create multiple data points with indexed timestamps
+						value.forEach((val, arrayIndex) => {
+							if (typeof val === "number") {
+								chartData[key].push({
+									timestamp: `${timestamp}_${arrayIndex}`,
+									value: val,
+									timestampFormatted: `${timestampFormatted} [${arrayIndex}]`,
+									index: measurementIndex * 1000 + arrayIndex,
+								});
+							}
+						});
+					} else if (typeof value === "number") {
+						// If it's a single number, create one data point
+						chartData[key].push({
+							timestamp,
+							value,
+							timestampFormatted,
+							index: measurementIndex,
+						});
+					}
+				}
+			});
+		});
+
+		return chartData;
+	};
+
+	// Get available chart keys for tabs
+	const getUnassignedChartKeys = () => {
+		const chartData = getUnassignedChartData();
+		return Object.keys(chartData);
+	};
+
 	const loadDeviceData = async () => {
 		try {
 			setLoading(true);
@@ -112,12 +244,24 @@ export default function DeviceDetailPage() {
 			if (latestRes.status === "fulfilled" && latestRes.value.success) {
 				setLatestMeasurement(latestRes.value.data);
 			}
-
 			if (
 				measurementsRes.status === "fulfilled" &&
 				measurementsRes.value.success
 			) {
-				setMeasurements(measurementsRes.value.data);
+				// Convert MeasurementData to Measurement format for backward compatibility
+				const convertedMeasurements: Measurement[] =
+					measurementsRes.value.data.map(
+						(data: MeasurementData, index: number) => ({
+							id: data.data_id,
+							temperature: 0, // Default values since MeasurementData doesn't have these
+							humidity: 0,
+							pressure: 0,
+							battery_level: 0,
+							measured_at: data.timestamp,
+							created_at: data.timestamp,
+						})
+					);
+				setMeasurements(convertedMeasurements);
 			}
 
 			if (statsRes.status === "fulfilled" && statsRes.value.success) {
@@ -390,7 +534,7 @@ export default function DeviceDetailPage() {
 								}`}
 							>
 								{tab === "live-experiments"
-									? "🧪 Live Experiments"
+									? "🧪 Experiments"
 									: tab === "data-explorer"
 									? "📊 Unassigned Data Explorer"
 									: tab === "channels"
@@ -505,8 +649,8 @@ export default function DeviceDetailPage() {
 							<div className='bg-white p-6 rounded-lg border border-gray-200'>
 								<h3 className='text-lg font-medium text-gray-900 mb-4'>
 									📊 Experiment Summary
-								</h3>
-								<div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+								</h3>{" "}
+								<div className='grid grid-cols-1 md:grid-cols-6 gap-4'>
 									<div className='text-center'>
 										<div className='text-2xl mb-1'>🧪</div>
 										<div className='text-2xl font-bold text-blue-600'>
@@ -523,6 +667,34 @@ export default function DeviceDetailPage() {
 										</div>
 										<div className='text-sm text-gray-500'>
 											Active
+										</div>
+									</div>
+									<div className='text-center'>
+										<div className='text-2xl mb-1'>🔄</div>
+										<div className='text-2xl font-bold text-purple-600'>
+											{
+												allExperiments.filter(
+													(exp) =>
+														exp.type === "stream"
+												).length
+											}
+										</div>
+										<div className='text-sm text-gray-500'>
+											Stream
+										</div>
+									</div>
+									<div className='text-center'>
+										<div className='text-2xl mb-1'>📦</div>
+										<div className='text-2xl font-bold text-orange-600'>
+											{
+												allExperiments.filter(
+													(exp) =>
+														exp.type === "batch"
+												).length
+											}
+										</div>
+										<div className='text-sm text-gray-500'>
+											Batch
 										</div>
 									</div>
 									<div className='text-center'>
@@ -557,7 +729,6 @@ export default function DeviceDetailPage() {
 										</div>
 									</div>
 								</div>
-
 								{/* Quick Actions */}
 								{/* <div className='mt-6 flex flex-wrap gap-3'>
 									<Link
@@ -630,10 +801,29 @@ export default function DeviceDetailPage() {
 																}
 																className='text-sm text-green-700 mt-1'
 															>
+																{" "}
 																<div>
 																	Name:{" "}
 																	{exp.experiment_name ||
 																		exp.experiment_id}
+																</div>
+																<div className='flex items-center space-x-2'>
+																	<span>
+																		Type:
+																	</span>
+																	<span
+																		className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+																			exp.type ===
+																			"stream"
+																				? "bg-purple-100 text-purple-800"
+																				: "bg-orange-100 text-orange-800"
+																		}`}
+																	>
+																		{exp.type ===
+																		"stream"
+																			? "🔄 Stream"
+																			: "📦 Batch"}
+																	</span>
 																</div>
 																<div>
 																	Started:{" "}
@@ -684,93 +874,9 @@ export default function DeviceDetailPage() {
 						<div className='bg-white p-6 rounded-lg border border-gray-200'>
 							<h3 className='text-lg font-medium text-gray-900 mb-4'>
 								📋 All Experiments
-							</h3>
+							</h3>{" "}
 							{allExperiments.length > 0 ? (
 								<div className='space-y-6'>
-									{/* Active Experiments */}
-									{activeExperiments.length > 0 && (
-										<div>
-											<h4 className='text-md font-medium text-green-700 mb-3 flex items-center'>
-												<span className='w-3 h-3 bg-green-500 rounded-full mr-2'></span>
-												Active Experiments (
-												{activeExperiments.length})
-											</h4>
-											<div className='overflow-x-auto'>
-												<table className='min-w-full divide-y divide-gray-200'>
-													<thead className='bg-gray-50'>
-														<tr>
-															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Experiment
-															</th>
-															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Status
-															</th>
-															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Started
-															</th>
-															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Actions
-															</th>
-														</tr>
-													</thead>
-													<tbody className='bg-white divide-y divide-gray-200'>
-														{activeExperiments.map(
-															(experiment) => (
-																<tr
-																	key={
-																		experiment.experiment_id
-																	}
-																>
-																	<td className='px-6 py-4 whitespace-nowrap'>
-																		<div className='text-sm font-medium text-gray-900'>
-																			{experiment.experiment_name ||
-																				experiment.experiment_id}
-																		</div>
-																		<div className='text-sm text-gray-500'>
-																			{experiment.description ||
-																				"No description"}
-																		</div>
-																	</td>
-																	<td className='px-6 py-4 whitespace-nowrap'>
-																		<span
-																			className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-																				experiment.status ===
-																				"Running"
-																					? "bg-green-100 text-green-800"
-																					: experiment.status ===
-																					  "Created"
-																					? "bg-yellow-100 text-yellow-800"
-																					: "bg-gray-100 text-gray-800"
-																			}`}
-																		>
-																			{
-																				experiment.status
-																			}
-																		</span>
-																	</td>
-																	<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-																		{new Date(
-																			experiment.start_date
-																		).toLocaleDateString()}
-																	</td>
-																	<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-																		<Link
-																			href={`/devices/${deviceId}/experiments/${experiment.experiment_id}`}
-																			className='text-blue-600 hover:text-blue-900'
-																		>
-																			View
-																			Details
-																		</Link>
-																	</td>
-																</tr>
-															)
-														)}
-													</tbody>
-												</table>
-											</div>
-										</div>
-									)}
-
 									{/* Previous Experiments */}
 									{allExperiments.filter(
 										(exp) =>
@@ -798,10 +904,14 @@ export default function DeviceDetailPage() {
 											</h4>
 											<div className='overflow-x-auto'>
 												<table className='min-w-full divide-y divide-gray-200'>
+													{" "}
 													<thead className='bg-gray-50'>
 														<tr>
 															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
 																Experiment
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Type
 															</th>
 															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
 																Status
@@ -839,6 +949,7 @@ export default function DeviceDetailPage() {
 																		}
 																		className='opacity-75'
 																	>
+																		{" "}
 																		<td className='px-6 py-4 whitespace-nowrap'>
 																			<div className='text-sm font-medium text-gray-900'>
 																				{experiment.experiment_name ||
@@ -848,6 +959,21 @@ export default function DeviceDetailPage() {
 																				{experiment.description ||
 																					"No description"}
 																			</div>
+																		</td>
+																		<td className='px-6 py-4 whitespace-nowrap'>
+																			<span
+																				className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+																					experiment.type ===
+																					"stream"
+																						? "bg-purple-100 text-purple-800"
+																						: "bg-orange-100 text-orange-800"
+																				}`}
+																			>
+																				{experiment.type ===
+																				"stream"
+																					? "🔄 Stream"
+																					: "📦 Batch"}
+																			</span>
 																		</td>
 																		<td className='px-6 py-4 whitespace-nowrap'>
 																			<span
@@ -910,144 +1036,340 @@ export default function DeviceDetailPage() {
 							)}{" "}
 						</div>
 					</div>
-				)}
+				)}{" "}
 				{activeTab === "data-explorer" && (
-					<div className='bg-white p-6 rounded-lg border border-gray-200'>
-						<h3 className='text-lg font-medium text-gray-900 mb-4'>
-							Measurement Statistics
-						</h3>
-						{stats ? (
-							<div className='space-y-6'>
-								<div className='text-center'>
-									<div className='text-3xl font-bold text-blue-600'>
-										{stats.total_measurements}
-									</div>
-									<div className='text-sm text-gray-500'>
-										Total Measurements
-									</div>
+					<div className='space-y-6'>
+						{/* Unassigned Data Header */}
+						<div className='bg-white p-6 rounded-lg border border-gray-200'>
+							<div className='flex justify-between items-center mb-4'>
+								<div>
+									<h3 className='text-lg font-medium text-gray-900'>
+										📊 Unassigned Data Explorer
+									</h3>
+									<p className='text-sm text-gray-500'>
+										Interactive visualization of measurement
+										data not assigned to any experiment
+									</p>
 								</div>
-
-								<div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-									<div className='text-center'>
-										<h4 className='text-lg font-medium text-gray-900 mb-3'>
-											🌡️ Temperature
-										</h4>
-										<div className='space-y-2'>
-											<div>
-												<div className='text-xl font-semibold text-gray-900'>
-													{stats.avg_temperature.toFixed(
-														1
-													)}
-													°C
-												</div>
-												<div className='text-sm text-gray-500'>
-													Average
-												</div>
-											</div>
-											<div className='flex justify-between'>
-												<div>
-													<div className='text-sm font-medium'>
-														{stats.min_temperature}
-														°C
-													</div>
-													<div className='text-xs text-gray-500'>
-														Min
-													</div>
-												</div>
-												<div>
-													<div className='text-sm font-medium'>
-														{stats.max_temperature}
-														°C
-													</div>
-													<div className='text-xs text-gray-500'>
-														Max
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-
-									<div className='text-center'>
-										<h4 className='text-lg font-medium text-gray-900 mb-3'>
-											💧 Humidity
-										</h4>
-										<div className='space-y-2'>
-											<div>
-												<div className='text-xl font-semibold text-gray-900'>
-													{stats.avg_humidity.toFixed(
-														1
-													)}
-													%
-												</div>
-												<div className='text-sm text-gray-500'>
-													Average
-												</div>
-											</div>
-											<div className='flex justify-between'>
-												<div>
-													<div className='text-sm font-medium'>
-														{stats.min_humidity}%
-													</div>
-													<div className='text-xs text-gray-500'>
-														Min
-													</div>
-												</div>
-												<div>
-													<div className='text-sm font-medium'>
-														{stats.max_humidity}%
-													</div>
-													<div className='text-xs text-gray-500'>
-														Max
-													</div>
-												</div>
-											</div>
-										</div>
-									</div>
-
-									<div className='text-center'>
-										<h4 className='text-lg font-medium text-gray-900 mb-3'>
-											🔄 Pressure
-										</h4>
-										<div className='space-y-2'>
-											<div>
-												<div className='text-xl font-semibold text-gray-900'>
-													{stats.avg_pressure.toFixed(
-														1
-													)}{" "}
-													hPa
-												</div>
-												<div className='text-sm text-gray-500'>
-													Average
-												</div>
-											</div>
-											<div className='flex justify-between'>
-												<div>
-													<div className='text-sm font-medium'>
-														{stats.min_pressure} hPa
-													</div>
-													<div className='text-xs text-gray-500'>
-														Min
-													</div>
-												</div>
-												<div>
-													<div className='text-sm font-medium'>
-														{stats.max_pressure} hPa
-													</div>
-													<div className='text-xs text-gray-500'>
-														Max
-													</div>
-												</div>
-											</div>
-										</div>
+								<div className='flex items-center space-x-4'>
+									<button
+										onClick={fetchUnassignedData}
+										disabled={unassignedDataLoading}
+										className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50'
+									>
+										{unassignedDataLoading
+											? "Loading..."
+											: "Refresh Data"}
+									</button>
+									<div className='text-sm text-gray-600'>
+										{unassignedData.length} data points
 									</div>
 								</div>
 							</div>
+						</div>
+
+						{/* Charts Section */}
+						{unassignedData.length > 0 ? (
+							<div className='bg-white p-6 rounded-lg border border-gray-200'>
+								<div className='flex justify-between items-center mb-6'>
+									<h4 className='text-lg font-medium text-gray-900'>
+										Interactive Charts
+									</h4>
+									<div className='flex items-center space-x-4'>
+										<select
+											value={chartType}
+											onChange={(e) =>
+												setChartType(
+													e.target
+														.value as typeof chartType
+												)
+											}
+											className='px-3 py-2 border border-gray-300 rounded-md text-sm'
+										>
+											<option value='line'>
+												Line Chart
+											</option>
+											<option value='area'>
+												Area Chart
+											</option>
+											<option value='bar'>
+												Bar Chart
+											</option>
+											<option value='scatter'>
+												Scatter Plot
+											</option>
+										</select>
+									</div>
+								</div>
+
+								{/* Chart Tabs */}
+								{(() => {
+									const chartKeys = getUnassignedChartKeys();
+									const currentKey =
+										activeChartTab || chartKeys[0];
+									const chartData = getUnassignedChartData();
+
+									if (chartKeys.length === 0) {
+										return (
+											<div className='text-center py-8'>
+												<p className='text-gray-500'>
+													No numeric data available
+													for charting
+												</p>
+											</div>
+										);
+									}
+
+									return (
+										<div>
+											{/* Tab Navigation */}
+											<div className='border-b border-gray-200 mb-6'>
+												<nav className='-mb-px flex space-x-8'>
+													{chartKeys.map((key) => (
+														<button
+															key={key}
+															onClick={() =>
+																setActiveChartTab(
+																	key
+																)
+															}
+															className={`py-2 px-1 border-b-2 font-medium text-sm ${
+																(activeChartTab ||
+																	chartKeys[0]) ===
+																key
+																	? "border-blue-500 text-blue-600"
+																	: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+															}`}
+														>
+															{key}
+														</button>
+													))}
+												</nav>
+											</div>{" "}
+											{/* Chart Display */}
+											{chartData[currentKey] && (
+												<div className='h-96'>
+													<ResponsiveContainer
+														width='100%'
+														height='100%'
+													>
+														{(() => {
+															switch (chartType) {
+																case "area":
+																	return (
+																		<AreaChart
+																			data={
+																				chartData[
+																					currentKey
+																				]
+																			}
+																		>
+																			<CartesianGrid strokeDasharray='3 3' />
+																			<XAxis
+																				dataKey='timestampFormatted'
+																				angle={
+																					-45
+																				}
+																				textAnchor='end'
+																				height={
+																					60
+																				}
+																			/>
+																			<YAxis />
+																			<Tooltip />
+																			<Legend />
+																			<Area
+																				type='monotone'
+																				dataKey='value'
+																				stroke='#2563eb'
+																				fill='#3b82f6'
+																				fillOpacity={
+																					0.3
+																				}
+																			/>
+																		</AreaChart>
+																	);
+																case "bar":
+																	return (
+																		<BarChart
+																			data={
+																				chartData[
+																					currentKey
+																				]
+																			}
+																		>
+																			<CartesianGrid strokeDasharray='3 3' />
+																			<XAxis
+																				dataKey='timestampFormatted'
+																				angle={
+																					-45
+																				}
+																				textAnchor='end'
+																				height={
+																					60
+																				}
+																			/>
+																			<YAxis />
+																			<Tooltip />
+																			<Legend />
+																			<Bar
+																				dataKey='value'
+																				fill='#3b82f6'
+																			/>
+																		</BarChart>
+																	);
+																case "scatter":
+																	return (
+																		<ScatterChart
+																			data={
+																				chartData[
+																					currentKey
+																				]
+																			}
+																		>
+																			<CartesianGrid strokeDasharray='3 3' />
+																			<XAxis
+																				dataKey='index'
+																				type='number'
+																				domain={[
+																					"auto",
+																					"auto",
+																				]}
+																			/>
+																			<YAxis dataKey='value' />
+																			<Tooltip />
+																			<Legend />
+																			<Scatter
+																				dataKey='value'
+																				fill='#3b82f6'
+																			/>
+																		</ScatterChart>
+																	);
+																default:
+																case "line":
+																	return (
+																		<LineChart
+																			data={
+																				chartData[
+																					currentKey
+																				]
+																			}
+																		>
+																			<CartesianGrid strokeDasharray='3 3' />
+																			<XAxis
+																				dataKey='timestampFormatted'
+																				angle={
+																					-45
+																				}
+																				textAnchor='end'
+																				height={
+																					60
+																				}
+																			/>
+																			<YAxis />
+																			<Tooltip />
+																			<Legend />
+																			<Line
+																				type='monotone'
+																				dataKey='value'
+																				stroke='#2563eb'
+																				strokeWidth={
+																					2
+																				}
+																				dot={{
+																					r: 3,
+																				}}
+																			/>
+																		</LineChart>
+																	);
+															}
+														})()}
+													</ResponsiveContainer>
+												</div>
+											)}
+											{/* Data Summary */}
+											<div className='mt-6 grid grid-cols-1 md:grid-cols-3 gap-4'>
+												{chartData[currentKey] && (
+													<>
+														<div className='bg-gray-50 p-4 rounded-lg'>
+															<div className='text-sm font-medium text-gray-500'>
+																Data Points
+															</div>
+															<div className='text-2xl font-bold text-gray-900'>
+																{
+																	chartData[
+																		currentKey
+																	].length
+																}
+															</div>
+														</div>
+														<div className='bg-gray-50 p-4 rounded-lg'>
+															<div className='text-sm font-medium text-gray-500'>
+																Min Value
+															</div>
+															<div className='text-2xl font-bold text-gray-900'>
+																{Math.min(
+																	...chartData[
+																		currentKey
+																	].map(
+																		(d) =>
+																			d.value
+																	)
+																).toFixed(2)}
+															</div>
+														</div>
+														<div className='bg-gray-50 p-4 rounded-lg'>
+															<div className='text-sm font-medium text-gray-500'>
+																Max Value
+															</div>
+															<div className='text-2xl font-bold text-gray-900'>
+																{Math.max(
+																	...chartData[
+																		currentKey
+																	].map(
+																		(d) =>
+																			d.value
+																	)
+																).toFixed(2)}
+															</div>
+														</div>
+													</>
+												)}
+											</div>
+										</div>
+									);
+								})()}
+							</div>
 						) : (
-							<div className='text-center py-8'>
-								<p className='text-gray-500'>
-									No measurement statistics available for this
-									device.
-								</p>
+							<div className='bg-white p-6 rounded-lg border border-gray-200'>
+								<div className='text-center py-8'>
+									{unassignedDataLoading ? (
+										<div>
+											<div className='text-4xl mb-2'>
+												⏳
+											</div>
+											<p className='text-gray-500'>
+												Loading unassigned data...
+											</p>
+										</div>
+									) : (
+										<div>
+											<div className='text-4xl mb-2'>
+												📊
+											</div>
+											<p className='text-gray-500'>
+												No unassigned measurement data
+												found for this device.
+											</p>
+											<p className='text-sm text-gray-400 mt-2'>
+												Data appears here when
+												measurements are uploaded
+												without being assigned to an
+												experiment.
+											</p>
+										</div>
+									)}
+								</div>
 							</div>
 						)}
 					</div>
@@ -1728,110 +2050,9 @@ export default function DeviceDetailPage() {
 							</div>
 						)}
 					</div>
-				)}
+				)}{" "}
 				{/* Remove old experiments tab - replaced with live-experiments and data-explorer */}
 				<div className='space-y-6'>
-					{/* Active Experiments */}
-					{activeExperiments.length > 0 && (
-						<div className='bg-white rounded-lg border border-gray-200 overflow-hidden'>
-							<div className='px-6 py-4 border-b border-gray-200'>
-								<h3 className='text-lg font-medium text-gray-900'>
-									Active Experiments
-								</h3>
-								<p className='text-sm text-gray-500'>
-									Currently running experiments for this
-									device
-								</p>
-							</div>
-							<div className='overflow-x-auto'>
-								<table className='min-w-full divide-y divide-gray-200'>
-									<thead className='bg-gray-50'>
-										<tr>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Name
-											</th>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Mode
-											</th>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Status
-											</th>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Start Date
-											</th>
-											<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-												Actions
-											</th>
-										</tr>
-									</thead>
-									<tbody className='bg-white divide-y divide-gray-200'>
-										{activeExperiments.map((experiment) => (
-											<tr
-												key={experiment.experiment_id}
-												className='hover:bg-gray-50'
-											>
-												<td className='px-6 py-4 whitespace-nowrap'>
-													<div className='text-sm font-medium text-gray-900'>
-														{
-															experiment.experiment_name
-														}
-													</div>
-													{experiment.description && (
-														<div className='text-sm text-gray-500'>
-															{
-																experiment.description
-															}
-														</div>
-													)}
-												</td>
-												<td className='px-6 py-4 whitespace-nowrap'>
-													<span
-														className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-															experiment.mode ===
-															"Online"
-																? "bg-blue-100 text-blue-800"
-																: "bg-purple-100 text-purple-800"
-														}`}
-													>
-														{experiment.mode}
-													</span>
-												</td>
-												<td className='px-6 py-4 whitespace-nowrap'>
-													<span
-														className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-															experiment.status ===
-															"Running"
-																? "bg-green-100 text-green-800"
-																: experiment.status ===
-																  "Created"
-																? "bg-yellow-100 text-yellow-800"
-																: "bg-gray-100 text-gray-800"
-														}`}
-													>
-														{experiment.status}
-													</span>
-												</td>
-												<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-													{new Date(
-														experiment.start_date
-													).toLocaleDateString()}
-												</td>
-												<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-													{" "}
-													<Link
-														href={`/devices/${deviceId}/experiments/${experiment.experiment_id}`}
-														className='text-blue-600 hover:text-blue-900'
-													>
-														View Details
-													</Link>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-						</div>
-					)}{" "}
 					{/* Experiment Creation Actions */}
 					<div className='bg-white p-6 rounded-lg border border-gray-200'>
 						<h3 className='text-lg font-medium text-gray-900 mb-4'>
