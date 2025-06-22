@@ -3,23 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
-import {
-	deviceApi,
-	experimentApi,
-	testApiConnection,
-	Device,
-	Experiment,
-	getAllMeasurements,
-	getLatestMeasurement,
-	Measurement,
-} from "@/services/api";
+import { deviceApi, testApiConnection, Device } from "@/services/api";
 
 export default function Dashboard() {
 	const [devices, setDevices] = useState<Device[]>([]);
-	const [experiments, setExperiments] = useState<Experiment[]>([]);
-	const [recentMeasurements, setRecentMeasurements] = useState<Measurement[]>(
-		[]
-	);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [apiStatus, setApiStatus] = useState<{
@@ -31,7 +18,6 @@ export default function Dashboard() {
 	useEffect(() => {
 		loadDashboardData();
 	}, []);
-
 	const loadDashboardData = async () => {
 		try {
 			setLoading(true);
@@ -43,32 +29,9 @@ export default function Dashboard() {
 			);
 			setApiStatus(apiResult);
 
-			// Load devices and experiments in parallel
-			const [devicesData, experimentsData] = await Promise.all([
-				deviceApi.getDevices(),
-				experimentApi.getExperiments(),
-			]);
-
+			// Load devices
+			const devicesData = await deviceApi.getDevices();
 			setDevices(devicesData || []);
-			setExperiments(experimentsData || []);
-
-			// Load recent measurements from the first active device
-			const activeDevice = devicesData?.find(
-				(d) => d.status === "Active"
-			);
-			if (activeDevice) {
-				try {
-					const measurementsResponse = await getAllMeasurements(
-						activeDevice.device_uuid,
-						5
-					);
-					if (measurementsResponse.success) {
-						setRecentMeasurements(measurementsResponse.data);
-					}
-				} catch (err) {
-					console.warn("Failed to load recent measurements:", err);
-				}
-			}
 		} catch (err) {
 			setError(
 				err instanceof Error
@@ -85,7 +48,6 @@ export default function Dashboard() {
 			setLoading(false);
 		}
 	};
-
 	const getDeviceStatusCounts = () => {
 		return {
 			total: devices.length,
@@ -93,16 +55,6 @@ export default function Dashboard() {
 			pending: devices.filter((d) => d.status === "Pending-Registration")
 				.length,
 			inactive: devices.filter((d) => d.status === "Not-Active").length,
-		};
-	};
-
-	const getExperimentStatusCounts = () => {
-		return {
-			total: experiments.length,
-			active: experiments.filter((e) => e.status === "Active").length,
-			completed: experiments.filter((e) => e.status === "Completed")
-				.length,
-			draft: experiments.filter((e) => e.status === "Draft").length,
 		};
 	};
 
@@ -181,97 +133,19 @@ export default function Dashboard() {
 					</div>
 				</div>
 			)}
-
-			{/* Quick Stats */}
-			<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
-				<div className='bg-white rounded-lg border border-gray-200 p-6'>
-					<div className='flex items-center'>
-						<div className='p-2 bg-blue-100 rounded-lg'>
-							<span className='text-2xl'>📱</span>
-						</div>
-						<div className='ml-4'>
-							<h3 className='text-sm font-medium text-gray-500'>
-								Total Devices
-							</h3>
-							<p className='text-2xl font-bold text-blue-600'>
-								{getDeviceStatusCounts().total}
-							</p>
-							<p className='text-xs text-gray-500'>
-								{getDeviceStatusCounts().active} active,{" "}
-								{getDeviceStatusCounts().pending} pending
-							</p>
-						</div>
-					</div>
-				</div>
-
-				<div className='bg-white rounded-lg border border-gray-200 p-6'>
-					<div className='flex items-center'>
-						<div className='p-2 bg-green-100 rounded-lg'>
-							<span className='text-2xl'>🧪</span>
-						</div>
-						<div className='ml-4'>
-							<h3 className='text-sm font-medium text-gray-500'>
-								Experiments
-							</h3>
-							<p className='text-2xl font-bold text-green-600'>
-								{getExperimentStatusCounts().total}
-							</p>
-							<p className='text-xs text-gray-500'>
-								{getExperimentStatusCounts().active} active,{" "}
-								{getExperimentStatusCounts().completed}{" "}
-								completed
-							</p>
-						</div>
-					</div>
-				</div>
-
-				<div className='bg-white rounded-lg border border-gray-200 p-6'>
-					<div className='flex items-center'>
-						<div className='p-2 bg-purple-100 rounded-lg'>
-							<span className='text-2xl'>�</span>
-						</div>
-						<div className='ml-4'>
-							<h3 className='text-sm font-medium text-gray-500'>
-								Measurements
-							</h3>
-							<p className='text-2xl font-bold text-purple-600'>
-								{recentMeasurements.length}
-							</p>
-							<p className='text-xs text-gray-500'>
-								Recent readings
-							</p>
-						</div>
-					</div>
-				</div>
-
-				<div className='bg-white rounded-lg border border-gray-200 p-6'>
-					<div className='flex items-center'>
-						<div className='p-2 bg-yellow-100 rounded-lg'>
-							<span className='text-2xl'>⚡</span>
-						</div>
-						<div className='ml-4'>
-							<h3 className='text-sm font-medium text-gray-500'>
-								System Status
-							</h3>
-							<p className='text-2xl font-bold text-yellow-600'>
-								{apiStatus?.success ? "Online" : "Offline"}
-							</p>
-							<p className='text-xs text-gray-500'>
-								API Connection
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			{/* Main Content Grid */}
-			<div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-				{/* Recent Devices */}
-				<div className='bg-white rounded-lg border border-gray-200 p-6'>
-					<div className='flex items-center justify-between mb-4'>
-						<h2 className='text-xl font-bold text-gray-900'>
-							Recent Devices
-						</h2>
+			{/* Devices List */}
+			<div className='bg-white rounded-lg border border-gray-200 p-6'>
+				<div className='flex items-center justify-between mb-6'>
+					<h2 className='text-2xl font-bold text-gray-900'>
+						Devices
+					</h2>
+					<div className='flex space-x-3'>
+						<Link
+							href='/devices/register'
+							className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
+						>
+							📱 Register Device
+						</Link>
 						<Link
 							href='/devices'
 							className='text-blue-600 hover:text-blue-500 text-sm font-medium'
@@ -279,28 +153,32 @@ export default function Dashboard() {
 							View All →
 						</Link>
 					</div>
-					{devices.length > 0 ? (
-						<div className='space-y-3'>
-							{devices.slice(0, 5).map((device) => (
-								<div
-									key={device.device_id}
-									className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
-								>
+				</div>
+
+				{devices.length > 0 ? (
+					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+						{devices.map((device) => (
+							<div
+								key={device.device_id}
+								className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow'
+							>
+								<div className='flex items-start justify-between mb-3'>
 									<div className='flex items-center'>
-										<span className='text-xl mr-3'>
+										{" "}
+										<span className='text-2xl mr-3'>
 											{device.device_type === "Drone"
 												? "🚁"
 												: device.device_type === "DSP"
 												? "📡"
 												: device.device_type ===
-												  "IoT-Sensor"
+												  "Linear Module"
 												? "📏"
 												: "🔧"}
 										</span>
 										<div>
-											<p className='font-medium text-gray-900'>
+											<h3 className='font-semibold text-gray-900'>
 												{device.device_name}
-											</p>
+											</h3>
 											<p className='text-sm text-gray-500'>
 												{device.device_type}
 											</p>
@@ -319,219 +197,60 @@ export default function Dashboard() {
 										{device.status}
 									</span>
 								</div>
-							))}
-						</div>
-					) : (
-						<div className='text-center py-8'>
-							<span className='text-4xl mb-3 block'>📱</span>
-							<p className='text-gray-500 mb-4'>
-								No devices registered yet
-							</p>
-							<Link
-								href='/devices/register'
-								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
-							>
-								Register First Device
-							</Link>
-						</div>
-					)}
-				</div>
+								<div className='space-y-2 text-sm text-gray-600'>
+									<div className='flex justify-between'>
+										<span>Device ID:</span>
+										<span className='font-mono text-xs'>
+											{device.device_id}
+										</span>
+									</div>
+									<div className='flex justify-between'>
+										<span>Registration:</span>
+										<span>
+											{new Date(
+												device.registration_date
+											).toLocaleDateString()}
+										</span>
+									</div>
+								</div>
 
-				{/* Recent Experiments */}
-				<div className='bg-white rounded-lg border border-gray-200 p-6'>
-					<div className='flex items-center justify-between mb-4'>
-						<h2 className='text-xl font-bold text-gray-900'>
-							Recent Experiments
-						</h2>
+								<div className='mt-4 flex space-x-2'>
+									<Link
+										href={`/devices/${device.device_id}`}
+										className='flex-1 text-center px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 text-sm font-medium'
+									>
+										View Details
+									</Link>
+									{device.status === "Active" && (
+										<Link
+											href={`/devices/${device.device_id}/experiments`}
+											className='flex-1 text-center px-3 py-2 bg-green-50 text-green-600 rounded-md hover:bg-green-100 text-sm font-medium'
+										>
+											Experiments
+										</Link>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
+				) : (
+					<div className='text-center py-12'>
+						<span className='text-6xl mb-4 block'>📱</span>
+						<h3 className='text-lg font-medium text-gray-900 mb-2'>
+							No devices registered yet
+						</h3>
+						<p className='text-gray-500 mb-6'>
+							Get started by registering your first measurement
+							device
+						</p>
 						<Link
-							href='/devices'
-							className='text-blue-600 hover:text-blue-500 text-sm font-medium'
+							href='/devices/register'
+							className='inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
 						>
-							View Devices →
+							📱 Register First Device
 						</Link>
 					</div>
-					{experiments.length > 0 ? (
-						<div className='space-y-3'>
-							{experiments.slice(0, 5).map((experiment) => (
-								<div
-									key={experiment.experiment_id}
-									className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
-								>
-									<div className='flex items-center'>
-										<span className='text-xl mr-3'>
-											{experiment.status === "Active"
-												? "🟢"
-												: experiment.status ===
-												  "Completed"
-												? "✅"
-												: experiment.status === "Paused"
-												? "⏸️"
-												: "📝"}
-										</span>
-										<div>
-											<p className='font-medium text-gray-900'>
-												{experiment.name}
-											</p>
-											<p className='text-sm text-gray-500'>
-												{experiment.device_ids
-													?.length || 0}{" "}
-												devices
-											</p>
-										</div>
-									</div>
-									<span
-										className={`px-2 py-1 rounded-full text-xs font-medium ${
-											experiment.status === "Active"
-												? "bg-green-100 text-green-800"
-												: experiment.status ===
-												  "Completed"
-												? "bg-blue-100 text-blue-800"
-												: experiment.status === "Paused"
-												? "bg-yellow-100 text-yellow-800"
-												: "bg-gray-100 text-gray-800"
-										}`}
-									>
-										{experiment.status}
-									</span>
-								</div>
-							))}
-						</div>
-					) : (
-						<div className='text-center py-8'>
-							<span className='text-4xl mb-3 block'>🧪</span>
-							<p className='text-gray-500 mb-4'>
-								No experiments created yet
-							</p>
-							<Link
-								href='/devices'
-								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700'
-							>
-								View Devices to Start Experiments
-							</Link>
-						</div>
-					)}
-				</div>
-			</div>
-
-			{/* Recent Measurements */}
-			{recentMeasurements.length > 0 && (
-				<div className='mt-8 bg-white rounded-lg border border-gray-200 p-6'>
-					<h2 className='text-xl font-bold text-gray-900 mb-4'>
-						Recent Measurements
-					</h2>
-					<div className='overflow-x-auto'>
-						<table className='min-w-full divide-y divide-gray-200'>
-							<thead className='bg-gray-50'>
-								<tr>
-									<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-										Time
-									</th>
-									<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-										Temperature (°C)
-									</th>
-									<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-										Humidity (%)
-									</th>
-									<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-										Pressure (hPa)
-									</th>
-									<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-										Battery (%)
-									</th>
-								</tr>
-							</thead>
-							<tbody className='bg-white divide-y divide-gray-200'>
-								{recentMeasurements.map((measurement) => (
-									<tr
-										key={measurement.id}
-										className='hover:bg-gray-50'
-									>
-										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-											{measurement.measured_at}
-										</td>
-										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-											{measurement.temperature}
-										</td>
-										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-											{measurement.humidity}
-										</td>
-										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-											{measurement.pressure}
-										</td>
-										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-											{measurement.battery_level}
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			)}
-
-			{/* Quick Actions */}
-			<div className='mt-8 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6'>
-				<h2 className='text-xl font-bold text-gray-900 mb-4'>
-					Quick Actions
-				</h2>
-				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-					<Link
-						href='/live-data'
-						className='flex items-center p-4 bg-white rounded-lg border border-gray-200 hover:border-red-300 hover:shadow-md transition-all'
-					>
-						<span className='text-3xl mr-4'>🔴</span>
-						<div>
-							<h3 className='font-medium text-gray-900'>
-								Live Data
-							</h3>
-							<p className='text-sm text-gray-500'>
-								Real-time measurement data
-							</p>
-						</div>
-					</Link>
-					<Link
-						href='/devices/register'
-						className='flex items-center p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all'
-					>
-						<span className='text-3xl mr-4'>📱</span>
-						<div>
-							<h3 className='font-medium text-gray-900'>
-								Register Device
-							</h3>
-							<p className='text-sm text-gray-500'>
-								Add a new measurement device
-							</p>
-						</div>
-					</Link>
-					<Link
-						href='/devices'
-						className='flex items-center p-4 bg-white rounded-lg border border-gray-200 hover:border-green-300 hover:shadow-md transition-all'
-					>
-						<span className='text-3xl mr-4'>🧪</span>
-						<div>
-							<h3 className='font-medium text-gray-900'>
-								View Devices
-							</h3>
-							<p className='text-sm text-gray-500'>
-								Manage devices and experiments
-							</p>
-						</div>
-					</Link>
-					<button
-						onClick={loadDashboardData}
-						className='flex items-center p-4 bg-white rounded-lg border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all'
-					>
-						<span className='text-3xl mr-4'>🔄</span>
-						<div>
-							<h3 className='font-medium text-gray-900'>
-								Refresh Data
-							</h3>
-							<p className='text-sm text-gray-500'>
-								Update dashboard information
-							</p>
-						</div>
-					</button>
-				</div>
+				)}
 			</div>
 		</PageLayout>
 	);

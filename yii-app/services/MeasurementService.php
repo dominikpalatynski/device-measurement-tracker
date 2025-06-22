@@ -109,7 +109,6 @@ class MeasurementService extends Component
             $activeExperiment = $device->getExperiments()
                 ->where(['type' => Experiments::STREAM, 'status' => Experiments::STATUS_RUNNING])
                 ->one();
-            echo "\033[32m[MQTT] Active experiment: " . $activeExperiment->experiment_id . "\033[0m\n";
             if ($activeExperiment) {
                 echo "\033[32m[MQTT] Found active experiment for device: $deviceId\033[0m\n";
                 $activePhenomena = $activeExperiment->getPhenomena()
