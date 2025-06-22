@@ -2,7 +2,7 @@
     "host": "localhost", 
     "port": 1883,
     "send_interval": 10,
-    "deviceId": "DRONE_001_2025",
+    "deviceId": "q4Z_ooBVKFJA",
     "included_files": [
       "w.dat",
       "udc.dat", 

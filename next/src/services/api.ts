@@ -121,7 +121,7 @@ export interface MeasurementDataResponse {
 export interface Device {
   device_id: string;
   device_name: string;
-  device_type: 'Drone' | 'DSP' | 'Linear Module';
+  device_type: 'pmsm-mechanical-vibration' | 'bldc-high-speed' | 'pmsm-torque-load';
   status: 'Active' | 'Pending-Registration' | 'Not-Active';
   registration_date: string;
   last_updated: string;
@@ -273,15 +273,42 @@ export async function getMeasurementStats(deviceUuid: string): Promise<Measureme
 /**
  * Get measurement data for a specific phenomenon from measurement_data table
  */
-export async function getPhenomenonMeasurements(phenomenonId: string): Promise<MeasurementDataResponse> {
-  return fetchApi<MeasurementDataResponse>(`measurement-data/phenomenon?phenomenonId=${phenomenonId}`);
+export async function getPhenomenonMeasurements(
+  phenomenonId: string, 
+  startDate?: string, 
+  endDate?: string
+): Promise<MeasurementDataResponse> {
+  let url = `measurement-data/phenomenon?phenomenonId=${phenomenonId}`;
+  
+  if (startDate) {
+    url += `&startDate=${encodeURIComponent(startDate)}`;
+  }
+  if (endDate) {
+    url += `&endDate=${encodeURIComponent(endDate)}`;
+  }
+  
+  return fetchApi<MeasurementDataResponse>(url);
 }
 
 /**
  * Get unassigned measurement data for a device (where phenomenon_id is null)
  */
-export async function getUnassignedMeasurements(deviceUuid: string, limit: number = 100): Promise<MeasurementDataResponse> {
-  return fetchApi<MeasurementDataResponse>(`device-measurement/unassigned?deviceUuid=${deviceUuid}&limit=${limit}`);
+export async function getUnassignedMeasurements(
+  deviceUuid: string, 
+  limit: number = 100, 
+  startDate?: string, 
+  endDate?: string
+): Promise<MeasurementDataResponse> {
+  let url = `device-measurement/unassigned?deviceUuid=${deviceUuid}&limit=${limit}`;
+  
+  if (startDate) {
+    url += `&startDate=${encodeURIComponent(startDate)}`;
+  }
+  if (endDate) {
+    url += `&endDate=${encodeURIComponent(endDate)}`;
+  }
+  
+  return fetchApi<MeasurementDataResponse>(url);
 }
 
 /**
@@ -343,22 +370,39 @@ export async function getDevice(deviceUuid: string): Promise<Device | null> {
 export async function registerDevice(deviceData: {device_name: string, device_type: string}): Promise<Device | null> {
   try {
     console.log('Registering device:', deviceData);
-    const response = await fetchApi<SingleDeviceResponse>('device-register/create', {
+    const response = await fetchApi<{success: boolean, deviceId?: string, verification_token?: string, error?: string}>('device-register/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(deviceData),
     });
-    if (response.success && response.data) {
-      return response.data;
+      if (response.success && response.deviceId) {
+      // Store verification token for later use
+      if (response.verification_token) {
+        localStorage.setItem(`verification_token_${response.deviceId}`, response.verification_token);
+      }
+        // Create a device object from the response
+      const device: Device = {
+        device_id: response.deviceId,
+        device_name: deviceData.device_name,
+        device_type: deviceData.device_type as "pmsm-mechanical-vibration" | "bldc-high-speed" | "pmsm-torque-load",
+        status: "Pending-Registration" as "Active" | "Pending-Registration" | "Not-Active",
+        registration_date: new Date().toISOString(),
+        last_updated: new Date().toISOString(),
+      };
+      return device;
     }
+    
+    if (!response.success && response.error) {
+      throw new Error(response.error);
+    }
+    
     console.log('API response:', response);
     return null;
   } catch (error) {
     console.error('Error registering device:', error);
-    console.log('API response:', error);
-    return null;
+    throw error; // Re-throw to let the UI handle it properly
   }
 }
 

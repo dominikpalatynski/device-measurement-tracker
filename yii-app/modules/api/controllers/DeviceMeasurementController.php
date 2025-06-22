@@ -350,10 +350,9 @@ class DeviceMeasurementController extends Controller
      * @param string $deviceUuid UUID urządzenia
      * @param int $limit Limit pomiarów
      * @return array
-     */
-    public function actionUnassigned($deviceUuid, $limit = 100)
+     */    public function actionUnassigned($deviceUuid, $limit = 100, $startDate = null, $endDate = null)
     {
-        Yii::info("Received request for unassigned measurements for device: {$deviceUuid}, limit: {$limit}", 'api.device-measurement');
+        Yii::info("Received request for unassigned measurements for device: {$deviceUuid}, limit: {$limit}, startDate: {$startDate}, endDate: {$endDate}", 'api.device-measurement');
         
         try {
             // Force proper JSON response type
@@ -362,8 +361,18 @@ class DeviceMeasurementController extends Controller
             Yii::beginProfile('unassigned-measurements', 'api.performance');
             
             // Fetch unassigned data from measurement_data table where phenomenon_id is null
-            $measurements = \app\models\MeasurementData::find()
-                ->where(['device_id' => $deviceUuid, 'phenomenon_id' => null])
+            $query = \app\models\MeasurementData::find()
+                ->where(['device_id' => $deviceUuid, 'phenomenon_id' => null]);
+            
+            // Add date range filtering if provided
+            if ($startDate) {
+                $query->andWhere(['>=', 'timestamp', $startDate]);
+            }
+            if ($endDate) {
+                $query->andWhere(['<=', 'timestamp', $endDate]);
+            }
+            
+            $measurements = $query
                 ->orderBy(['timestamp' => SORT_DESC])
                 ->limit((int)$limit)
                 ->all();

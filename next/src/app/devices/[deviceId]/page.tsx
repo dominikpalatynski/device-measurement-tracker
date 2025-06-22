@@ -35,6 +35,7 @@ import {
 	ScatterChart,
 	Scatter,
 } from "recharts";
+import { formatDate, formatDateShort } from "@/utils/dateUtils";
 
 export default function DeviceDetailPage() {
 	const params = useParams();
@@ -55,7 +56,6 @@ export default function DeviceDetailPage() {
 	const [activeTab, setActiveTab] = useState<
 		"overview" | "live-experiments" | "data-explorer" | "channels"
 	>("overview");
-
 	// Unassigned data state
 	const [unassignedData, setUnassignedData] = useState<MeasurementData[]>([]);
 	const [unassignedDataLoading, setUnassignedDataLoading] = useState(false);
@@ -63,6 +63,10 @@ export default function DeviceDetailPage() {
 		"line" | "area" | "bar" | "scatter"
 	>("line");
 	const [activeChartTab, setActiveChartTab] = useState<string>("");
+
+	// Date range state for filtering charts
+	const [startDate, setStartDate] = useState<string>("");
+	const [endDate, setEndDate] = useState<string>("");
 
 	// Real channels state
 	const [channels, setChannels] = useState<MeasurementChannel[]>([]);
@@ -95,16 +99,20 @@ export default function DeviceDetailPage() {
 		setChannels(data);
 		setChannelsLoading(false);
 	};
-
 	// Fetch unassigned measurement data
-	const fetchUnassignedData = async () => {
+	const fetchUnassignedData = async (
+		useStartDate?: string,
+		useEndDate?: string
+	) => {
 		if (!device) return;
 
 		setUnassignedDataLoading(true);
 		try {
 			const response = await getUnassignedMeasurements(
 				device.device_id,
-				100
+				100,
+				useStartDate || startDate || undefined,
+				useEndDate || endDate || undefined
 			);
 			if (response.success) {
 				setUnassignedData(response.data);
@@ -277,43 +285,6 @@ export default function DeviceDetailPage() {
 			setLoading(false);
 		}
 	};
-	const handleActivateDevice = async () => {
-		if (!device) return;
-
-		try {
-			const success = await deviceApi.activateDevice(device.device_id);
-			if (success) {
-				setDevice({ ...device, status: "Active" });
-			} else {
-				setError("Failed to activate device");
-			}
-		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : "Failed to activate device"
-			);
-		}
-	};
-
-	const handleDeactivateDevice = async () => {
-		if (!device) return;
-		if (!confirm("Are you sure you want to deactivate this device?"))
-			return;
-
-		try {
-			const success = await deviceApi.deactivateDevice(device.device_id);
-			if (success) {
-				setDevice({ ...device, status: "Not-Active" });
-			} else {
-				setError("Failed to deactivate device");
-			}
-		} catch (err) {
-			setError(
-				err instanceof Error
-					? err.message
-					: "Failed to deactivate device"
-			);
-		}
-	};
 
 	const handleDeleteDevice = async () => {
 		if (!device) return;
@@ -361,19 +332,18 @@ export default function DeviceDetailPage() {
 				return status;
 		}
 	};
-
 	const getDeviceIcon = (type: string) => {
 		switch (type) {
 			case "Drone":
-				return "🚁";
+				return "DRONE";
 			case "DSP":
-				return "📡";
+				return "DSP";
 			case "Linear Module":
-				return "📏";
+				return "LINEAR";
 			case "Scanner":
-				return "🔍";
+				return "SCAN";
 			default:
-				return "📱";
+				return "DEVICE";
 		}
 	};
 	if (loading) {
@@ -444,23 +414,6 @@ export default function DeviceDetailPage() {
 						</div>
 					</div>{" "}
 					<div className='flex space-x-2'>
-						{/* Activate/Deactivate Controls */}
-						{device.status === "Pending-Registration" && (
-							<button
-								onClick={handleActivateDevice}
-								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700'
-							>
-								Activate
-							</button>
-						)}
-						{device.status === "Active" && (
-							<button
-								onClick={handleDeactivateDevice}
-								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700'
-							>
-								Deactivate
-							</button>
-						)}{" "}
 						{/* Experiment Controls - Only for Active devices */}
 						{device.status === "Active" && (
 							<>
@@ -533,12 +486,13 @@ export default function DeviceDetailPage() {
 										: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
 								}`}
 							>
+								{" "}
 								{tab === "live-experiments"
-									? "🧪 Experiments"
+									? "Experiments"
 									: tab === "data-explorer"
-									? "📊 Unassigned Data Explorer"
+									? "Unassigned Data Explorer"
 									: tab === "channels"
-									? "📡 Channels"
+									? "Channels"
 									: tab.charAt(0).toUpperCase() +
 									  tab.slice(1)}
 							</button>
@@ -555,7 +509,21 @@ export default function DeviceDetailPage() {
 								</h3>
 								<div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
 									<div className='text-center'>
-										<div className='text-2xl mb-1'>🌡️</div>
+										<div className='text-2xl mb-1'>
+											<svg
+												className='w-8 h-8 text-blue-500'
+												fill='none'
+												stroke='currentColor'
+												viewBox='0 0 24 24'
+											>
+												<path
+													strokeLinecap='round'
+													strokeLinejoin='round'
+													strokeWidth={2}
+													d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+												/>
+											</svg>
+										</div>
 										<div className='text-2xl font-bold text-blue-600'>
 											{latestMeasurement.temperature}°C
 										</div>
@@ -564,16 +532,44 @@ export default function DeviceDetailPage() {
 										</div>
 									</div>
 									<div className='text-center'>
-										<div className='text-2xl mb-1'>💧</div>
+										<div className='text-2xl mb-1'>
+											<svg
+												className='w-8 h-8 text-blue-500'
+												fill='none'
+												stroke='currentColor'
+												viewBox='0 0 24 24'
+											>
+												<path
+													strokeLinecap='round'
+													strokeLinejoin='round'
+													strokeWidth={2}
+													d='M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM7 3H5v12a2 2 0 002 2 2 2 0 002-2V3z'
+												/>
+											</svg>
+										</div>
 										<div className='text-2xl font-bold text-blue-600'>
 											{latestMeasurement.humidity}%
 										</div>
 										<div className='text-sm text-gray-500'>
 											Humidity
 										</div>
-									</div>
+									</div>{" "}
 									<div className='text-center'>
-										<div className='text-2xl mb-1'>🔄</div>
+										<div className='text-2xl mb-1'>
+											<svg
+												className='w-8 h-8 text-blue-500'
+												fill='none'
+												stroke='currentColor'
+												viewBox='0 0 24 24'
+											>
+												<path
+													strokeLinecap='round'
+													strokeLinejoin='round'
+													strokeWidth={2}
+													d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+												/>
+											</svg>
+										</div>
 										<div className='text-2xl font-bold text-blue-600'>
 											{latestMeasurement.pressure} hPa
 										</div>
@@ -582,7 +578,21 @@ export default function DeviceDetailPage() {
 										</div>
 									</div>
 									<div className='text-center'>
-										<div className='text-2xl mb-1'>🔋</div>
+										<div className='text-2xl mb-1'>
+											<svg
+												className='w-8 h-8 text-blue-500'
+												fill='none'
+												stroke='currentColor'
+												viewBox='0 0 24 24'
+											>
+												<path
+													strokeLinecap='round'
+													strokeLinejoin='round'
+													strokeWidth={2}
+													d='M13 10V3L4 14h7v7l9-11h-7z'
+												/>
+											</svg>
+										</div>
 										<div className='text-2xl font-bold text-blue-600'>
 											{latestMeasurement.battery_level}%
 										</div>
@@ -648,7 +658,7 @@ export default function DeviceDetailPage() {
 						{allExperiments.length > 0 && (
 							<div className='bg-white p-6 rounded-lg border border-gray-200'>
 								<h3 className='text-lg font-medium text-gray-900 mb-4'>
-									📊 Experiment Summary
+									Experiment Summary
 								</h3>{" "}
 								<div className='grid grid-cols-1 md:grid-cols-6 gap-4'>
 									<div className='text-center'>
@@ -1039,6 +1049,7 @@ export default function DeviceDetailPage() {
 				)}{" "}
 				{activeTab === "data-explorer" && (
 					<div className='space-y-6'>
+						{" "}
 						{/* Unassigned Data Header */}
 						<div className='bg-white p-6 rounded-lg border border-gray-200'>
 							<div className='flex justify-between items-center mb-4'>
@@ -1050,10 +1061,10 @@ export default function DeviceDetailPage() {
 										Interactive visualization of measurement
 										data not assigned to any experiment
 									</p>
-								</div>
+								</div>{" "}
 								<div className='flex items-center space-x-4'>
 									<button
-										onClick={fetchUnassignedData}
+										onClick={() => fetchUnassignedData()}
 										disabled={unassignedDataLoading}
 										className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50'
 									>
@@ -1067,7 +1078,76 @@ export default function DeviceDetailPage() {
 								</div>
 							</div>
 						</div>
-
+						{/* Filter Controls - Always Visible */}
+						<div className='bg-white p-6 rounded-lg border border-gray-200'>
+							<div className='flex justify-between items-center mb-4'>
+								<h4 className='text-lg font-medium text-gray-900'>
+									Data Filters & Chart Controls
+								</h4>
+								<div className='flex items-center space-x-4'>
+									{/* Date Range Selectors */}
+									<div className='flex items-center space-x-2'>
+										<label className='text-sm font-medium text-gray-700'>
+											From:
+										</label>
+										<input
+											type='datetime-local'
+											value={startDate}
+											onChange={(e) =>
+												setStartDate(e.target.value)
+											}
+											className='px-2 py-1 border border-gray-300 rounded-md text-sm'
+										/>
+									</div>
+									<div className='flex items-center space-x-2'>
+										<label className='text-sm font-medium text-gray-700'>
+											To:
+										</label>
+										<input
+											type='datetime-local'
+											value={endDate}
+											onChange={(e) =>
+												setEndDate(e.target.value)
+											}
+											className='px-2 py-1 border border-gray-300 rounded-md text-sm'
+										/>
+									</div>
+									<button
+										onClick={() => fetchUnassignedData()}
+										className='px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm'
+									>
+										Filter
+									</button>
+									<button
+										onClick={() => {
+											setStartDate("");
+											setEndDate("");
+											fetchUnassignedData("", "");
+										}}
+										className='px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm'
+									>
+										Clear
+									</button>
+									<select
+										value={chartType}
+										onChange={(e) =>
+											setChartType(
+												e.target
+													.value as typeof chartType
+											)
+										}
+										className='px-3 py-2 border border-gray-300 rounded-md text-sm'
+									>
+										<option value='line'>Line Chart</option>
+										<option value='area'>Area Chart</option>
+										<option value='bar'>Bar Chart</option>
+										<option value='scatter'>
+											Scatter Plot
+										</option>
+									</select>
+								</div>
+							</div>
+						</div>
 						{/* Charts Section */}
 						{unassignedData.length > 0 ? (
 							<div className='bg-white p-6 rounded-lg border border-gray-200'>
@@ -1075,33 +1155,7 @@ export default function DeviceDetailPage() {
 									<h4 className='text-lg font-medium text-gray-900'>
 										Interactive Charts
 									</h4>
-									<div className='flex items-center space-x-4'>
-										<select
-											value={chartType}
-											onChange={(e) =>
-												setChartType(
-													e.target
-														.value as typeof chartType
-												)
-											}
-											className='px-3 py-2 border border-gray-300 rounded-md text-sm'
-										>
-											<option value='line'>
-												Line Chart
-											</option>
-											<option value='area'>
-												Area Chart
-											</option>
-											<option value='bar'>
-												Bar Chart
-											</option>
-											<option value='scatter'>
-												Scatter Plot
-											</option>
-										</select>
-									</div>
 								</div>
-
 								{/* Chart Tabs */}
 								{(() => {
 									const chartKeys = getUnassignedChartKeys();
@@ -2090,23 +2144,12 @@ export default function DeviceDetailPage() {
 										<div>
 											<h4 className='text-lg font-medium text-yellow-800'>
 												Device Not Active
-											</h4>
+											</h4>{" "}
 											<p className='text-sm text-yellow-700 mt-1'>
 												This device must be activated
 												before you can create
 												experiments.
 											</p>
-											{device.status ===
-												"Pending-Registration" && (
-												<button
-													onClick={
-														handleActivateDevice
-													}
-													className='mt-3 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700'
-												>
-													Activate Device
-												</button>
-											)}
 										</div>
 									</div>
 								</div>

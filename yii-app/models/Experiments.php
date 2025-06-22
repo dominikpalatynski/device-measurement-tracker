@@ -127,15 +127,17 @@ class Experiments extends ActiveRecord
      * @param string $deviceId
      * @param string $name
      * @param string $description
+     * @param string $type
      * @return self|null
      */
-    public static function createExperiment($deviceId, $name, $description = null)
+    public static function createExperiment($deviceId, $name, $description = null, $type = 'stream')
     {
         $experiment = new self();
         $experiment->experiment_id = self::generateExperimentId();
         $experiment->device_id = $deviceId;
         $experiment->experiment_name = $name;
         $experiment->description = $description;
+        $experiment->type = $type;
         $experiment->status = self::STATUS_SCHEDULED;
         $experiment->start_time = new Expression('NOW()');
         

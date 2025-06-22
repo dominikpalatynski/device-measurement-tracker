@@ -30,24 +30,34 @@ class MeasurementDataController extends Controller
         ];
         
         return $behaviors;
-    }
-
-    /**
+    }    /**
      * Get measurement data for a specific phenomenon
      * 
      * @param string $phenomenonId Phenomenon ID
+     * @param string $startDate Start date filter (optional)
+     * @param string $endDate End date filter (optional)
      * @return array
      */
-    public function actionPhenomenon($phenomenonId)
+    public function actionPhenomenon($phenomenonId, $startDate = null, $endDate = null)
     {
         try {
             // Force proper JSON response type
             Yii::$app->response->format = Response::FORMAT_JSON;
             
-            Yii::info("Fetching measurement data for phenomenon: {$phenomenonId}", 'api.measurement-data');
+            Yii::info("Fetching measurement data for phenomenon: {$phenomenonId}, startDate: {$startDate}, endDate: {$endDate}", 'api.measurement-data');
             
-            $measurements = MeasurementData::find()
-                ->where(['phenomenon_id' => $phenomenonId])
+            $query = MeasurementData::find()
+                ->where(['phenomenon_id' => $phenomenonId]);
+            
+            // Add date range filtering if provided
+            if ($startDate) {
+                $query->andWhere(['>=', 'timestamp', $startDate]);
+            }
+            if ($endDate) {
+                $query->andWhere(['<=', 'timestamp', $endDate]);
+            }
+            
+            $measurements = $query
                 ->orderBy(['timestamp' => SORT_DESC])
                 ->all();
             

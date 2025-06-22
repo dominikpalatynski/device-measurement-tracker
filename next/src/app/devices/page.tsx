@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import { deviceApi, Device } from "@/services/api";
+import { formatDate, formatDateShort } from "@/utils/dateUtils";
 
 export default function DevicesPage() {
 	const [devices, setDevices] = useState<Device[]>([]);
@@ -82,17 +83,77 @@ export default function DevicesPage() {
 				return "Unknown";
 		}
 	};
-
 	const getDeviceIcon = (type: string) => {
 		switch (type) {
-			case "Drone":
-				return "🚁";
-			case "DSP":
-				return "📡";
-			case "Linear Module":
-				return "📏";
+			case "pmsm-mechanical-vibration":
+				return (
+					<svg
+						className='w-6 h-6 text-blue-600'
+						fill='currentColor'
+						viewBox='0 0 20 20'
+					>
+						<path
+							fillRule='evenodd'
+							d='M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z'
+							clipRule='evenodd'
+						/>
+					</svg>
+				);
+			case "bldc-high-speed":
+				return (
+					<svg
+						className='w-6 h-6 text-green-600'
+						fill='currentColor'
+						viewBox='0 0 20 20'
+					>
+						<path
+							fillRule='evenodd'
+							d='M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z'
+							clipRule='evenodd'
+						/>
+					</svg>
+				);
+			case "pmsm-torque-load":
+				return (
+					<svg
+						className='w-6 h-6 text-purple-600'
+						fill='currentColor'
+						viewBox='0 0 20 20'
+					>
+						<path
+							fillRule='evenodd'
+							d='M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z'
+							clipRule='evenodd'
+						/>
+					</svg>
+				);
 			default:
-				return "📱";
+				return (
+					<svg
+						className='w-6 h-6 text-gray-600'
+						fill='currentColor'
+						viewBox='0 0 20 20'
+					>
+						<path
+							fillRule='evenodd'
+							d='M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z'
+							clipRule='evenodd'
+						/>
+					</svg>
+				);
+		}
+	};
+
+	const getDeviceTypeName = (type: string) => {
+		switch (type) {
+			case "pmsm-mechanical-vibration":
+				return "PMSM Mechanical Vibration";
+			case "bldc-high-speed":
+				return "BLDC High Speed";
+			case "pmsm-torque-load":
+				return "PMSM Torque Load";
+			default:
+				return type;
 		}
 	};
 
@@ -142,11 +203,21 @@ export default function DevicesPage() {
 				>
 					+ Register Device
 				</Link>
-			</div>
+			</div>{" "}
 			{error && (
 				<div className='mb-6 bg-red-50 border border-red-200 rounded-lg p-4'>
 					<div className='flex items-center'>
-						<span className='text-red-400 text-xl mr-3'>❌</span>
+						<svg
+							className='w-5 h-5 text-red-400 mr-3'
+							fill='currentColor'
+							viewBox='0 0 20 20'
+						>
+							<path
+								fillRule='evenodd'
+								d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
+								clipRule='evenodd'
+							/>
+						</svg>
 						<div>
 							<h3 className='text-sm font-medium text-red-800'>
 								Error
@@ -234,11 +305,19 @@ export default function DevicesPage() {
 					</div>
 					<div className='text-sm text-red-600'>Not Active</div>
 				</div>
-			</div>
+			</div>{" "}
 			{/* Devices List */}
 			{filteredDevices.length === 0 ? (
 				<div className='text-center py-12'>
-					<div className='text-gray-400 text-6xl mb-4'>📱</div>{" "}
+					<div className='w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center'>
+						<svg
+							className='w-8 h-8 text-gray-400'
+							fill='currentColor'
+							viewBox='0 0 20 20'
+						>
+							<path d='M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z' />
+						</svg>
+					</div>
 					<h3 className='text-lg font-medium text-gray-900 mb-2'>
 						{filter === "all"
 							? "No devices found"
@@ -296,7 +375,7 @@ export default function DevicesPage() {
 										{" "}
 										<td className='px-6 py-4 whitespace-nowrap'>
 											<div className='flex items-center'>
-												<div className='text-2xl mr-3'>
+												<div className='mr-3 flex items-center justify-center w-10 h-10 bg-gray-50 rounded-lg'>
 													{getDeviceIcon(
 														device.device_type
 													)}
@@ -317,7 +396,9 @@ export default function DevicesPage() {
 											</div>
 										</td>
 										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-											{device.device_type}
+											{getDeviceTypeName(
+												device.device_type
+											)}
 										</td>
 										<td className='px-6 py-4 whitespace-nowrap'>
 											<span
@@ -330,9 +411,9 @@ export default function DevicesPage() {
 										</td>{" "}
 										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
 											{device.last_updated
-												? new Date(
+												? formatDate(
 														device.last_updated
-												  ).toLocaleDateString()
+												  )
 												: "N/A"}
 										</td>
 										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>

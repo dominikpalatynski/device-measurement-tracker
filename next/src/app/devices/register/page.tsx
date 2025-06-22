@@ -10,11 +10,17 @@ export default function DeviceRegisterPage() {
 	const router = useRouter();
 	const [formData, setFormData] = useState({
 		device_name: "",
-		device_type: "Drone" as "Drone" | "DSP" | "Linear Module",
+		device_type: "pmsm-mechanical-vibration" as
+			| "pmsm-mechanical-vibration"
+			| "bldc-high-speed"
+			| "pmsm-torque-load",
 	});
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<Device | null>(null);
+	const [verificationToken, setVerificationToken] = useState<string | null>(
+		null
+	);
 
 	const handleInputChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -41,9 +47,13 @@ export default function DeviceRegisterPage() {
 				device_name: formData.device_name.trim(),
 				device_type: formData.device_type,
 			});
-
 			if (device) {
 				setSuccess(device);
+				// Get the verification token from localStorage
+				const token = localStorage.getItem(
+					`verification_token_${device.device_id}`
+				);
+				setVerificationToken(token);
 			} else {
 				setError("Failed to register device");
 			}
@@ -58,10 +68,11 @@ export default function DeviceRegisterPage() {
 	const handleReset = () => {
 		setFormData({
 			device_name: "",
-			device_type: "Drone",
+			device_type: "pmsm-mechanical-vibration",
 		});
 		setError(null);
 		setSuccess(null);
+		setVerificationToken(null);
 	};
 	const handleViewDevice = () => {
 		if (success) {
@@ -136,18 +147,37 @@ export default function DeviceRegisterPage() {
 												? "Pending Registration"
 												: "Not Active"}
 										</span>
-									</dd>
+									</dd>{" "}
 								</div>
+								{verificationToken && (
+									<div className='flex justify-between'>
+										<dt className='text-sm font-medium text-gray-500'>
+											Verification Token:
+										</dt>
+										<dd className='text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded'>
+											{verificationToken}
+										</dd>
+									</div>
+								)}
 							</dl>
 						</div>
 
 						<div className='bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6'>
 							<h4 className='text-sm font-medium text-blue-800 mb-2'>
 								Next Steps:
-							</h4>
+							</h4>{" "}
 							<ul className='text-sm text-blue-700 space-y-1 list-disc list-inside'>
 								<li>
-									Configure your device with the provided UUID
+									Save the verification token - you'll need it
+									to activate your device
+								</li>
+								<li>
+									Configure your device with the provided
+									Device ID
+								</li>
+								<li>
+									Use the verification token to authenticate
+									and activate the device
 								</li>
 								<li>
 									Start sending measurement data to activate
@@ -272,10 +302,14 @@ export default function DeviceRegisterPage() {
 								className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
 								disabled={loading}
 							>
-								<option value='Drone'>Drone</option>
-								<option value='DSP'>DSP</option>
-								<option value='Linear Module'>
-									Linear Module
+								<option value='pmsm-mechanical-vibration'>
+									PMSM Mechanical Vibration
+								</option>
+								<option value='bldc-high-speed'>
+									BLDC High Speed
+								</option>
+								<option value='pmsm-torque-load'>
+									PMSM Torque Load
 								</option>
 							</select>
 							<p className='text-sm text-gray-500 mt-1'>

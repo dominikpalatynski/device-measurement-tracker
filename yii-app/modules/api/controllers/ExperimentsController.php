@@ -110,20 +110,25 @@ class ExperimentsController extends Controller
             }
             
             $data = Json::decode($rawBody);
+              // Validate required fields
+            if (empty($data['experiment_name']) || empty($data['device_id'])) {
+                throw new ServerErrorHttpException('Missing required fields: experiment_name and device_id are required');
+            }
             
-            // Validate required fields
-            if (empty($data['name']) || empty($data['device_id'])) {
-                throw new ServerErrorHttpException('Missing required fields: name and device_id are required');
-            }            // Check if device exists
+            // Validate type field
+            $type = $data['type'] ?? 'stream'; // Default to stream if not provided
+            if (!in_array($type, ['batch', 'stream'])) {
+                throw new ServerErrorHttpException('Invalid type. Must be "batch" or "stream"');
+            }// Check if device exists
             $device = Devices::findByDeviceId($data['device_id']);
             if (!$device) {
                 throw new ServerErrorHttpException('Device not found with ID: ' . $data['device_id']);
             }
-            
-            $experiment = Experiments::createExperiment(
+              $experiment = Experiments::createExperiment(
                 $data['device_id'],
-                $data['name'],
-                $data['description'] ?? null
+                $data['experiment_name'],
+                $data['description'] ?? null,
+                $type
             );
             
             if (!$experiment) {

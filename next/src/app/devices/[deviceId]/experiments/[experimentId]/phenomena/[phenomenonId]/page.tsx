@@ -28,13 +28,14 @@ import {
 	Experiment,
 	ActivePhenomenon,
 	getAllMeasurements,
-	getPhenomenonMeasurements,
 	getLivePhenomenonMeasurements,
 	getLatestPhenomenonMeasurement,
 	getLatestMeasurementData,
+	getPhenomenonMeasurements,
 	Measurement,
 	MeasurementData,
 } from "@/services/api";
+import { formatDate, formatDateShort } from "@/utils/dateUtils";
 
 export default function PhenomenonDetailPage() {
 	const params = useParams();
@@ -44,10 +45,6 @@ export default function PhenomenonDetailPage() {
 	const [device, setDevice] = useState<Device | null>(null);
 	const [experiment, setExperiment] = useState<Experiment | null>(null);
 	const [phenomenon, setPhenomenon] = useState<ActivePhenomenon | null>(null);
-	const [measurements, setMeasurements] = useState<Measurement[]>([]);
-	const [phenomenonMeasurements, setPhenomenonMeasurements] = useState<
-		MeasurementData[]
-	>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null); // Real-time data viewing
 	const [autoRefresh, setAutoRefresh] = useState(false);
@@ -56,50 +53,45 @@ export default function PhenomenonDetailPage() {
 		useState<MeasurementData | null>(null);
 	const [liveDataBuffer, setLiveDataBuffer] = useState<MeasurementData[]>([]);
 	const [lastUpdateTime, setLastUpdateTime] = useState<string | null>(null);
-	const [viewMode, setViewMode] = useState<
-		"chart" | "phenomenon-data" | "charts" | "live"
-	>("phenomenon-data");
+	const [viewMode, setViewMode] = useState<"charts" | "live">("charts");
 	const [activeChartTab, setActiveChartTab] = useState<string>("");
 	const [chartType, setChartType] = useState<
 		"line" | "area" | "bar" | "scatter"
 	>("line");
 	const [autoZoom, setAutoZoom] = useState(true);
+
+	// Date range state for filtering charts
+	const [startDate, setStartDate] = useState<string>("");
+	const [endDate, setEndDate] = useState<string>("");
 	useEffect(() => {
 		if (deviceId && experimentId && phenomenonId) {
 			loadPhenomenonData();
 		}
-	}, [deviceId, experimentId, phenomenonId]);
-	// Define loadMeasurements function before using it in effects
+	}, [deviceId, experimentId, phenomenonId]); // Define loadMeasurements function before using it in effects
 	const loadMeasurements = async () => {
 		try {
-			// Load recent measurements for this device using the latest measurement data API
-			const measurementRes = await getLatestMeasurementData(
-				100,
-				deviceId
-			);
-			if (measurementRes.success) {
-				// Convert MeasurementData to Measurement format for backward compatibility
-				const convertedMeasurements: Measurement[] =
-					measurementRes.data.map(
-						(data: MeasurementData, index: number) => ({
-							id: data.data_id,
-							temperature: 0, // Default values since MeasurementData doesn't have these
-							humidity: 0,
-							pressure: 0,
-							battery_level: 0,
-							measured_at: data.timestamp,
-							created_at: data.timestamp,
-						})
-					);
-				setMeasurements(convertedMeasurements);
-			}
+			if (!phenomenonId) return;
 
-			// Load phenomenon-specific measurements from measurement_data table
-			const phenomenonMeasurementRes = await getPhenomenonMeasurements(
-				phenomenonId
+			// Load measurements for the phenomenon with date filtering
+			const response = await getPhenomenonMeasurements(
+				phenomenonId,
+				startDate || undefined,
+				endDate || undefined
 			);
-			if (phenomenonMeasurementRes.success) {
-				setPhenomenonMeasurements(phenomenonMeasurementRes.data);
+			if (response.success && response.data.length > 0) {
+				// Convert the response data to MeasurementData format
+				const measurementData: MeasurementData[] = response.data.map(
+					(payload: any, index: number) => ({
+						data_id: index, // Since we don't have real IDs from the payload
+						device_id: deviceId,
+						phenomenon_id: phenomenonId,
+						data_payload: payload,
+						upload_type: "batch",
+						timestamp: new Date().toISOString(), // You might want to get real timestamps
+					})
+				);
+
+				setLiveDataBuffer(measurementData);
 			}
 		} catch (error) {
 			console.error("Error loading measurements:", error);
@@ -224,10 +216,9 @@ export default function PhenomenonDetailPage() {
 			setLoading(false);
 		}
 	};
-
-	// Extract and process chart data from phenomenon measurements for Recharts
+	// Extract and process chart data from live data buffer for Recharts
 	const getChartDataFromPayloads = () => {
-		if (!phenomenonMeasurements.length) return {};
+		if (!liveDataBuffer.length) return {};
 
 		const chartData: Record<
 			string,
@@ -241,23 +232,31 @@ export default function PhenomenonDetailPage() {
 		const availableKeys = new Set<string>();
 
 		// First pass: collect all possible keys from all payloads
-		phenomenonMeasurements.forEach((measurement) => {
-			Object.keys(measurement).forEach((key) => {
-				const value = measurement[key];
-				// Check if the value is an array or a single numeric value
-				if (Array.isArray(value) || typeof value === "number") {
-					availableKeys.add(key);
-				}
-			});
+		liveDataBuffer.forEach((measurement) => {
+			if (
+				measurement.data_payload &&
+				typeof measurement.data_payload === "object"
+			) {
+				Object.keys(measurement.data_payload).forEach((key) => {
+					const value = measurement.data_payload[key];
+					// Check if the value is an array or a single numeric value
+					if (Array.isArray(value) || typeof value === "number") {
+						availableKeys.add(key);
+					}
+				});
+			}
 		});
 
 		// Second pass: extract data for each key
 		availableKeys.forEach((key) => {
 			chartData[key] = [];
 
-			phenomenonMeasurements.forEach((measurement, measurementIndex) => {
-				if (measurement && measurement[key] !== undefined) {
-					const value = measurement[key];
+			liveDataBuffer.forEach((measurement, measurementIndex) => {
+				if (
+					measurement.data_payload &&
+					measurement.data_payload[key] !== undefined
+				) {
+					const value = measurement.data_payload[key];
 					const timestamp = measurement.timestamp;
 					const timestampFormatted = new Date(
 						timestamp
@@ -735,8 +734,9 @@ export default function PhenomenonDetailPage() {
 				<div className='bg-white p-6 rounded-lg border border-gray-200'>
 					<div className='flex justify-between items-start mb-4'>
 						<div>
+							{" "}
 							<h2 className='text-2xl font-bold text-gray-900 mb-2'>
-								🔬 {phenomenon.name}
+								{phenomenon.name}
 							</h2>
 							<p className='text-gray-600 mb-4'>
 								{phenomenon.description ||
@@ -783,33 +783,28 @@ export default function PhenomenonDetailPage() {
 				{/* Data View Controls */}
 				<div className='bg-white p-6 rounded-lg border border-gray-200'>
 					<div className='flex justify-between items-center mb-4'>
+						{" "}
 						<h3 className='text-lg font-medium text-gray-900'>
-							📊 Measurement Data
+							Measurement Data
 						</h3>{" "}
 						<div className='flex space-x-2'>
-							{["live", "phenomenon-data", "charts", "chart"].map(
-								(mode) => (
-									<button
-										key={mode}
-										onClick={() =>
-											setViewMode(mode as typeof viewMode)
-										}
-										className={`px-3 py-1 rounded text-sm ${
-											viewMode === mode
-												? "bg-blue-600 text-white"
-												: "bg-gray-200 text-gray-700 hover:bg-gray-300"
-										}`}
-									>
-										{mode === "live"
-											? "🔴 Live Data"
-											: mode === "phenomenon-data"
-											? "🔬 Phenomenon Data"
-											: mode === "charts"
-											? "📊 Interactive Charts"
-											: "📈 Device Chart"}
-									</button>
-								)
-							)}{" "}
+							{["live", "charts"].map((mode) => (
+								<button
+									key={mode}
+									onClick={() =>
+										setViewMode(mode as typeof viewMode)
+									}
+									className={`px-3 py-1 rounded text-sm ${
+										viewMode === mode
+											? "bg-blue-600 text-white"
+											: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+									}`}
+								>
+									{mode === "live"
+										? "Live Data"
+										: "Interactive Charts"}
+								</button>
+							))}{" "}
 						</div>{" "}
 					</div>
 					{/* Data Display */}
@@ -819,8 +814,9 @@ export default function PhenomenonDetailPage() {
 							<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
 								<div className='flex items-center justify-between'>
 									<div>
+										{" "}
 										<h4 className='text-lg font-medium text-red-800 mb-2'>
-											🔴 Live Data Stream
+											Live Data Stream
 										</h4>
 										<p className='text-red-700 text-sm'>
 											Real-time measurement data from the
@@ -831,10 +827,11 @@ export default function PhenomenonDetailPage() {
 									<div className='text-right'>
 										<div className='text-sm text-red-600'>
 											<div>
+												{" "}
 												Status:{" "}
 												{liveMode
-													? "🟢 Active"
-													: "🔴 Inactive"}
+													? "Active"
+													: "Inactive"}
 											</div>
 											<div>
 												Buffer: {liveDataBuffer.length}{" "}
@@ -1379,7 +1376,7 @@ export default function PhenomenonDetailPage() {
 								)}
 							</div>
 						</div>
-					)}
+					)}{" "}
 					{viewMode === "charts" && (
 						<div className='space-y-6'>
 							<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
@@ -1390,7 +1387,7 @@ export default function PhenomenonDetailPage() {
 									Interactive charts generated from data
 									payload objects. Each key in the payload
 									becomes a separate chart.
-								</p>
+								</p>{" "}
 								<div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm'>
 									<div>
 										<span className='font-medium'>
@@ -1412,6 +1409,64 @@ export default function PhenomenonDetailPage() {
 											Source:
 										</span>{" "}
 										data_payload fields
+									</div>
+								</div>
+							</div>
+
+							{/* Date Range Filter Controls - Always Visible */}
+							<div className='bg-white border border-gray-200 rounded-lg p-4'>
+								<h4 className='text-lg font-medium text-gray-900 mb-4'>
+									🔍 Data Filters & Chart Controls
+								</h4>
+								<div className='flex items-center justify-between'>
+									<div className='flex items-center space-x-4'>
+										<div className='flex items-center space-x-2'>
+											<label className='text-sm font-medium text-gray-700'>
+												From:
+											</label>
+											<input
+												type='datetime-local'
+												value={startDate}
+												onChange={(e) =>
+													setStartDate(e.target.value)
+												}
+												className='px-2 py-1 border border-gray-300 rounded-md text-sm'
+											/>
+										</div>
+										<div className='flex items-center space-x-2'>
+											<label className='text-sm font-medium text-gray-700'>
+												To:
+											</label>
+											<input
+												type='datetime-local'
+												value={endDate}
+												onChange={(e) =>
+													setEndDate(e.target.value)
+												}
+												className='px-2 py-1 border border-gray-300 rounded-md text-sm'
+											/>
+										</div>
+									</div>
+									<div className='flex items-center space-x-2'>
+										<button
+											onClick={() => {
+												// Reload data with date filtering
+												loadMeasurements();
+											}}
+											className='px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm'
+										>
+											Filter
+										</button>
+										<button
+											onClick={() => {
+												setStartDate("");
+												setEndDate("");
+												loadMeasurements();
+											}}
+											className='px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm'
+										>
+											Clear
+										</button>
 									</div>
 								</div>
 							</div>
@@ -1483,17 +1538,17 @@ export default function PhenomenonDetailPage() {
 															{[
 																{
 																	type: "line" as const,
-																	icon: "📈",
+																	icon: "Line",
 																	name: "Line",
 																},
 																{
 																	type: "area" as const,
-																	icon: "📊",
+																	icon: "Area",
 																	name: "Area",
 																},
 																{
 																	type: "bar" as const,
-																	icon: "📊",
+																	icon: "Bar",
 																	name: "Bar",
 																},
 																{
@@ -1572,21 +1627,21 @@ export default function PhenomenonDetailPage() {
 																value: avg.toFixed(
 																	3
 																),
-																icon: "📊",
+																icon: "Avg",
 															},
 															{
 																label: "Minimum",
 																value: min.toFixed(
 																	3
 																),
-																icon: "📉",
+																icon: "Min",
 															},
 															{
 																label: "Maximum",
 																value: max.toFixed(
 																	3
 																),
-																icon: "📈",
+																icon: "Max",
 															},
 															{
 																label: "Latest",
@@ -1594,7 +1649,7 @@ export default function PhenomenonDetailPage() {
 																	latest?.toFixed(
 																		3
 																	) || "N/A",
-																icon: "🕐",
+																icon: "Latest",
 															},
 														].map((stat, index) => (
 															<div
@@ -1910,191 +1965,6 @@ export default function PhenomenonDetailPage() {
 												chartable data types
 											</li>
 										</ul>
-									</div>
-								</div>
-							)}
-						</div>
-					)}
-					{viewMode === "chart" && (
-						<div className='bg-gray-50 border border-gray-200 rounded-lg p-8'>
-							<div className='text-center text-gray-500'>
-								<div className='text-4xl mb-4'>📈</div>
-								<h4 className='text-lg font-medium mb-2'>
-									Chart Visualization
-								</h4>
-								<p>
-									Real-time charts showing temperature,
-									humidity, pressure, and battery over time
-								</p>
-								<p className='text-sm mt-2'>
-									{measurements.length} data points available
-								</p>
-								{autoRefresh && (
-									<div className='mt-4 text-green-600'>
-										🔄 Auto-refreshing every 2 seconds
-									</div>
-								)}
-							</div>
-						</div>
-					)}
-					{viewMode === "phenomenon-data" && (
-						<div className='space-y-4'>
-							<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
-								<h4 className='text-lg font-medium text-blue-800 mb-2'>
-									🔬 Phenomenon-Specific Measurements
-								</h4>
-								<p className='text-blue-700 text-sm mb-4'>
-									This data is specifically collected during
-									this phenomenon from the measurement_data
-									table. It includes detailed sensor readings
-									and experimental parameters.
-								</p>
-								<div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm'>
-									<div>
-										<span className='font-medium'>
-											Total Records:
-										</span>{" "}
-										{phenomenonMeasurements.length}
-									</div>
-									<div>
-										<span className='font-medium'>
-											Phenomenon ID:
-										</span>{" "}
-										{phenomenonId}
-									</div>
-									<div>
-										<span className='font-medium'>
-											Data Source:
-										</span>{" "}
-										measurement_data table
-									</div>
-								</div>
-							</div>{" "}
-							{phenomenonMeasurements.length > 0 ? (
-								<div className='text-center py-8 bg-green-50 rounded-lg'>
-									<div className='text-green-600 text-4xl mb-4'>
-										📊
-									</div>
-									<h4 className='text-lg font-medium text-green-800 mb-2'>
-										Phenomenon Data Available
-									</h4>
-									<p className='text-green-700 mb-4'>
-										{phenomenonMeasurements.length}{" "}
-										measurements recorded for this
-										phenomenon
-									</p>
-									<p className='text-sm text-green-600'>
-										View this data in the "Interactive
-										Charts" tab above for detailed analysis
-									</p>
-								</div>
-							) : (
-								<div className='text-center py-12 bg-gray-50 rounded-lg'>
-									<div className='text-gray-400 text-4xl mb-4'>
-										📊
-									</div>
-									<h4 className='text-lg font-medium text-gray-600 mb-2'>
-										No Phenomenon Data Available
-									</h4>
-									<p className='text-gray-500 mb-4'>
-										No measurements have been recorded for
-										this specific phenomenon yet.
-									</p>
-									<div className='text-sm text-gray-400'>
-										<p>Data will appear here when:</p>
-										<ul className='mt-2 space-y-1'>
-											<li>
-												• The phenomenon is actively
-												collecting data
-											</li>
-											<li>
-												• Measurements are stored in the
-												measurement_data table
-											</li>
-											<li>
-												• The phenomenon_id matches this
-												phenomenon
-											</li>
-										</ul>
-									</div>
-								</div>
-							)}
-							{/* Phenomenon Data Summary */}
-							{phenomenonMeasurements.length > 0 && (
-								<div className='bg-gray-50 border border-gray-200 rounded-lg p-4'>
-									<h4 className='text-lg font-medium text-gray-800 mb-3'>
-										📈 Data Summary
-									</h4>
-									<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-										{(() => {
-											const latestMeasurement =
-												phenomenonMeasurements[
-													phenomenonMeasurements.length -
-														1
-												];
-											const oldestMeasurement =
-												phenomenonMeasurements[0];
-
-											return [
-												{
-													label: "Total Records",
-													value: phenomenonMeasurements.length.toString(),
-													icon: "📊",
-												},
-												{
-													label: "Device ID",
-													value:
-														phenomenonMeasurements[0]
-															?.device_id ||
-														"N/A",
-													icon: "�",
-												},
-												{
-													label: "Latest Data ID",
-													value:
-														latestMeasurement?.data_id?.toString() ||
-														"N/A",
-													icon: "🆔",
-												},
-												{
-													label: "Time Range",
-													value:
-														latestMeasurement &&
-														oldestMeasurement
-															? `${Math.round(
-																	(new Date(
-																		latestMeasurement.timestamp
-																	).getTime() -
-																		new Date(
-																			oldestMeasurement.timestamp
-																		).getTime()) /
-																		1000 /
-																		60
-															  )}m`
-															: "N/A",
-													icon: "⏱️",
-												},
-											].map((stat, index) => (
-												<div
-													key={index}
-													className='bg-white p-3 rounded border'
-												>
-													<div className='flex items-center space-x-2'>
-														<span className='text-lg'>
-															{stat.icon}
-														</span>
-														<div>
-															<p className='text-sm text-gray-600'>
-																{stat.label}
-															</p>
-															<p className='text-lg font-semibold text-gray-900'>
-																{stat.value}
-															</p>
-														</div>
-													</div>
-												</div>
-											));
-										})()}
 									</div>
 								</div>
 							)}
