@@ -128,6 +128,7 @@ export interface Device {
   // Optional fields that might be added by frontend
   experiments_count?: number;
   active_experiments_count?: number;
+  verification_token?: string;
 }
 
 export interface DeviceResponse {
@@ -433,8 +434,10 @@ export async function updateDevice(deviceUuid: string, deviceData: Partial<Devic
  */
 export async function activateDevice(deviceUuid: string): Promise<boolean> {
   try {
-    const response = await updateDevice(deviceUuid, { status: 'Active' });
-    return response !== null;
+    const response = await fetchApi<{success: boolean; data?: any; message?: string}>(`device-register/activate?id=${deviceUuid}`, {
+      method: 'POST',
+    });
+    return response.success;
   } catch (error) {
     console.error('Error activating device:', error);
     return false;
@@ -446,8 +449,10 @@ export async function activateDevice(deviceUuid: string): Promise<boolean> {
  */
 export async function deactivateDevice(deviceUuid: string): Promise<boolean> {
   try {
-    const response = await updateDevice(deviceUuid, { status: 'Not-Active' });
-    return response !== null;
+    const response = await fetchApi<{success: boolean; data?: any; message?: string}>(`device-register/deactivate?id=${deviceUuid}`, {
+      method: 'POST',
+    });
+    return response.success;
   } catch (error) {
     console.error('Error deactivating device:', error);
     return false;
@@ -597,6 +602,23 @@ export async function getPhenomena(): Promise<Phenomenon[]> {
   }
 }
 
+export async function regenerateDeviceToken(deviceId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const response = await fetchApi<{ success: boolean; data?: any; error?: string }>(`device-register/regenerate-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ deviceId }),
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Failed to regenerate device token:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
 // Device API object for easy access
 export const deviceApi = {
   getDevices,
@@ -606,6 +628,7 @@ export const deviceApi = {
   activateDevice,
   deactivateDevice,
   deleteDevice,
+  regenerateToken: regenerateDeviceToken,
 };
 
 // Online Mode API for real-time experiment control

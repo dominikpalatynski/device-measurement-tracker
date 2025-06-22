@@ -32,6 +32,7 @@ class DeviceRegisterController extends Controller
                 'view' => ['GET', 'OPTIONS'],
                 'activate' => ['POST', 'OPTIONS'],
                 'deactivate' => ['POST', 'OPTIONS'],
+                'regenerate-token' => ['POST', 'OPTIONS'],
                 'test' => ['GET', 'OPTIONS'],
             ],
         ];
@@ -50,7 +51,7 @@ class DeviceRegisterController extends Controller
         ];
         
         return $behaviors;
-    }/**
+    }    /**
      * Simple test endpoint to verify controller is working
      */
     public function actionTest()
@@ -63,6 +64,109 @@ class DeviceRegisterController extends Controller
             'timestamp' => date('Y-m-d H:i:s'),
             'controller' => static::class,
         ];
+    }
+
+    /**
+     * Regenerates verification token for a device
+     */
+    public function actionRegenerateToken()
+    {
+        Yii::info("Device token regeneration endpoint called", 'api.device-register');
+        
+        // Ensure this is only accessible via POST
+        if (!Yii::$app->request->isPost) {
+            Yii::$app->response->statusCode = 405;
+            return [
+                'success' => false,
+                'error' => 'Method not allowed. Use POST to regenerate token.',
+                'allowed_methods' => ['POST']
+            ];
+        }
+        
+        try {
+            // Parse JSON body
+            $data = Json::decode(Yii::$app->request->rawBody);
+
+            if (!isset($data['deviceId'])) {
+                return [
+                    'success' => false,
+                    'error' => 'Missing deviceId in request body',
+                ];
+            }
+
+            // Find device by deviceId
+            $device = Devices::findOne(['device_id' => $data['deviceId']]);
+            if (!$device) {
+                return [
+                    'success' => false,
+                    'error' => 'Device not found',
+                ];
+            }
+
+            // Check if device is in pending registration status
+            if ($device->status !== Devices::STATUS_PENDING) {
+                return [
+                    'success' => false,
+                    'error' => 'Device is not in pending registration status',
+                ];
+            }
+
+            // Find existing verification token
+            $existingToken = VerificationToken::findOne(['device_id' => $data['deviceId']]);
+            
+            if ($existingToken) {
+                // Mark existing token as used/expired
+                if(!$existingToken->delete()){
+                    return [
+                        'success' => false,
+                        'error' => 'Error deleting existing verification token: ' . Json::encode($existingToken->errors),
+                    ];
+                }
+            }
+
+            // Create new verification token
+            $newToken = new VerificationToken();
+            $newToken->token = Yii::$app->security->generateRandomString(10);
+            $newToken->expiration_date = time() + 3600; // 1 hour expiration
+            $newToken->device_id = $device->device_id;
+            $newToken->used = false;
+            $newToken->created_at = time();
+            $newToken->updated_at = time();
+
+            if (!$newToken->save()) {
+                return [
+                    'success' => false,
+                    'error' => 'Error creating new verification token: ' . Json::encode($newToken->errors),
+                ];
+            }
+
+            return [
+                'success' => true,
+                'data' => [
+                    'device_id' => $device->device_id,
+                    'verification_token' => $newToken->token,
+                    'device_name' => $device->device_name,
+                    'device_type' => $device->device_type,
+                    'status' => $device->status,
+                    'expiration_date' => $newToken->expiration_date,
+                ],
+                'message' => 'New verification token generated successfully',
+            ];
+
+        } catch (\Exception $e) {
+            Yii::error("Token regeneration error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        } catch (\Throwable $e) {
+            Yii::error("Critical token regeneration error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            Yii::$app->response->statusCode = 500;
+            return [
+                'success' => false,
+                'error' => 'Unexpected error during token regeneration',
+            ];
+        }
     }    /**
      * Rejestruje nowe urządzenie
      */
@@ -93,10 +197,10 @@ class DeviceRegisterController extends Controller
             // Parse JSON body
             $data = Json::decode(Yii::$app->request->rawBody);
 
-            if (!isset($data['deviceId']) || !isset($data['config'])) {
+            if (!isset($data['deviceId'])) {
                 return [
                     'success' => false,
-                    'error' => 'Missing deviceId or config in request body',
+                    'error' => 'Missing deviceId  in request body',
                 ];
             }
 
@@ -108,7 +212,7 @@ class DeviceRegisterController extends Controller
                     'error' => 'Device not found',
                 ];
             }
-            $verification_token = VerificationToken::findOne(['device_id' => $data['deviceId']]);
+            $verification_token = VerificationToken::findOne(['device_id' => $data['deviceId'], 'used' => false]);
             if (!$verification_token) {
                 return [
                     'success' => false,
@@ -135,8 +239,7 @@ class DeviceRegisterController extends Controller
                     'error' => 'Error updating verification token: ' . Json::encode($verification_token->errors),
                 ];
             }
-            // Update config and status
-            $device->config = json_encode($data['config']);
+ 
             $device->status = Devices::STATUS_ACTIVE;
             $device->last_updated = new \yii\db\Expression('NOW()');
 
@@ -184,7 +287,7 @@ class DeviceRegisterController extends Controller
             if (isset($data['status'])) {
                 $device->status = $data['status'];
             }
-            $device->updated_at = time();
+            // $device->updated_at = time();
 
             if (!$device->save()) {
                 throw new ServerErrorHttpException('Błąd podczas aktualizacji urządzenia: ' . 
@@ -354,8 +457,13 @@ class DeviceRegisterController extends Controller
 
             return [
                 'success' => true,
-                'deviceId' => $device->device_id,
-                'verification_token' => $verification_token->token,
+                'data' => [
+                    'device_id' => $device->device_id,
+                    'verification_token' => $verification_token->token,
+                    'device_name' => $device->device_name,
+                    'device_type' => $device->device_type,
+                    'status' => $device->status,
+                ],
             ];
         } catch (\Exception $e) {
             Yii::error("Device create error: " . $e->getMessage());

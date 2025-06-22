@@ -17,25 +17,7 @@ class DeviceRegistrar:
         self.base_url = "http://localhost:8080"
         self.register_endpoint = f"{self.base_url}/api/device-register/register"
     
-    def load_config(self, config_path: str) -> Dict[str, Any]:
-        """Load configuration from JSON file."""
-        try:
-            config_file = Path(config_path)
-            if not config_file.exists():
-                raise FileNotFoundError(f"Config file not found: {config_path}")
-            
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-            
-            print(f"✓ Config loaded from {config_path}")
-            return config
-            
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in config file: {e}")
-        except Exception as e:
-            raise RuntimeError(f"Failed to load config: {e}")
-    
-    def register_device(self, token: str, device_id: str, config: Dict[str, Any]) -> bool:
+    def register_device(self, token: str, device_id: str) -> bool:
         """Register device with the server."""
         headers = {
             "Authorization": f"Bearer {token}",
@@ -44,7 +26,6 @@ class DeviceRegistrar:
         
         payload = {
             "deviceId": device_id,
-            "config": config
         }
         
         try:
@@ -65,6 +46,7 @@ class DeviceRegistrar:
                     response_data = response.json()
                     if response_data:
                         print(f"Server response: {json.dumps(response_data, indent=2)}")
+                        return response_data.get('data.success')
                 except:
                     print("Server returned success without JSON response")
                 return True
@@ -100,29 +82,6 @@ class DeviceRegistrar:
             print(f"✗ Unexpected error during registration: {e}")
             return False
 
-def create_sample_config(filename: str = "init_config.json"):
-    """Create a sample configuration file."""
-    sample_config = {
-        "name": "Sample Device",
-        "type": "sensor",
-        "location": "Office",
-        "settings": {
-            "interval": 30,
-            "enabled": True,
-            "debug_mode": False
-        },
-        "capabilities": [
-            "temperature",
-            "humidity",
-            "pressure"
-        ]
-    }
-    
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(sample_config, f, indent=2)
-    
-    print(f"✓ Sample config created: {filename}")
-
 def main():
     parser = argparse.ArgumentParser(
         description="Register device with server",
@@ -131,7 +90,6 @@ def main():
 Examples:
   %(prog)s --token abc123xyz --config init_config.json --device-id mydevice001
   %(prog)s --token $API_TOKEN --config /path/to/config.json --device-id sensor-01 --url https://api.example.com
-  %(prog)s --create-sample-config
         """
     )
     
@@ -142,51 +100,26 @@ Examples:
     )
     
     parser.add_argument(
-        "--config", 
-        required=False,
-        help="Path to configuration JSON file"
-    )
-    
-    parser.add_argument(
         "--device-id", 
         required=False,
         help="Unique device identifier"
     )
     
-    parser.add_argument(
-        "--url", 
-        default="https://your-api-server.com",
-        help="Base URL of the API server (default: https://your-api-server.com)"
-    )
-    
-    parser.add_argument(
-        "--create-sample-config",
-        action="store_true",
-        help="Create a sample configuration file and exit"
-    )
-    
     args = parser.parse_args()
     
-    # Handle sample config creation
-    if args.create_sample_config:
-        create_sample_config()
-        return 0
     
-    # Validate required arguments
-    if not all([args.token, args.config, args.device_id]):
+    if not all([args.token, args.device_id]):
         print("✗ Missing required arguments")
         parser.print_help()
         return 1
     
     try:
         # Initialize registrar
-        registrar = DeviceRegistrar(args.url)
+        registrar = DeviceRegistrar()
         
-        # Load config
-        config = registrar.load_config(args.config)
         
         # Register device
-        success = registrar.register_device(args.token, args.device_id, config)
+        success = registrar.register_device(args.token, args.device_id)
         
         if success:
             print(f"\n🎉 Registration complete! Device should now be visible in web panel.")
