@@ -398,14 +398,12 @@ export default function DeviceDetailPage() {
 	};
 	const getDeviceIcon = (type: string) => {
 		switch (type) {
-			case "Drone":
-				return "DRONE";
-			case "DSP":
-				return "DSP";
-			case "Linear Module":
-				return "LINEAR";
-			case "Scanner":
-				return "SCAN";
+			case "pmsm-mechanical-vibration":
+				return "PMSM-MECHANICAL-VIBRATION";
+			case "bldc-high-speed":
+				return "BLDC-HIGH-SPEED";
+			case "pmsm-torque-load":
+				return "PMSM-TORQUE-LOAD";
 			default:
 				return "DEVICE";
 		}
@@ -463,7 +461,7 @@ export default function DeviceDetailPage() {
 						</Link>
 						<div>
 							<div className='flex items-center'>
-								<span className='text-3xl mr-3'>
+								<span className='text-xl mr-3 text-center text-gray-500'>
 									{getDeviceIcon(device.device_type)}
 								</span>
 								<div>
@@ -718,7 +716,7 @@ export default function DeviceDetailPage() {
 									<dt className='text-sm font-medium text-gray-500'>
 										Device ID
 									</dt>
-									<dd className='text-sm text-gray-900 font-mono'>
+									<dd className='text-sm text-gray-500 font-mono'>
 										{device.device_id}
 									</dd>
 								</div>
@@ -2251,7 +2249,7 @@ export default function DeviceDetailPage() {
 											type='text'
 											value={device?.device_id || ''}
 											readOnly
-											className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono'
+											className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-500'
 										/>
 										<button
 											onClick={() => navigator.clipboard.writeText(device?.device_id || '')}
@@ -2270,7 +2268,7 @@ export default function DeviceDetailPage() {
 											type='text'
 											value={regeneratedToken}
 											readOnly
-											className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono'
+											className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-500'
 										/>
 										<button
 											onClick={() => navigator.clipboard.writeText(regeneratedToken)}

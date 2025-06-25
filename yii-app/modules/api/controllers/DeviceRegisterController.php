@@ -433,7 +433,9 @@ class DeviceRegisterController extends Controller
             $device->device_name = $data['device_name'];
             $device->device_type = $data['device_type'];
             $device->status = Devices::STATUS_PENDING;
-            new \yii\db\Expression('NOW()');
+            $device->registration_date = new \yii\db\Expression('NOW()');
+            $device->last_updated = new \yii\db\Expression('NOW()');
+            
             if (!$device->save()) {
                 return [
                     'success' => false,

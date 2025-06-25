@@ -130,7 +130,7 @@ export default function DeviceRegisterPage() {
 									<dt className='text-sm font-medium text-gray-500'>
 										Device ID:
 									</dt>
-									<dd className='text-sm text-gray-900 font-mono'>
+									<dd className='text-sm text-gray-500 font-mono'>
 										{success.device_id}
 									</dd>
 								</div>
@@ -178,7 +178,7 @@ export default function DeviceRegisterPage() {
 												type='text'
 												value={success.device_id}
 												readOnly
-												className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono'
+												className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-900'
 											/>
 											<button
 												onClick={() => navigator.clipboard.writeText(success.device_id)}
@@ -197,7 +197,7 @@ export default function DeviceRegisterPage() {
 												type='text'
 												value={success.verification_token}
 												readOnly
-												className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono'
+												className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-900'
 											/>
 											<button
 												onClick={() => navigator.clipboard.writeText(success.verification_token || '')}

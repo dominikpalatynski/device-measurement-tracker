@@ -26,9 +26,9 @@ class Device extends ActiveRecord
     const STATUS_INACTIVE = 'Not-Active';
     
     // Type constants
-    const TYPE_DRONE = 'Drone';
-    const TYPE_DSP = 'DSP';
-    const TYPE_LINEAR_MODULE = 'Linear Module';
+    const TYPE_PMSM_MECHANICAL_VIBRATION = 'pmsm-mechanical-vibration';
+    const TYPE_BLDC_HIGH_SPEED = 'bldc-high-speed';
+    const TYPE_PMSM_TORQUE_LOAD = 'pmsm-torque-load';
     
     /**
      * {@inheritdoc}
@@ -76,7 +76,7 @@ class Device extends ActiveRecord
      */
     public function getMeasurements()
     {
-        return $this->hasMany(Measurement::class, ['device_id' => 'device_id']);
+        return $this->hasMany(MeasurementData::class, ['device_id' => 'device_id']);
     }
     
     /**
@@ -92,7 +92,7 @@ class Device extends ActiveRecord
      */
     public function getLatestMeasurement()
     {
-        return $this->hasOne(Measurement::class, ['device_id' => 'device_id'])
+        return $this->hasOne(MeasurementData::class, ['device_id' => 'device_id'])
             ->orderBy(['timestamp' => SORT_DESC]);
     }
     
@@ -126,9 +126,9 @@ class Device extends ActiveRecord
     public static function getDeviceTypes()
     {
         return [
-            self::TYPE_DRONE => 'Drone',
-            self::TYPE_DSP => 'DSP',
-            self::TYPE_LINEAR_MODULE => 'Linear Module',
+            self::TYPE_PMSM_MECHANICAL_VIBRATION => 'PMSM Mechanical Vibration',
+            self::TYPE_BLDC_HIGH_SPEED => 'BLDC High Speed',
+            self::TYPE_PMSM_TORQUE_LOAD => 'PMSM Torque Load',
         ];
     }
     

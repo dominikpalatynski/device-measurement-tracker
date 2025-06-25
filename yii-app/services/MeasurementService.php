@@ -8,6 +8,7 @@ use yii\base\Component;
 use yii\helpers\Json;
 use yii\web\ServerErrorHttpException;
 use app\models\Experiments;
+use app\models\MeasurementData;
 class MeasurementService extends Component
 {
     /**
@@ -43,7 +44,7 @@ class MeasurementService extends Component
             $device->last_seen_at = time();
             $device->save();
               // Create new measurement
-            $measurement = new Measurement();
+            $measurement = new MeasurementData();
             $measurement->device_id = $device->device_id;
             $measurement->temperature = $data['temperature'] ?? null;
             $measurement->humidity = $data['humidity'] ?? null;
@@ -80,7 +81,7 @@ class MeasurementService extends Component
             $device = new Devices();
             $device->device_id = $deviceUuid;
             $device->device_name = "Device $deviceUuid";
-            $device->device_type = Devices::TYPE_DSP; // Default type
+            $device->device_type = Devices::TYPE_PMSM_MECHANICAL_VIBRATION; // Default type
             $device->status = Devices::STATUS_ACTIVE;
             $device->registration_date = new \yii\db\Expression('NOW()');
             $device->last_updated = new \yii\db\Expression('NOW()');
@@ -147,7 +148,7 @@ class MeasurementService extends Component
      */
     public function getLatestMeasurements($deviceId = null, $limit = 10)
     {
-        $query = Measurement::find()
+        $query = MeasurementData::find()
             ->orderBy(['measured_at' => SORT_DESC]);
             
         if ($deviceId !== null) {

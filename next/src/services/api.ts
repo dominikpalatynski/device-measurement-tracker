@@ -371,26 +371,27 @@ export async function getDevice(deviceUuid: string): Promise<Device | null> {
 export async function registerDevice(deviceData: {device_name: string, device_type: string}): Promise<Device | null> {
   try {
     console.log('Registering device:', deviceData);
-    const response = await fetchApi<{success: boolean, deviceId?: string, verification_token?: string, error?: string}>('device-register/create', {
+    const response = await fetchApi<{success: boolean, data?: {device_id: string, verification_token: string, device_name: string, device_type: string, status: string}, error?: string}>('device-register/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(deviceData),
     });
-      if (response.success && response.deviceId) {
+      if (response.success && response.data && response.data.device_id) {
       // Store verification token for later use
-      if (response.verification_token) {
-        localStorage.setItem(`verification_token_${response.deviceId}`, response.verification_token);
+      if (response.data.verification_token) {
+        localStorage.setItem(`verification_token_${response.data.device_id}`, response.data.verification_token);
       }
         // Create a device object from the response
       const device: Device = {
-        device_id: response.deviceId,
-        device_name: deviceData.device_name,
-        device_type: deviceData.device_type as "pmsm-mechanical-vibration" | "bldc-high-speed" | "pmsm-torque-load",
-        status: "Pending-Registration" as "Active" | "Pending-Registration" | "Not-Active",
+        device_id: response.data.device_id,
+        device_name: response.data.device_name,
+        device_type: response.data.device_type as "pmsm-mechanical-vibration" | "bldc-high-speed" | "pmsm-torque-load",
+        status: response.data.status as "Active" | "Pending-Registration" | "Not-Active",
         registration_date: new Date().toISOString(),
         last_updated: new Date().toISOString(),
+        verification_token: response.data.verification_token,
       };
       return device;
     }
