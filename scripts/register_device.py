@@ -46,7 +46,7 @@ class DeviceRegistrar:
                     response_data = response.json()
                     if response_data:
                         print(f"Server response: {json.dumps(response_data, indent=2)}")
-                        return response_data.get('data.success')
+                        return response_data.get('success')
                 except:
                     print("Server returned success without JSON response")
                 return True
