@@ -308,3 +308,26 @@
 1750021606: Saving in-memory database to /mosquitto/data//mosquitto.db.
 1750023407: Saving in-memory database to /mosquitto/data//mosquitto.db.
 1750025515: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1750660730: mosquitto version 2.0.21 starting
+1750660730: Config loaded from /mosquitto/config/mosquitto.conf.
+1750660730: Opening ipv4 listen socket on port 1883.
+1750660730: Opening ipv6 listen socket on port 1883.
+1750660730: Opening websockets listen socket on port 9001.
+1750660730: mosquitto version 2.0.21 running
+1750662531: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1750664332: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1750664530: New connection from 172.18.0.1:61312 on port 1883.
+1750664530: New client connected from 172.18.0.1:61312 as yii-mqtt-68590552d4b5f (p1, c0, k10).
+1750664572: New connection from 172.18.0.1:57938 on port 1883.
+1750664572: New client connected from 172.18.0.1:57938 as device_q4Z_ooBVKFJA (p2, c1, k60).
+1750664581: Client device_q4Z_ooBVKFJA disconnected.
+1750664602: New connection from 172.18.0.1:64354 on port 1883.
+1750664602: New client connected from 172.18.0.1:64354 as device_nrXJOCFjfsmU (p2, c1, k60).
+1750664620: Client yii-mqtt-68590552d4b5f closed its connection.
+1750664624: Client device_nrXJOCFjfsmU disconnected.
+1750666133: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1750667934: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1750670330: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1750672131: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1750672712: mosquitto version 2.0.21 terminating
+1750672712: Saving in-memory database to /mosquitto/data//mosquitto.db.

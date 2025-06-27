@@ -92,6 +92,11 @@ export default function DeviceDetailPage() {
 		measurement_range_max: 0,
 	});
 
+	// Token regeneration state
+	const [showTokenModal, setShowTokenModal] = useState(false);
+	const [regeneratedToken, setRegeneratedToken] = useState<string | null>(null);
+	const [tokenLoading, setTokenLoading] = useState(false);
+
 	// Fetch channels from backend
 	const fetchChannels = async () => {
 		setChannelsLoading(true);
@@ -285,6 +290,44 @@ export default function DeviceDetailPage() {
 			setLoading(false);
 		}
 	};
+	const handleActivateDevice = async () => {
+		if (!device) return;
+
+		try {
+			const success = await deviceApi.activateDevice(device.device_id);
+			if (success) {
+				setDevice({ ...device, status: "Active" });
+			} else {
+				setError("Failed to activate device");
+			}
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "Failed to activate device"
+			);
+		}
+	};
+
+	const handleDeactivateDevice = async () => {
+		if (!device) return;
+		if (!confirm("Are you sure you want to deactivate this device?"))
+			return;
+
+		try {
+			const success = await deviceApi.deactivateDevice(device.device_id);
+			if (success) {
+				setDevice({ ...device, status: "Not-Active" });
+			} else {
+				console.log("Success:", success);
+				setError("Failed to deactivate device");
+			}
+		} catch (err) {
+			setError(
+				err instanceof Error
+					? err.message
+					: "Failed to deactivate device"
+			);
+		}
+	};
 
 	const handleDeleteDevice = async () => {
 		if (!device) return;
@@ -306,6 +349,27 @@ export default function DeviceDetailPage() {
 			setError(
 				err instanceof Error ? err.message : "Failed to delete device"
 			);
+		}
+	};
+
+	const handleRegenerateToken = async () => {
+		if (!device) return;
+
+		setTokenLoading(true);
+		try {
+			const response = await deviceApi.regenerateToken(device.device_id);
+			if (response.success && response.data) {
+				setRegeneratedToken(response.data.verification_token);
+				setShowTokenModal(true);
+			} else {
+				setError(response.error || "Failed to regenerate token");
+			}
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "Failed to regenerate token"
+			);
+		} finally {
+			setTokenLoading(false);
 		}
 	};
 	const getStatusColor = (status: Device["status"]) => {
@@ -334,14 +398,12 @@ export default function DeviceDetailPage() {
 	};
 	const getDeviceIcon = (type: string) => {
 		switch (type) {
-			case "Drone":
-				return "DRONE";
-			case "DSP":
-				return "DSP";
-			case "Linear Module":
-				return "LINEAR";
-			case "Scanner":
-				return "SCAN";
+			case "pmsm-mechanical-vibration":
+				return "PMSM-MECHANICAL-VIBRATION";
+			case "bldc-high-speed":
+				return "BLDC-HIGH-SPEED";
+			case "pmsm-torque-load":
+				return "PMSM-TORQUE-LOAD";
 			default:
 				return "DEVICE";
 		}
@@ -399,7 +461,7 @@ export default function DeviceDetailPage() {
 						</Link>
 						<div>
 							<div className='flex items-center'>
-								<span className='text-3xl mr-3'>
+								<span className='text-xl mr-3 text-center text-gray-500'>
 									{getDeviceIcon(device.device_type)}
 								</span>
 								<div>
@@ -414,6 +476,34 @@ export default function DeviceDetailPage() {
 						</div>
 					</div>{" "}
 					<div className='flex space-x-2'>
+						{/* Regenerate Token - Only for Pending Registration devices */}
+						{device.status === "Pending-Registration" && (
+							<button
+								onClick={handleRegenerateToken}
+								disabled={tokenLoading}
+								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50'
+							>
+								{tokenLoading ? "Regenerating..." : "🔄 Regenerate Token"}
+							</button>
+						)}
+						{/* Activate Controls - For Not-Active devices */}
+						{device.status === "Not-Active" && (
+							<button
+								onClick={handleActivateDevice}
+								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700'
+							>
+								✅ Activate Device
+							</button>
+						)}
+						{/* Deactivate Controls - For Active devices */}
+						{device.status === "Active" && (
+							<button
+								onClick={handleDeactivateDevice}
+								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700'
+							>
+								⏸️ Deactivate
+							</button>
+						)}{" "}
 						{/* Experiment Controls - Only for Active devices */}
 						{device.status === "Active" && (
 							<>
@@ -626,7 +716,7 @@ export default function DeviceDetailPage() {
 									<dt className='text-sm font-medium text-gray-500'>
 										Device ID
 									</dt>
-									<dd className='text-sm text-gray-900 font-mono'>
+									<dd className='text-sm text-gray-500 font-mono'>
 										{device.device_id}
 									</dd>
 								</div>
@@ -770,19 +860,29 @@ export default function DeviceDetailPage() {
 
 							{device.status !== "Active" ? (
 								<div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4'>
-									<div className='flex items-center'>
-										<div className='text-yellow-400 mr-3'>
-											⚠️
+									<div className='flex items-center justify-between'>
+										<div className='flex items-center'>
+											<div className='text-yellow-400 mr-3'>
+												⚠️
+											</div>
+											<div>
+												<h4 className='font-medium text-yellow-800'>
+													Device Not Active
+												</h4>
+												<p className='text-sm text-yellow-700 mt-1'>
+													The device must be active to
+													start live experiments.
+												</p>
+											</div>
 										</div>
-										<div>
-											<h4 className='font-medium text-yellow-800'>
-												Device Not Active
-											</h4>
-											<p className='text-sm text-yellow-700 mt-1'>
-												The device must be active to
-												start live experiments.
-											</p>
-										</div>
+										{device.status === "Not-Active" && (
+											<button
+												onClick={handleActivateDevice}
+												className='inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700'
+											>
+												✅ Activate
+											</button>
+										)}
 									</div>
 								</div>
 							) : (
@@ -2105,6 +2205,108 @@ export default function DeviceDetailPage() {
 						)}
 					</div>
 				)}{" "}
+
+				{/* Token Regeneration Modal */}
+				{showTokenModal && regeneratedToken && (
+					<div className='fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50'>
+						<div className='bg-white rounded-lg max-w-md w-full p-6'>
+							<div className='flex justify-between items-center mb-4'>
+								<h4 className='text-lg font-bold text-gray-900'>
+									New Verification Token Generated
+								</h4>
+								<button
+									onClick={() => {
+										setShowTokenModal(false);
+										setRegeneratedToken(null);
+									}}
+									className='text-gray-500 hover:text-gray-700'
+								>
+									✕
+								</button>
+							</div>
+							<div className='space-y-4'>
+								<div className='bg-green-50 border border-green-200 rounded-lg p-4'>
+									<div className='flex items-center'>
+										<div className='text-green-400 mr-3'>
+											✅
+										</div>
+										<div>
+											<h4 className='font-medium text-green-800'>
+												Token Generated Successfully
+											</h4>
+											<p className='text-sm text-green-700 mt-1'>
+												Use this token to register your device. It will expire in 1 hour.
+											</p>
+										</div>
+									</div>
+								</div>
+								<div className='space-y-2'>
+									<label className='block text-sm font-medium text-gray-700'>
+										Device ID
+									</label>
+									<div className='flex'>
+										<input
+											type='text'
+											value={device?.device_id || ''}
+											readOnly
+											className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-500'
+										/>
+										<button
+											onClick={() => navigator.clipboard.writeText(device?.device_id || '')}
+											className='px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 text-sm'
+										>
+											Copy
+										</button>
+									</div>
+								</div>
+								<div className='space-y-2'>
+									<label className='block text-sm font-medium text-gray-700'>
+										Verification Token
+									</label>
+									<div className='flex'>
+										<input
+											type='text'
+											value={regeneratedToken}
+											readOnly
+											className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-500'
+										/>
+										<button
+											onClick={() => navigator.clipboard.writeText(regeneratedToken)}
+											className='px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 text-sm'
+										>
+											Copy
+										</button>
+									</div>
+								</div>
+								<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
+									<h5 className='font-medium text-blue-800 mb-2'>Registration Command</h5>
+									<p className='text-sm text-blue-700 mb-2'>Use this command to register your device:</p>
+									<div className='bg-gray-800 text-green-400 p-2 rounded text-xs font-mono overflow-x-auto'>
+										{`python register_device.py --token ${regeneratedToken} --device-id ${device?.device_id}`}
+									</div>
+									<button
+										onClick={() => navigator.clipboard.writeText(`python register_device.py --token ${regeneratedToken} --device-id ${device?.device_id}`)}
+										className='mt-2 text-xs text-blue-600 hover:text-blue-800'
+									>
+										📋 Copy command
+									</button>
+								</div>
+							</div>
+							<div className='flex justify-end mt-6'>
+								<button
+									onClick={() => {
+										setShowTokenModal(false);
+										setRegeneratedToken(null);
+									}}
+									className='px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md'
+								>
+									Close
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+
 				{/* Remove old experiments tab - replaced with live-experiments and data-explorer */}
 				<div className='space-y-6'>
 					{/* Experiment Creation Actions */}
@@ -2150,6 +2352,14 @@ export default function DeviceDetailPage() {
 												before you can create
 												experiments.
 											</p>
+											{(device.status === "Pending-Registration" || device.status === "Not-Active") && (
+												<button
+													onClick={handleActivateDevice}
+													className='mt-3 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700'
+												>
+													✅ Activate Device
+												</button>
+											)}
 										</div>
 									</div>
 								</div>

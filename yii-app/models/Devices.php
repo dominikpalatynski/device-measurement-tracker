@@ -25,9 +25,9 @@ class Devices extends ActiveRecord
     const STATUS_PENDING = 'Pending-Registration';
     const STATUS_INACTIVE = 'Not-Active';
 
-    const TYPE_DRONE = 'Drone';
-    const TYPE_DSP = 'DSP';
-    const TYPE_LINEAR_MODULE = 'Linear Module';
+    const TYPE_PMSM_MECHANICAL_VIBRATION = 'pmsm-mechanical-vibration';
+    const TYPE_BLDC_HIGH_SPEED = 'bldc-high-speed';
+    const TYPE_PMSM_TORQUE_LOAD = 'pmsm-torque-load';
 
     /**
      * {@inheritdoc}
@@ -55,7 +55,7 @@ class Devices extends ActiveRecord
             [['registration_date', 'last_updated'], 'safe'],
             [['device_id', 'device_name'], 'string', 'max' => 255],
             [['device_type'], 'string'],
-            [['device_type'], 'in', 'range' => [self::TYPE_DRONE, self::TYPE_DSP, self::TYPE_LINEAR_MODULE]],
+            [['device_type'], 'in', 'range' => [self::TYPE_PMSM_MECHANICAL_VIBRATION, self::TYPE_BLDC_HIGH_SPEED, self::TYPE_PMSM_TORQUE_LOAD]],
             [['status'], 'string'],
             [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_PENDING, self::STATUS_INACTIVE]],
             [['device_id'], 'unique'],

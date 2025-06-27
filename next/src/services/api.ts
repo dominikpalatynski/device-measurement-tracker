@@ -128,6 +128,7 @@ export interface Device {
   // Optional fields that might be added by frontend
   experiments_count?: number;
   active_experiments_count?: number;
+  verification_token?: string;
 }
 
 export interface DeviceResponse {
@@ -370,26 +371,27 @@ export async function getDevice(deviceUuid: string): Promise<Device | null> {
 export async function registerDevice(deviceData: {device_name: string, device_type: string}): Promise<Device | null> {
   try {
     console.log('Registering device:', deviceData);
-    const response = await fetchApi<{success: boolean, deviceId?: string, verification_token?: string, error?: string}>('device-register/create', {
+    const response = await fetchApi<{success: boolean, data?: {device_id: string, verification_token: string, device_name: string, device_type: string, status: string}, error?: string}>('device-register/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(deviceData),
     });
-      if (response.success && response.deviceId) {
+      if (response.success && response.data && response.data.device_id) {
       // Store verification token for later use
-      if (response.verification_token) {
-        localStorage.setItem(`verification_token_${response.deviceId}`, response.verification_token);
+      if (response.data.verification_token) {
+        localStorage.setItem(`verification_token_${response.data.device_id}`, response.data.verification_token);
       }
         // Create a device object from the response
       const device: Device = {
-        device_id: response.deviceId,
-        device_name: deviceData.device_name,
-        device_type: deviceData.device_type as "pmsm-mechanical-vibration" | "bldc-high-speed" | "pmsm-torque-load",
-        status: "Pending-Registration" as "Active" | "Pending-Registration" | "Not-Active",
+        device_id: response.data.device_id,
+        device_name: response.data.device_name,
+        device_type: response.data.device_type as "pmsm-mechanical-vibration" | "bldc-high-speed" | "pmsm-torque-load",
+        status: response.data.status as "Active" | "Pending-Registration" | "Not-Active",
         registration_date: new Date().toISOString(),
         last_updated: new Date().toISOString(),
+        verification_token: response.data.verification_token,
       };
       return device;
     }
@@ -433,8 +435,10 @@ export async function updateDevice(deviceUuid: string, deviceData: Partial<Devic
  */
 export async function activateDevice(deviceUuid: string): Promise<boolean> {
   try {
-    const response = await updateDevice(deviceUuid, { status: 'Active' });
-    return response !== null;
+    const response = await fetchApi<{success: boolean; data?: any; message?: string}>(`device-register/activate?id=${deviceUuid}`, {
+      method: 'POST',
+    });
+    return response.success;
   } catch (error) {
     console.error('Error activating device:', error);
     return false;
@@ -446,8 +450,10 @@ export async function activateDevice(deviceUuid: string): Promise<boolean> {
  */
 export async function deactivateDevice(deviceUuid: string): Promise<boolean> {
   try {
-    const response = await updateDevice(deviceUuid, { status: 'Not-Active' });
-    return response !== null;
+    const response = await fetchApi<{success: boolean; data?: any; message?: string}>(`device-register/deactivate?id=${deviceUuid}`, {
+      method: 'POST',
+    });
+    return response.success;
   } catch (error) {
     console.error('Error deactivating device:', error);
     return false;
@@ -597,6 +603,23 @@ export async function getPhenomena(): Promise<Phenomenon[]> {
   }
 }
 
+export async function regenerateDeviceToken(deviceId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const response = await fetchApi<{ success: boolean; data?: any; error?: string }>(`device-register/regenerate-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ deviceId }),
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Failed to regenerate device token:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
 // Device API object for easy access
 export const deviceApi = {
   getDevices,
@@ -606,6 +629,7 @@ export const deviceApi = {
   activateDevice,
   deactivateDevice,
   deleteDevice,
+  regenerateToken: regenerateDeviceToken,
 };
 
 // Online Mode API for real-time experiment control

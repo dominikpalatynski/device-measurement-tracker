@@ -4,8 +4,7 @@
 2. pip install -r requirements.txt
 
 #RegisterDevice
-
-1. python3 register_device.py --token q4Z_ooBVKFJA --device-id pcS-GqREh2 --create-sample-config
+1. python3 register_device.py --token bqKH4YjZN2 --device-id OCc6TFetHPFI
 
 #Batch processing
 
