@@ -2,7 +2,7 @@
     "host": "localhost", 
     "port": 1883,
     "send_interval": 10,
-    "deviceId": "nrXJOCFjfsmU",
+    "deviceId": "YTdzQYiThAuY",
     "included_files": [
       "w.dat",
       "udc.dat", 

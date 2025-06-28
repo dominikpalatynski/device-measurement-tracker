@@ -50,7 +50,22 @@ services:
             - db
         networks:
             - iot-network
-
+    influxdb2:
+        image: influxdb:2
+        ports:
+            - 8086:8086
+        environment:
+            DOCKER_INFLUXDB_INIT_MODE: setup
+            DOCKER_INFLUXDB_INIT_USERNAME: admin
+            DOCKER_INFLUXDB_INIT_PASSWORD: password
+            DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: mytoken
+            DOCKER_INFLUXDB_INIT_ORG: myorg
+            DOCKER_INFLUXDB_INIT_BUCKET: bucket
+        volumes:
+            - ./docker/influxdb/influxdb2-data:/var/lib/influxdb2
+            - ./docker/influxdb/influxdb2-config:/etc/influxdb2
+        networks:
+            - iot-network
 networks:
     iot-network:
         driver: bridge
