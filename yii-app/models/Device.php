@@ -16,7 +16,7 @@ use yii\db\Expression;
  * @property string $last_updated
  *
  * @property Measurement[] $measurements
- * @property Experiments[] $experiments
+ * @property Faults[] $faults
  */
 class Device extends ActiveRecord
 {
@@ -80,11 +80,19 @@ class Device extends ActiveRecord
     }
     
     /**
-     * Get experiments for this device
+     * Get faults for this device
+     */
+    public function getFaults()
+    {
+        return $this->hasMany(Faults::class, ['device_id' => 'device_id']);
+    }
+    
+    /**
+     * Get experiments for this device (backward compatibility)
      */
     public function getExperiments()
     {
-        return $this->hasMany(Experiments::class, ['device_id' => 'device_id']);
+        return $this->getFaults();
     }
     
     /**

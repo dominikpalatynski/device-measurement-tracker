@@ -104,35 +104,63 @@ $config = [
                 'api/devices/<id:\d+>/delete' => 'api/device-register/delete',                'api/devices/<id:\d+>/activate' => 'api/device-register/activate',
                 'api/devices/<id:\d+>/deactivate' => 'api/device-register/deactivate',
 
-                // Live experiment endpoints for devices
-                'api/devices/<deviceId:\w+>/live-experiment' => 'api/devices/live-experiment',
-                'api/devices/<deviceId:\w+>/start-phenomenon' => 'api/devices/start-phenomenon',
-                'api/devices/<deviceId:\w+>/stop-phenomenon' => 'api/devices/stop-phenomenon',// Experiment endpoints
-                'api/experiment/list' => 'api/experiment/list',
-                'api/experiment/view' => 'api/experiment/view',
-                'api/experiment/create' => 'api/experiment/create',
-                'api/experiment/update' => 'api/experiment/update',
-                'api/experiment/delete' => 'api/experiment/delete',
-                'api/experiment/test' => 'api/experiment/test',
+                // Live fault endpoints for devices
+                'api/devices/<deviceId:\w+>/live-fault' => 'api/devices/live-fault',
+                'api/devices/<deviceId:\w+>/start-condition' => 'api/devices/start-condition',
+                'api/devices/<deviceId:\w+>/stop-condition' => 'api/devices/stop-condition',                // Fault endpoints
+                'api/fault/list' => 'api/faults/list',
+                'api/fault/view' => 'api/faults/view',
+                'api/fault/create' => 'api/faults/create',
+                'api/fault/update' => 'api/faults/update',
+                'api/fault/delete' => 'api/faults/delete',
+                'api/fault/test' => 'api/faults/test',
                 
-                // Additional experiment endpoints (keeping backward compatibility)
-                'api/experiments/list' => 'api/experiments/list',
-                'api/experiments/view' => 'api/experiments/view',
-                'api/experiments/create' => 'api/experiments/create',
-                'api/experiments/update' => 'api/experiments/update',
-                'api/experiments/delete' => 'api/experiments/delete',
-                'api/experiments/test' => 'api/experiments/test',
+                // Additional fault endpoints (keeping backward compatibility)
+                'api/faults/list' => 'api/faults/list',
+                'api/faults/view' => 'api/faults/view',
+                'api/faults/create' => 'api/faults/create',
+                'api/faults/update' => 'api/faults/update',
+                'api/faults/delete' => 'api/faults/delete',
+                'api/faults/test' => 'api/faults/test',
                 
-                // Phenomenon endpoints
-                'api/phenomenon/list' => 'api/phenomena/list',
-                'api/phenomenon/view' => 'api/phenomena/view',
-                'api/phenomenon/create' => 'api/phenomena/create',
-                'api/phenomenon/update' => 'api/phenomena/update',
-                'api/phenomenon/delete' => 'api/phenomena/delete',
-                'api/phenomenon/test' => 'api/phenomena/test',
-                'api/phenomenon/start' => 'api/phenomena/start',
-                'api/phenomenon/stop' => 'api/phenomena/stop',
-                'api/phenomenon/finish' => 'api/phenomena/finish',
+                // Condition endpoints
+                'api/condition/list' => 'api/conditions/list',
+                'api/condition/view' => 'api/conditions/view',
+                'api/condition/create' => 'api/conditions/create',
+                'api/condition/update' => 'api/conditions/update',
+                'api/condition/delete' => 'api/conditions/delete',
+                'api/condition/test' => 'api/conditions/test',
+                'api/condition/start' => 'api/conditions/start',
+                'api/condition/stop' => 'api/conditions/stop',
+                'api/condition/finish' => 'api/conditions/finish',
+                
+                // Backward compatibility: experiment endpoints map to faults
+                'api/experiment/list' => 'api/faults/list',
+                'api/experiment/view' => 'api/faults/view',
+                'api/experiment/create' => 'api/faults/create',
+                'api/experiment/update' => 'api/faults/update',
+                'api/experiment/delete' => 'api/faults/delete',
+                'api/experiment/test' => 'api/faults/test',
+                'api/experiments/list' => 'api/faults/list',
+                'api/experiments/view' => 'api/faults/view',
+                'api/experiments/create' => 'api/faults/create',
+                'api/experiments/update' => 'api/faults/update',
+                'api/experiments/delete' => 'api/faults/delete',
+                'api/experiments/test' => 'api/faults/test',
+                
+                // Backward compatibility: phenomena endpoints map to conditions
+                'api/phenomenon/list' => 'api/conditions/list',
+                'api/phenomenon/view' => 'api/conditions/view',
+                'api/phenomenon/create' => 'api/conditions/create',
+                'api/phenomenon/update' => 'api/conditions/update',
+                'api/phenomenon/delete' => 'api/conditions/delete',
+                'api/phenomenon/test' => 'api/conditions/test',
+                'api/phenomena/list' => 'api/conditions/list',
+                'api/phenomena/view' => 'api/conditions/view',
+                'api/phenomena/create' => 'api/conditions/create',
+                'api/phenomena/update' => 'api/conditions/update',
+                'api/phenomena/delete' => 'api/conditions/delete',
+                'api/phenomena/test' => 'api/conditions/test',
                 
                 // Measurement endpoints
                 'api/measurement/latest' => 'api/device-measurement/latest',
@@ -145,9 +173,9 @@ $config = [
                 'api/measurement/<action>' => 'api/device-measurement/<action>',
                   // Measurement Data endpoints (from measurement_data table)
                 // More specific routes must come first
-                'api/measurement-data/phenomenon/live' => 'api/measurement-data/phenomenon-live',
-                'api/measurement-data/phenomenon/latest' => 'api/measurement-data/phenomenon-latest',
-                'api/measurement-data/phenomenon/<phenomenonId>' => 'api/measurement-data/phenomenon',
+                'api/measurement-data/condition/live' => 'api/measurement-data/condition-live',
+                'api/measurement-data/condition/latest' => 'api/measurement-data/condition-latest',
+                'api/measurement-data/condition/<conditionId>' => 'api/measurement-data/condition',
                 'api/measurement-data/device/<deviceId>' => 'api/measurement-data/device',
                 'api/measurement-data/latest-all' => 'api/measurement-data/latest-all',
                 'api/measurement-data/<action>' => 'api/measurement-data/<action>',

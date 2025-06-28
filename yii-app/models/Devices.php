@@ -17,13 +17,12 @@ use yii\db\Expression;
  * @property string $status
  * @property string $last_updated
  *
- * @property Experiments[] $experiments
+ * @property Faults[] $faults
  */
 class Devices extends ActiveRecord
 {
     const STATUS_ACTIVE = 'Active';
-    const STATUS_PENDING = 'Pending-Registration';
-    const STATUS_INACTIVE = 'Not-Active';
+    const STATUS_INACTIVE = 'Inactive';
 
     const TYPE_PMSM_MECHANICAL_VIBRATION = 'pmsm-mechanical-vibration';
     const TYPE_BLDC_HIGH_SPEED = 'bldc-high-speed';
@@ -57,7 +56,7 @@ class Devices extends ActiveRecord
             [['device_type'], 'string'],
             [['device_type'], 'in', 'range' => [self::TYPE_PMSM_MECHANICAL_VIBRATION, self::TYPE_BLDC_HIGH_SPEED, self::TYPE_PMSM_TORQUE_LOAD]],
             [['status'], 'string'],
-            [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_PENDING, self::STATUS_INACTIVE]],
+            [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_INACTIVE]],
             [['device_id'], 'unique'],
             [['config'], 'safe'],
         ];
@@ -78,13 +77,13 @@ class Devices extends ActiveRecord
             'config' => 'Config',
         ];
     }    /**
-     * Gets query for [[Experiments]].
+     * Gets query for [[Faults]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getExperiments()
+    public function getFaults()
     {
-        return $this->hasMany(Experiments::class, ['device_id' => 'device_id']);
+        return $this->hasMany(Faults::class, ['device_id' => 'device_id']);
     }
 
     /**
@@ -117,26 +116,26 @@ class Devices extends ActiveRecord
     {
         return $this->status === self::STATUS_ACTIVE;
     }    /**
-     * Check if device has active experiments
+     * Check if device has active faults
      * 
      * @return bool
      */
-    public function hasActiveExperiments()
+    public function hasActiveFaults()
     {
-        return $this->getExperiments()
-            ->where(['status' => [Experiments::STATUS_RUNNING, Experiments::STATUS_SCHEDULED]])
+        return $this->getFaults()
+            ->where(['status' => [Faults::STATUS_RUNNING, Faults::STATUS_SCHEDULED]])
             ->exists();
     }
 
     /**
-     * Get active experiment
+     * Get active fault
      * 
-     * @return Experiments|null
+     * @return Faults|null
      */
-    public function getActiveExperiment()
+    public function getActiveFault()
     {
-        return $this->getExperiments()
-            ->where(['status' => [Experiments::STATUS_RUNNING, Experiments::STATUS_SCHEDULED]])
+        return $this->getFaults()
+            ->where(['status' => [Faults::STATUS_RUNNING, Faults::STATUS_SCHEDULED]])
             ->one();
     }
 }

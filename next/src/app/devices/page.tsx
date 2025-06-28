@@ -358,7 +358,7 @@ export default function DevicesPage() {
 										Last Updated
 									</th>
 									<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-										Experiments
+										Faults
 									</th>
 									<th className='px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider'>
 										Actions
@@ -417,14 +417,11 @@ export default function DevicesPage() {
 												: "N/A"}
 										</td>
 										<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-											{device.experiments_count || 0}{" "}
-											total
-											{device.active_experiments_count ? (
+											{device.faults_count || 0} total
+											{device.active_faults_count ? (
 												<span className='text-green-600 ml-2'>
 													(
-													{
-														device.active_experiments_count
-													}{" "}
+													{device.active_faults_count}{" "}
 													active)
 												</span>
 											) : null}

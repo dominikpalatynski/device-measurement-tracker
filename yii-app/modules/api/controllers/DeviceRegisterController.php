@@ -103,11 +103,11 @@ class DeviceRegisterController extends Controller
                 ];
             }
 
-            // Check if device is in pending registration status
-            if ($device->status !== Devices::STATUS_PENDING) {
+            // Check if device is inactive (awaiting verification)
+            if ($device->status !== Devices::STATUS_INACTIVE) {
                 return [
                     'success' => false,
-                    'error' => 'Device is not in pending registration status',
+                    'error' => 'Device is not awaiting verification',
                 ];
             }
 
@@ -432,7 +432,7 @@ class DeviceRegisterController extends Controller
             $device->device_id = Yii::$app->security->generateRandomString(12);
             $device->device_name = $data['device_name'];
             $device->device_type = $data['device_type'];
-            $device->status = Devices::STATUS_PENDING;
+            $device->status = Devices::STATUS_INACTIVE;
             $device->registration_date = new \yii\db\Expression('NOW()');
             $device->last_updated = new \yii\db\Expression('NOW()');
             

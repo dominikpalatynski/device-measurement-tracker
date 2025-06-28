@@ -32,16 +32,16 @@ export default function Breadcrumb({ items }: BreadcrumbProps) {
 			let label = segment;
 
 			// Handle specific cases
-			if (segment === "experiments") {
-				label = "Experiments";
+			if (segment === "faults") {
+				label = "Faults";
 			} else if (segment === "devices") {
 				label = "Devices";
 			} else if (segment === "register") {
 				label = "Register";
-			} else if (segment.startsWith("exp_") || segment.length > 10) {
+			} else if (segment.startsWith("flt_") || segment.length > 10) {
 				// This might be an ID, try to make it more readable
-				if (segment.startsWith("exp_")) {
-					label = `Experiment ${segment.slice(4, 12)}...`;
+				if (segment.startsWith("flt_")) {
+					label = `Fault ${segment.slice(4, 12)}...`;
 				} else {
 					label = `${segment.slice(0, 8)}...`;
 				}

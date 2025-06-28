@@ -5,8 +5,8 @@ use Yii;
 use yii\rest\Controller;
 use yii\web\Response;
 use app\services\DeviceMeasurementService;
-use app\models\Phenomena;
-use app\models\Experiments;
+use app\models\Conditions;
+use app\models\Faults;
 
 class DeviceMeasurementController extends Controller
 {    /**
@@ -58,7 +58,7 @@ class DeviceMeasurementController extends Controller
                 return [
                     'data_id' => (int)$measurement->data_id,
                     'device_id' => $measurement->device_id,
-                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'condition_id' => $measurement->condition_id,
                     'data_payload' => $measurement->data_payload,
                     'timestamp' => $measurement->timestamp,
                 ];
@@ -248,7 +248,7 @@ class DeviceMeasurementController extends Controller
 
         // Validate required fields
         $deviceId = $data['deviceId'] ?? null;
-        $phenomenonId = $data['phenomenomId'] ?? null;
+        $conditionId = $data['conditionId'] ?? null;
         $timestamp = $data['timestamp'] ?? null;
         $payload = $data['data'] ?? null;
         
@@ -274,50 +274,42 @@ class DeviceMeasurementController extends Controller
             ];
         }
 
-        $phenomenon = Phenomena::findOne(['phenomenon_id' => $phenomenonId, 'status' => Phenomena::STATUS_ACTIVE]);
-        if (!$phenomenon) {
+        $condition = Conditions::findOne(['condition_id' => $conditionId, 'status' => Conditions::STATUS_ACTIVE]);
+        if (!$condition) {
             Yii::$app->response->statusCode = 422;
             return [
                 'success' => false,
-                'error' => 'Phenomenon not found'
+                'error' => 'Condition not found'
             ];
         }
 
-        if (!$phenomenon) {
+        if (!$condition) {
             Yii::$app->response->statusCode = 422;
             return [
                 'success' => false,
-                'error' => 'Phenomenon not found'
+                'error' => 'Condition not found'
             ];
         }
 
-        $experiment = Experiments::findOne(['experiment_id' => $phenomenon->experiment_id]);
-        if (!$experiment) {
+        $fault = Faults::findOne(['fault_id' => $condition->fault_id]);
+        if (!$fault) {
             Yii::$app->response->statusCode = 422;
             return [
                 'success' => false,
-                'error' => 'Experiment not found'
+                'error' => 'Fault not found'
             ];
         }
 
-        if ($experiment->type === Experiments::STREAM) {
+        if ($fault->status !== Faults::STATUS_ACTIVE) {
             Yii::$app->response->statusCode = 422;
             return [
                 'success' => false,
-                'error' => 'Stream experiment can not receive data from batch experiment'
-            ];
-        }
-
-        if ($experiment->status !== Experiments::STATUS_RUNNING) {
-            Yii::$app->response->statusCode = 422;
-            return [
-                'success' => false,
-                'error' => 'Experiment is not running'
+                'error' => 'Fault is not active'
             ];
         }        try {
             $measurement = new \app\models\MeasurementData();
             $measurement->device_id = $deviceId;
-            $measurement->phenomenon_id = $phenomenonId;
+            $measurement->condition_id = $conditionId;
             $measurement->timestamp = $timestamp;
             $measurement->data_payload = $payload;
             $measurement->upload_type = 'batch'; // Set upload type for batch data
@@ -345,7 +337,7 @@ class DeviceMeasurementController extends Controller
     }
 
     /**
-     * Pobiera nieprzypiaane pomiary dla urządzenia (phenomenon_id = null)
+     * Pobiera nieprzypiaane pomiary dla urządzenia (condition_id = null)
      * 
      * @param string $deviceUuid UUID urządzenia
      * @param int $limit Limit pomiarów
@@ -360,9 +352,9 @@ class DeviceMeasurementController extends Controller
             
             Yii::beginProfile('unassigned-measurements', 'api.performance');
             
-            // Fetch unassigned data from measurement_data table where phenomenon_id is null
+            // Fetch unassigned data from measurement_data table where condition_id is null
             $query = \app\models\MeasurementData::find()
-                ->where(['device_id' => $deviceUuid, 'phenomenon_id' => null]);
+                ->where(['device_id' => $deviceUuid, 'condition_id' => null]);
             
             // Add date range filtering if provided
             if ($startDate) {
@@ -382,7 +374,7 @@ class DeviceMeasurementController extends Controller
                 return [
                     'data_id' => (int)$measurement->data_id,
                     'device_id' => $measurement->device_id,
-                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'condition_id' => $measurement->condition_id,
                     'data_payload' => $measurement->data_payload,
                     'upload_type' => $measurement->upload_type ?? 'batch',
                     'timestamp' => $measurement->timestamp,

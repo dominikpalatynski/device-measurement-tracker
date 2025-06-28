@@ -99,14 +99,15 @@ export interface MeasurementStatsResponse {
 }
 
 /**
- * Measurement Data from measurement_data table (for phenomena)
+ * Measurement Data from measurement_data table (for conditions)
  */
 export interface MeasurementData {
   data_id: number;
   device_id: string;
-  phenomenon_id: string | null;
+  condition_id: string | null;
+  fault_id: string | null;
   data_payload: any; // JSON data
-  upload_type?: string; // 'batch' or 'stream'
+  upload_type?: string; // Metadata for upload method
   timestamp: string;
   [key: string]: any; // Allow string indexing for dynamic field access
 }
@@ -122,12 +123,12 @@ export interface Device {
   device_id: string;
   device_name: string;
   device_type: 'pmsm-mechanical-vibration' | 'bldc-high-speed' | 'pmsm-torque-load';
-  status: 'Active' | 'Pending-Registration' | 'Not-Active';
+  status: 'Active' | 'Inactive';
   registration_date: string;
   last_updated: string;
   // Optional fields that might be added by frontend
-  experiments_count?: number;
-  active_experiments_count?: number;
+  faults_count?: number;
+  active_faults_count?: number;
   verification_token?: string;
 }
 
@@ -143,68 +144,67 @@ export interface SingleDeviceResponse {
   error?: string;
 }
 
-// Experiment interfaces
-export interface Experiment {
+// Fault interfaces
+export interface Fault {
   id: number;
-  experiment_id: string;
-  experiment_name: string;
+  fault_id: string;
+  fault_name: string;
   description?: string;
   device_id: string;
   mode: "Online" | "Offline";
-  status: "Created" | "Running" | "Paused" | "Completed" | "Failed";
-  type: "batch" | "stream";
+  status: "Active" | "Inactive";
   start_date: string;
   end_date?: string;
   created_at: string;
   updated_at: string;
-  phenomena?: Phenomenon[];
+  conditions?: Condition[];
 }
 
-export interface ExperimentResponse {
+export interface FaultResponse {
   success: boolean;
-  data: Experiment[];
+  data: Fault[];
   error?: string;
 }
 
-export interface SingleExperimentResponse {
+export interface SingleFaultResponse {
   success: boolean;
-  data: Experiment;
+  data: Fault;
   error?: string;
 }
 
-// Phenomenon interface
-export interface Phenomenon {
+// Condition interface
+export interface Condition {
   id: number;
-  phenomenon_id: string;
-  experiment_id: string;
+  condition_id: string;
+  fault_id: string;
   name: string;
   description?: string;
-  status: "Pending" | "Active" | "Finished" | "Stopped";
+  status: "Active" | "Inactive";
   start_time?: string;
   end_time?: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface PhenomenonResponse {
+export interface ConditionResponse {
   success: boolean;
-  data: Phenomenon[];
+  data: Condition[];
   error?: string;
 }
 
 // Online Mode interfaces
-export interface LiveExperiment {
-  experiment_id: string;
+export interface LiveFault {
+  fault_id: string;
   device_id: string;
   start_time: string;
   end_time?: string;
-  current_phenomenon?: ActivePhenomenon;
-  phenomena_count: number;
+  current_condition?: ActiveCondition;
+  conditions_count: number;
   duration: number; // in seconds
 }
 
-export interface ActivePhenomenon {
-  phenomenon_id: string;
+export interface ActiveCondition {
+  condition_id: string;
   name: string;
   description?: string;
   status: "Active";
@@ -212,15 +212,15 @@ export interface ActivePhenomenon {
   duration: number; // in seconds
 }
 
-export interface LiveExperimentResponse {
+export interface LiveFaultResponse {
   success: boolean;
-  data: LiveExperiment;
+  data: LiveFault;
   error?: string;
 }
 
-export interface PhenomenonControlResponse {
+export interface ConditionControlResponse {
   success: boolean;
-  data: ActivePhenomenon;
+  data: ActiveCondition;
   error?: string;
 }
 
@@ -272,14 +272,14 @@ export async function getMeasurementStats(deviceUuid: string): Promise<Measureme
 }
 
 /**
- * Get measurement data for a specific phenomenon from measurement_data table
+ * Get measurement data for a specific condition from measurement_data table
  */
-export async function getPhenomenonMeasurements(
-  phenomenonId: string, 
+export async function getConditionMeasurements(
+  conditionId: string, 
   startDate?: string, 
   endDate?: string
 ): Promise<MeasurementDataResponse> {
-  let url = `measurement-data/phenomenon?phenomenonId=${phenomenonId}`;
+  let url = `measurement-data/condition?conditionId=${conditionId}`;
   
   if (startDate) {
     url += `&startDate=${encodeURIComponent(startDate)}`;
@@ -292,7 +292,7 @@ export async function getPhenomenonMeasurements(
 }
 
 /**
- * Get unassigned measurement data for a device (where phenomenon_id is null)
+ * Get unassigned measurement data for a device (where condition_id is null)
  */
 export async function getUnassignedMeasurements(
   deviceUuid: string, 
@@ -388,7 +388,7 @@ export async function registerDevice(deviceData: {device_name: string, device_ty
         device_id: response.data.device_id,
         device_name: response.data.device_name,
         device_type: response.data.device_type as "pmsm-mechanical-vibration" | "bldc-high-speed" | "pmsm-torque-load",
-        status: response.data.status as "Active" | "Pending-Registration" | "Not-Active",
+        status: (response.data.status === "Active" ? "Active" : "Inactive") as "Active" | "Inactive",
         registration_date: new Date().toISOString(),
         last_updated: new Date().toISOString(),
         verification_token: response.data.verification_token,
@@ -475,51 +475,51 @@ export async function deleteDevice(deviceUuid: string): Promise<boolean> {
   }
 }
 
-// Experiment API functions
-export const experimentApi = {
+// Fault API functions
+export const faultApi = {
   /**
-   * Get all experiments
+   * Get all faults
    */
-  getExperiments: async (): Promise<Experiment[]> => {
+  getFaults: async (): Promise<Fault[]> => {
     try {
-      const response = await fetchApi<ExperimentResponse>('experiments/list');
+      const response = await fetchApi<FaultResponse>('faults/list');
       if (response.success && response.data) {
         return response.data;
       }
       return [];
     } catch (error) {
-      console.error('Error fetching experiments:', error);
+      console.error('Error fetching faults:', error);
       return [];
     }
   },
 
   /**
-   * Get a single experiment by ID
+   * Get a single fault by ID
    */
-  getExperiment: async (experimentId: string): Promise<Experiment | null> => {
+  getFault: async (faultId: string): Promise<Fault | null> => {
     try {
-      const response = await fetchApi<SingleExperimentResponse>(`experiments/view?id=${experimentId}`);
+      const response = await fetchApi<SingleFaultResponse>(`faults/view?id=${faultId}`);
       if (response.success && response.data) {
         return response.data;
       }
       return null;
     } catch (error) {
-      console.error('Error fetching experiment:', error);
+      console.error('Error fetching fault:', error);
       return null;
     }
   },
 
   /**
-   * Create a new experiment
+   * Create a new fault
    */
-  createExperiment: async (experimentData: Partial<Experiment>): Promise<Experiment | null> => {
+  createFault: async (faultData: Partial<Fault>): Promise<Fault | null> => {
     try {
-      const response = await fetchApi<SingleExperimentResponse>('experiments/create', {
+      const response = await fetchApi<SingleFaultResponse>('faults/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(experimentData),
+        body: JSON.stringify(faultData),
       });
       console.log('API response:', response);
       if (response.success && response.data) {
@@ -529,76 +529,76 @@ export const experimentApi = {
       return null;
     } catch (error) {
       console.log('API response:', error);
-      console.error('Error creating experiment:', error);
+      console.error('Error creating fault:', error);
       return null;
     }
   },
 
   /**
-   * Update experiment
+   * Update fault
    */
-  updateExperiment: async (experimentId: string, experimentData: Partial<Experiment>): Promise<Experiment | null> => {
+  updateFault: async (faultId: string, faultData: Partial<Fault>): Promise<Fault | null> => {
     try {
-      const response = await fetchApi<SingleExperimentResponse>(`experiments/update?id=${experimentId}`, {
+      const response = await fetchApi<SingleFaultResponse>(`faults/update?id=${faultId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(experimentData),
+        body: JSON.stringify(faultData),
       });
       if (response.success && response.data) {
         return response.data;
       }
       return null;
     } catch (error) {
-      console.error('Error updating experiment:', error);
+      console.error('Error updating fault:', error);
       return null;
     }
   },
 
   /**
-   * Delete experiment
+   * Delete fault
    */
-  deleteExperiment: async (experimentId: string): Promise<boolean> => {
+  deleteFault: async (faultId: string): Promise<boolean> => {
     try {
-      const response = await fetchApi<{success: boolean}>(`experiments/delete?id=${experimentId}`, {
+      const response = await fetchApi<{success: boolean}>(`faults/delete?id=${faultId}`, {
         method: 'DELETE',
       });
       return response.success;
     } catch (error) {
-      console.error('Error deleting experiment:', error);
+      console.error('Error deleting fault:', error);
       return false;
     }
   }
 };
 
 /**
- * Delete experiment
+ * Delete fault
  */
-export async function deleteExperiment(experimentId: string): Promise<boolean> {
+export async function deleteFault(faultId: string): Promise<boolean> {
   try {
-    const response = await fetchApi<{success: boolean}>(`experiment/delete?id=${experimentId}`, {
+    const response = await fetchApi<{success: boolean}>(`fault/delete?id=${faultId}`, {
       method: 'DELETE',
     });
     return response.success;
   } catch (error) {
-    console.error('Error deleting experiment:', error);
+    console.error('Error deleting fault:', error);
     return false;
   }
 }
 
 /**
- * Get all phenomena
+ * Get all conditions
  */
-export async function getPhenomena(): Promise<Phenomenon[]> {
+export async function getConditions(): Promise<Condition[]> {
   try {
-    const response = await fetchApi<PhenomenonResponse>('phenomenon/list');
+    const response = await fetchApi<ConditionResponse>('condition/list');
     if (response.success && response.data) {
       return response.data;
     }
     return [];
   } catch (error) {
-    console.error('Error fetching phenomena:', error);
+    console.error('Error fetching conditions:', error);
     return [];
   }
 }
@@ -632,110 +632,110 @@ export const deviceApi = {
   regenerateToken: regenerateDeviceToken,
 };
 
-// Online Mode API for real-time experiment control
+// Online Mode API for real-time fault control
 export const onlineModeApi = {
   /**
-   * Start a live experiment on a device (Online Mode)
+   * Start a live fault on a device (Online Mode)
    */
-  startLiveExperiment: async (deviceId: string, name?: string): Promise<LiveExperiment> => {
+  startLiveFault: async (deviceId: string, name?: string): Promise<LiveFault> => {
     try {
-      const response = await fetchApi<LiveExperimentResponse>(`devices/${deviceId}/live-experiment`, {
+      const response = await fetchApi<LiveFaultResponse>(`devices/${deviceId}/live-fault`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: name || `Live Experiment - ${new Date().toLocaleString()}`,
+          name: name || `Live Fault - ${new Date().toLocaleString()}`,
         }),
       });
       
       if (response.success && response.data) {
         return response.data;
       }
-      throw new Error(response.error || 'Failed to start live experiment');
+      throw new Error(response.error || 'Failed to start live fault');
     } catch (error) {
-      console.log('Starting live experiment:', error);
-      console.error('Error starting live experiment:', error);
+      console.log('Starting live fault:', error);
+      console.error('Error starting live fault:', error);
       throw error;
     }
   },
 
   /**
-   * Get current live experiment status for a device
+   * Get current live fault status for a device
    */
-  getLiveExperiment: async (deviceId: string): Promise<LiveExperiment | null> => {
+  getLiveFault: async (deviceId: string): Promise<LiveFault | null> => {
     try {
-      const response = await fetchApi<LiveExperimentResponse>(`devices/${deviceId}/live-experiment`);
+      const response = await fetchApi<LiveFaultResponse>(`devices/${deviceId}/live-fault`);
       if (response.success && response.data) {
         return response.data;
       }
-      console.log('Error getting live experiment:', response);
+      console.log('Error getting live fault:', response);
       return null;
     } catch (error) {
-      console.log('Error getting live experiment:', error);
-      console.error('Error getting live experiment:', error);
+      console.log('Error getting live fault:', error);
+      console.error('Error getting live fault:', error);
       return null;
     }
   },
 
   /**
-   * Stop/Complete a live experiment
+   * Stop/Complete a live fault
    */
-  stopLiveExperiment: async (deviceId: string): Promise<boolean> => {
+  stopLiveFault: async (deviceId: string): Promise<boolean> => {
     try {
-      const response = await fetchApi<{ success: boolean; error?: string }>(`devices/${deviceId}/live-experiment`, {
+      const response = await fetchApi<{ success: boolean; error?: string }>(`devices/${deviceId}/live-fault`, {
         method: 'DELETE',
       });
       return response.success;
     } catch (error) {
-      console.error('Error stopping live experiment:', error);
+      console.error('Error stopping live fault:', error);
       return false;
     }
   },
   /**
-   * Start a phenomenon in the current live experiment
+   * Start a condition in the current live fault
    */
-  startPhenomenon: async (deviceId: string, phenomenonData: { name: string; description?: string }): Promise<ActivePhenomenon> => {
+  startCondition: async (deviceId: string, conditionData: { name: string; description?: string }): Promise<ActiveCondition> => {
     try {
-      const response = await fetchApi<PhenomenonControlResponse>(`devices/${deviceId}/start-phenomenon`, {
+      const response = await fetchApi<ConditionControlResponse>(`devices/${deviceId}/start-condition`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(phenomenonData),
+        body: JSON.stringify(conditionData),
       });
       
       if (response.success && response.data) {
         return response.data;
       }
-      throw new Error(response.error || 'Failed to start phenomenon');
+      throw new Error(response.error || 'Failed to start condition');
     } catch (error) {
-      console.error('Error starting phenomenon:', error);
+      console.error('Error starting condition:', error);
       throw error;
     }
   },  /**
-   * Stop the current active phenomenon
+   * Stop the current active condition
    */
-  stopPhenomenon: async (deviceId: string, phenomenonId: string): Promise<boolean> => {
+  stopCondition: async (deviceId: string, conditionId: string): Promise<boolean> => {
     try {
-      const response = await fetchApi<{ success: boolean; error?: string }>(`devices/${deviceId}/stop-phenomenon`, {
+      const response = await fetchApi<{ success: boolean; error?: string }>(`devices/${deviceId}/stop-condition`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phenomenon_id: phenomenonId,
+          condition_id: conditionId,
         }),
       });
       return response.success;
     } catch (error) {
-      console.error('Error stopping phenomenon:', error);
+      console.error('Error stopping condition:', error);
       return false;
     }
   },
 
   /**
-   * Get real-time data for the current phenomenon
+   * Get real-time data for the current condition
    */
   getLiveData: async (deviceId: string): Promise<any[]> => {
     try {
@@ -751,117 +751,117 @@ export const onlineModeApi = {
   },
 };
 
-export const phenomenaApi = {
+export const conditionsApi = {
   /**
-   * Get all phenomena
+   * Get all conditions
    */
-  getPhenomena: async (): Promise<Phenomenon[]> => {
+  getConditions: async (): Promise<Condition[]> => {
     try {
-      const response = await fetchApi<PhenomenonResponse>('phenomena/list');
+      const response = await fetchApi<ConditionResponse>('conditions/list');
       if (response.success && response.data) {
         return response.data;
       }
       return [];
     } catch (error) {
-      console.error('Error fetching phenomena:', error);
+      console.error('Error fetching conditions:', error);
       return [];
     }
   },
 
   /**
-   * Get phenomena for an experiment
+   * Get conditions for a fault
    */
-  getPhenomenaForExperiment: async (experimentId: string): Promise<Phenomenon[]> => {
+  getConditionsForFault: async (faultId: string): Promise<Condition[]> => {
     try {
-      const allPhenomena = await phenomenaApi.getPhenomena();
-      return allPhenomena.filter(p => p.experiment_id === experimentId);
+      const allConditions = await conditionsApi.getConditions();
+      return allConditions.filter(c => c.fault_id === faultId);
     } catch (error) {
-      console.error('Error fetching phenomena for experiment:', error);
+      console.error('Error fetching conditions for fault:', error);
       return [];
     }
   },
 
   /**
-   * Get a single phenomenon by ID
+   * Get a single condition by ID
    */
-  getPhenomenon: async (phenomenonId: string): Promise<Phenomenon | null> => {
+  getCondition: async (conditionId: string): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/view?id=${phenomenonId}`);
+      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/view?id=${conditionId}`);
       if (response.success && response.data) {
         return response.data;
       }
       return null;
     } catch (error) {
-      console.error('Error fetching phenomenon:', error);
+      console.error('Error fetching condition:', error);
       return null;
     }
   },
 
   /**
-   * Create a new phenomenon
+   * Create a new condition
    */
-  createPhenomenon: async (phenomenonData: Partial<Phenomenon>): Promise<Phenomenon | null> => {
+  createCondition: async (conditionData: Partial<Condition>): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Phenomenon}>('phenomena/create', {
+      const response = await fetchApi<{success: boolean, data: Condition}>('conditions/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(phenomenonData),
+        body: JSON.stringify(conditionData),
       });
       if (response.success && response.data) {
         return response.data;
       }
       return null;
     } catch (error) {
-      console.error('Error creating phenomenon:', error);
+      console.error('Error creating condition:', error);
       return null;
     }
   },
 
   /**
-   * Update phenomenon
+   * Update condition
    */
-  updatePhenomenon: async (phenomenonId: string, phenomenonData: Partial<Phenomenon>): Promise<Phenomenon | null> => {
+  updateCondition: async (conditionId: string, conditionData: Partial<Condition>): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/update?id=${phenomenonId}`, {
+      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/update?id=${conditionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(phenomenonData),
+        body: JSON.stringify(conditionData),
       });
       if (response.success && response.data) {
         return response.data;
       }
       return null;
     } catch (error) {
-      console.error('Error updating phenomenon:', error);
+      console.error('Error updating condition:', error);
       return null;
     }
   },
 
   /**
-   * Delete phenomenon
+   * Delete condition
    */
-  deletePhenomenon: async (phenomenonId: string): Promise<boolean> => {
+  deleteCondition: async (conditionId: string): Promise<boolean> => {
     try {
-      const response = await fetchApi<{success: boolean}>(`phenomena/delete?id=${phenomenonId}`, {
+      const response = await fetchApi<{success: boolean}>(`conditions/delete?id=${conditionId}`, {
         method: 'DELETE',
       });
       return response.success;
     } catch (error) {
-      console.error('Error deleting phenomenon:', error);
+      console.error('Error deleting condition:', error);
       return false;
     }
   },
 
   /**
-   * Start a phenomenon
+   * Start a condition
    */
-  startPhenomenon: async (phenomenonId: string): Promise<Phenomenon | null> => {
+  startCondition: async (conditionId: string): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/start?id=${phenomenonId}`, {
+      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/start?id=${conditionId}`, {
         method: 'POST',
       });
       if (response.success && response.data) {
@@ -869,17 +869,17 @@ export const phenomenaApi = {
       }
       return null;
     } catch (error) {
-      console.error('Error starting phenomenon:', error);
+      console.error('Error starting condition:', error);
       return null;
     }
   },
 
   /**
-   * Stop a phenomenon
+   * Stop a condition
    */
-  stopPhenomenon: async (phenomenonId: string): Promise<Phenomenon | null> => {
+  stopCondition: async (conditionId: string): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/stop?id=${phenomenonId}`, {
+      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/stop?id=${conditionId}`, {
         method: 'POST',
       });
       if (response.success && response.data) {
@@ -887,17 +887,17 @@ export const phenomenaApi = {
       }
       return null;
     } catch (error) {
-      console.error('Error stopping phenomenon:', error);
+      console.error('Error stopping condition:', error);
       return null;
     }
   },
 
   /**
-   * Finish a phenomenon
+   * Finish a condition
    */
-  finishPhenomenon: async (phenomenonId: string): Promise<Phenomenon | null> => {
+  finishCondition: async (conditionId: string): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Phenomenon}>(`phenomena/finish?id=${phenomenonId}`, {
+      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/finish?id=${conditionId}`, {
         method: 'POST',
       });
       if (response.success && response.data) {
@@ -905,17 +905,17 @@ export const phenomenaApi = {
       }
       return null;
     } catch (error) {
-      console.error('Error finishing phenomenon:', error);
+      console.error('Error finishing condition:', error);
       return null;
     }
   },
 
   /**
-   * Upload measurement data to a phenomenon
+   * Upload measurement data to a condition
    */
-  uploadData: async (phenomenonId: string, data: any): Promise<boolean> => {
+  uploadData: async (conditionId: string, data: any): Promise<boolean> => {
     try {
-      const response = await fetchApi<{success: boolean, message: string}>(`phenomena/${phenomenonId}/data`, {
+      const response = await fetchApi<{success: boolean, message: string}>(`conditions/${conditionId}/data`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -924,7 +924,7 @@ export const phenomenaApi = {
       });
       return response.success;
     } catch (error) {
-      console.error('Error uploading phenomenon data:', error);
+      console.error('Error uploading condition data:', error);
       return false;
     }
   }
@@ -1006,15 +1006,15 @@ export const measurementChannelApi = {
 };
 
 /**
- * Get live measurement data for a specific phenomenon from measurement_data table
+ * Get live measurement data for a specific condition from measurement_data table
  * with optional limit and sorting by timestamp DESC for real-time updates
  */
-export async function getLivePhenomenonMeasurements(
-  phenomenonId: string, 
+export async function getLiveConditionMeasurements(
+  conditionId: string, 
   limit: number = 50,
   since?: string
 ): Promise<MeasurementDataResponse> {
-  let endpoint = `measurement-data/phenomenon/live?phenomenonId=${phenomenonId}&limit=${limit}`;
+  let endpoint = `measurement-data/condition/live?conditionId=${conditionId}&limit=${limit}`;
   if (since) {
     endpoint += `&since=${encodeURIComponent(since)}`;
   }
@@ -1022,11 +1022,11 @@ export async function getLivePhenomenonMeasurements(
 }
 
 /**
- * Get the latest measurement data for a specific phenomenon
+ * Get the latest measurement data for a specific condition
  * (just the most recent entry)
  */
-export async function getLatestPhenomenonMeasurement(phenomenonId: string): Promise<MeasurementDataResponse> {
-  return fetchApi<MeasurementDataResponse>(`measurement-data/phenomenon/latest?phenomenonId=${phenomenonId}`);
+export async function getLatestConditionMeasurement(conditionId: string): Promise<MeasurementDataResponse> {
+  return fetchApi<MeasurementDataResponse>(`measurement-data/condition/latest?conditionId=${conditionId}`);
 }
 
 /**
@@ -1035,14 +1035,14 @@ export async function getLatestPhenomenonMeasurement(phenomenonId: string): Prom
 export async function getLatestMeasurementData(
   limit: number = 50,
   deviceId?: string,
-  phenomenonId?: string
+  conditionId?: string
 ): Promise<MeasurementDataResponse> {
   let endpoint = `measurement-data/latest-all?limit=${limit}`;
   if (deviceId) {
     endpoint += `&deviceId=${encodeURIComponent(deviceId)}`;
   }
-  if (phenomenonId) {
-    endpoint += `&phenomenonId=${encodeURIComponent(phenomenonId)}`;
+  if (conditionId) {
+    endpoint += `&conditionId=${encodeURIComponent(conditionId)}`;
   }
   return fetchApi<MeasurementDataResponse>(endpoint);
 }

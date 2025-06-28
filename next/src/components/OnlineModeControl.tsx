@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-	onlineModeApi,
-	LiveExperiment,
-	ActivePhenomenon,
-} from "@/services/api";
+import { onlineModeApi, LiveFault, ActiveCondition } from "@/services/api";
 import { formatDuration } from "@/utils/dateUtils";
 
 interface OnlineModeControlProps {
@@ -19,22 +15,19 @@ export default function OnlineModeControl({
 	deviceName,
 	onStatusChange,
 }: OnlineModeControlProps) {
-	const [liveExperiment, setLiveExperiment] = useState<LiveExperiment | null>(
-		null
-	);
+	const [liveFault, setLiveFault] = useState<LiveFault | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [newPhenomenonName, setNewPhenomenonName] = useState("");
-	const [newPhenomenonDescription, setNewPhenomenonDescription] =
-		useState("");
-	const [showPhenomenonForm, setShowPhenomenonForm] = useState(false);
+	const [newConditionName, setNewConditionName] = useState("");
+	const [newConditionDescription, setNewConditionDescription] = useState("");
+	const [showConditionForm, setShowConditionForm] = useState(false);
 
-	// Refresh live experiment status
+	// Refresh live fault status
 	const refreshStatus = useCallback(async () => {
 		try {
-			const experiment = await onlineModeApi.getLiveExperiment(deviceId);
-			setLiveExperiment(experiment);
-			onStatusChange?.(experiment !== null);
+			const fault = await onlineModeApi.getLiveFault(deviceId);
+			setLiveFault(fault);
+			onStatusChange?.(fault !== null);
 		} catch (error) {
 			console.error("Error refreshing status:", error);
 		}
@@ -45,108 +38,107 @@ export default function OnlineModeControl({
 		refreshStatus();
 	}, [refreshStatus]);
 
-	// Auto-refresh every 5 seconds when experiment is active
+	// Auto-refresh every 5 seconds when fault is active
 	useEffect(() => {
-		if (!liveExperiment) return;
+		if (!liveFault) return;
 
 		const interval = setInterval(refreshStatus, 5000);
 		return () => clearInterval(interval);
-	}, [liveExperiment, refreshStatus]);
+	}, [liveFault, refreshStatus]);
 
-	const handleStartExperiment = async () => {
+	const handleStartFault = async () => {
 		setLoading(true);
 		setError(null);
 		try {
-			const experiment = await onlineModeApi.startLiveExperiment(
+			const fault = await onlineModeApi.startLiveFault(
 				deviceId,
 				`Live Session - ${deviceName}`
 			);
-			setLiveExperiment(experiment);
+			setLiveFault(fault);
 			onStatusChange?.(true);
 		} catch (error) {
 			setError(
-				error instanceof Error
-					? error.message
-					: "Failed to start experiment"
+				error instanceof Error ? error.message : "Failed to start fault"
 			);
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const handleStopExperiment = async () => {
-		if (!liveExperiment) return;
+	const handleStopFault = async () => {
+		if (!liveFault) return;
 
 		setLoading(true);
 		setError(null);
 		try {
-			await onlineModeApi.stopLiveExperiment(deviceId);
-			setLiveExperiment(null);
+			await onlineModeApi.stopLiveFault(deviceId);
+			setLiveFault(null);
 			onStatusChange?.(false);
 		} catch (error) {
 			setError(
-				error instanceof Error
-					? error.message
-					: "Failed to stop experiment"
+				error instanceof Error ? error.message : "Failed to stop fault"
 			);
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const handleStartPhenomenon = async () => {
-		if (!liveExperiment || !newPhenomenonName.trim()) return;
+	const handleStartCondition = async () => {
+		if (!liveFault || !newConditionName.trim()) return;
 
 		setLoading(true);
 		setError(null);
 		try {
-			await onlineModeApi.startPhenomenon(deviceId, {
-				name: newPhenomenonName.trim(),
-				description: newPhenomenonDescription.trim() || undefined,
+			await onlineModeApi.startCondition(deviceId, {
+				name: newConditionName.trim(),
+				description: newConditionDescription.trim() || undefined,
 			});
-			setNewPhenomenonName("");
-			setNewPhenomenonDescription("");
-			setShowPhenomenonForm(false);
+			setNewConditionName("");
+			setNewConditionDescription("");
+			setShowConditionForm(false);
 			await refreshStatus();
 		} catch (error) {
 			setError(
 				error instanceof Error
 					? error.message
-					: "Failed to start phenomenon"
+					: "Failed to start condition"
 			);
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const handleStopPhenomenon = async () => {
-		if (!liveExperiment?.current_phenomenon) return;
+	const handleStopCondition = async () => {
+		if (!liveFault?.current_condition) return;
 
 		setLoading(true);
 		setError(null);
 		try {
-			await onlineModeApi.stopPhenomenon(deviceId);
+			await onlineModeApi.stopCondition(
+				deviceId,
+				liveFault.current_condition.condition_id
+			);
 			await refreshStatus();
 		} catch (error) {
 			setError(
 				error instanceof Error
 					? error.message
-					: "Failed to stop phenomenon"
+					: "Failed to stop condition"
 			);
 		} finally {
 			setLoading(false);
 		}
 	};
-	// No live experiment - show start button
-	if (!liveExperiment) {
+	// No live fault - show start button
+	if (!liveFault) {
 		return (
 			<div className='bg-white rounded-lg shadow p-6'>
 				<div className='text-center'>
 					<h3 className='text-lg font-medium text-gray-900 mb-4'>
-						🚀 Start Live Experiment
+						🚀 Start Live Fault
 					</h3>
 					<p className='text-gray-600 mb-6'>
-						Begin real-time data collection and phenomenon control
+						Begin real-time data collection and condition control
 						for {deviceName}
 					</p>
 
@@ -157,34 +149,34 @@ export default function OnlineModeControl({
 					)}
 
 					<button
-						onClick={handleStartExperiment}
+						onClick={handleStartFault}
 						disabled={loading}
 						className='inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
 					>
-						{loading ? "Starting..." : "🎯 Start Live Experiment"}
+						{loading ? "Starting..." : "🎯 Start Live Fault"}
 					</button>
 				</div>
 			</div>
 		);
 	}
 
-	// Live experiment is active
+	// Live fault is active
 	return (
 		<div className='bg-white rounded-lg shadow'>
-			{/* Experiment Header */}
+			{/* Fault Header */}
 			<div className='bg-green-50 border-b border-green-200 px-6 py-4'>
 				<div className='flex items-center justify-between'>
 					<div>
 						<h3 className='text-lg font-medium text-green-900'>
-							🔴 Live Experiment Active
+							🔴 Live Fault Active
 						</h3>
 						<p className='text-sm text-green-700'>
-							Duration: {formatDuration(liveExperiment.duration)}{" "}
-							| Phenomena: {liveExperiment.phenomena_count}
+							Duration: {formatDuration(liveFault.duration)} |
+							Conditions: {liveFault.conditions_count}
 						</p>
 					</div>
 					<button
-						onClick={handleStopExperiment}
+						onClick={handleStopFault}
 						disabled={loading}
 						className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50'
 					>
@@ -200,33 +192,32 @@ export default function OnlineModeControl({
 					</div>
 				)}
 
-				{/* Current Phenomenon Status */}
-				{liveExperiment.current_phenomenon ? (
+				{/* Current Condition Status */}
+				{liveFault.current_condition ? (
 					<div className='mb-6'>
 						<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
 							<div className='flex items-center justify-between mb-3'>
 								<h4 className='text-lg font-medium text-blue-900'>
-									📊 Active Phenomenon
+									📊 Active Condition
 								</h4>
 								<button
-									onClick={handleStopPhenomenon}
+									onClick={handleStopCondition}
 									disabled={loading}
 									className='inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50'
 								>
 									{loading
 										? "Stopping..."
-										: "⏹️ Stop Phenomenon"}
+										: "⏹️ Stop Condition"}
 								</button>
 							</div>
 							<div>
 								<h5 className='font-medium text-blue-900'>
-									{liveExperiment.current_phenomenon.name}
+									{liveFault.current_condition.name}
 								</h5>
-								{liveExperiment.current_phenomenon
-									.description && (
+								{liveFault.current_condition.description && (
 									<p className='text-sm text-blue-700 mt-1'>
 										{
-											liveExperiment.current_phenomenon
+											liveFault.current_condition
 												.description
 										}
 									</p>
@@ -234,44 +225,43 @@ export default function OnlineModeControl({
 								<p className='text-sm text-blue-600 mt-2'>
 									⏱️ Running for:{" "}
 									{formatDuration(
-										liveExperiment.current_phenomenon
-											.duration
+										liveFault.current_condition.duration
 									)}
 								</p>
 							</div>
 						</div>
 					</div>
 				) : (
-					// No active phenomenon - show start form
+					// No active condition - show start form
 					<div className='mb-6'>
-						{!showPhenomenonForm ? (
+						{!showConditionForm ? (
 							<div className='text-center py-8'>
 								<p className='text-gray-600 mb-4'>
-									No phenomenon is currently active. Start
+									No condition is currently active. Start
 									measuring a new condition.
 								</p>
 								<button
-									onClick={() => setShowPhenomenonForm(true)}
+									onClick={() => setShowConditionForm(true)}
 									className='inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
 								>
-									▶️ Start Phenomenon
+									▶️ Start Condition
 								</button>
 							</div>
 						) : (
 							<div className='bg-gray-50 border border-gray-200 rounded-lg p-4'>
 								<h4 className='text-lg font-medium text-gray-900 mb-4'>
-									🔬 Start New Phenomenon
+									🔬 Start New Condition
 								</h4>
 								<div className='space-y-4'>
 									<div>
 										<label className='block text-sm font-medium text-gray-700 mb-1'>
-											Phenomenon Name *
+											Condition Name *
 										</label>
 										<input
 											type='text'
-											value={newPhenomenonName}
+											value={newConditionName}
 											onChange={(e) =>
-												setNewPhenomenonName(
+												setNewConditionName(
 													e.target.value
 												)
 											}
@@ -284,9 +274,9 @@ export default function OnlineModeControl({
 											Description (Optional)
 										</label>
 										<textarea
-											value={newPhenomenonDescription}
+											value={newConditionDescription}
 											onChange={(e) =>
-												setNewPhenomenonDescription(
+												setNewConditionDescription(
 													e.target.value
 												)
 											}
@@ -297,10 +287,10 @@ export default function OnlineModeControl({
 									</div>
 									<div className='flex space-x-3'>
 										<button
-											onClick={handleStartPhenomenon}
+											onClick={handleStartCondition}
 											disabled={
 												loading ||
-												!newPhenomenonName.trim()
+												!newConditionName.trim()
 											}
 											className='flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
 										>
@@ -310,9 +300,9 @@ export default function OnlineModeControl({
 										</button>
 										<button
 											onClick={() => {
-												setShowPhenomenonForm(false);
-												setNewPhenomenonName("");
-												setNewPhenomenonDescription("");
+												setShowConditionForm(false);
+												setNewConditionName("");
+												setNewConditionDescription("");
 											}}
 											className='px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'
 										>
@@ -332,9 +322,9 @@ export default function OnlineModeControl({
 							📈 Real-time Data Visualization
 						</h4>
 						<p className='text-gray-600'>
-							{liveExperiment.current_phenomenon
-								? "Live data charts will appear here during active phenomenon measurement."
-								: "Start a phenomenon to see real-time data visualization."}
+							{liveFault.current_condition
+								? "Live data charts will appear here during active condition measurement."
+								: "Start a condition to see real-time data visualization."}
 						</p>
 					</div>
 				</div>

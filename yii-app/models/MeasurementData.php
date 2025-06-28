@@ -9,12 +9,15 @@ use yii\db\ActiveRecord;
  * This is the model class for table "measurement_data".
  * * @property int $data_id
  * @property string $device_id
- * @property string|null $phenomenon_id
+ * @property string|null $condition_id
+ * @property string|null $fault_id
  * @property array|null $data_payload
  * @property string $upload_type
  * @property string $timestamp
  *
  * @property Devices $device
+ * @property Conditions $condition
+ * @property Faults $fault
  */
 class MeasurementData extends ActiveRecord
 {
@@ -34,7 +37,7 @@ class MeasurementData extends ActiveRecord
             [['device_id'], 'required'],
             [['data_payload'], 'safe'],
             [['timestamp'], 'safe'],
-            [['device_id', 'phenomenon_id'], 'string', 'max' => 255],
+            [['device_id', 'condition_id', 'fault_id'], 'string', 'max' => 255],
             [['upload_type'], 'in', 'range' => ['batch', 'stream']],
             [['device_id'], 'exist', 'skipOnError' => true, 'targetClass' => Devices::class, 'targetAttribute' => ['device_id' => 'device_id']],
         ];
@@ -47,7 +50,8 @@ class MeasurementData extends ActiveRecord
         return [
             'data_id' => 'Data ID',
             'device_id' => 'Device ID',
-            'phenomenon_id' => 'Phenomenon ID',
+            'condition_id' => 'Condition ID',
+            'fault_id' => 'Fault ID',
             'data_payload' => 'Data Payload',
             'upload_type' => 'Upload Type',
             'timestamp' => 'Timestamp',

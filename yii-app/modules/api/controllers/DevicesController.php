@@ -10,8 +10,9 @@ use yii\web\ServerErrorHttpException;
 use yii\web\BadRequestHttpException;
 use yii\helpers\Json;
 use app\models\Devices;
-use app\models\Experiments;
-use app\models\Phenomena;
+use app\models\Faults;
+use app\models\Condition;
+use app\models\LiveFaults;
 
 class DevicesController extends Controller
 {
@@ -27,9 +28,9 @@ class DevicesController extends Controller
         $behaviors['verbs'] = [
             'class' => \yii\filters\VerbFilter::class,
             'actions' => [
-                'live-experiment' => ['GET', 'POST', 'DELETE'],
-                'start-phenomenon' => ['POST'],
-                'stop-phenomenon' => ['POST'],
+                'live-fault' => ['GET', 'POST', 'DELETE'],
+                'start-condition' => ['POST'],
+                'stop-condition' => ['POST'],
             ],
         ];
         
@@ -49,170 +50,169 @@ class DevicesController extends Controller
     }
 
     /**
-     * Start a live experiment for a device
-     * POST /api/devices/{deviceId}/live-experiment
+     * Start a live fault for a device
+     * POST /api/devices/{deviceId}/live-fault
      */
-    public function actionLiveExperiment($deviceId)
+    public function actionLiveFault($deviceId)
     {
         $request = Yii::$app->request;
         
         if ($request->isGet) {
-            return $this->getLiveExperiment($deviceId);
+            return $this->getLiveFault($deviceId);
         } elseif ($request->isPost) {
-            return $this->startLiveExperiment($deviceId);
+            return $this->startLiveFault($deviceId);
         } elseif ($request->isDelete) {
-            return $this->stopLiveExperiment($deviceId);
+            return $this->stopLiveFault($deviceId);
         }
         
         throw new BadRequestHttpException('Method not allowed');
     }    /**
-     * Get current live experiment for a device
+     * Get current live fault for a device
      */
-    protected function getLiveExperiment($deviceId)
+    protected function getLiveFault($deviceId)
     {
         $device = $this->findDevice($deviceId);
         
-        $liveExperiment = Experiments::findActiveByDevice($deviceId);
+        $liveFault = Faults::findActiveByDevice($deviceId);
 
-        if (!$liveExperiment) {
+        if (!$liveFault) {
             return [
                 'success' => false,
-                'message' => 'No active live experiment found for this device',
+                'message' => 'No active live fault found for this device',
                 'data' => null
             ];
-        }        // Get current active phenomenon
-        $currentPhenomenon = Phenomena::find()
-            ->where(['experiment_id' => $liveExperiment->experiment_id, 'status' => Phenomena::STATUS_ACTIVE])
+        }        // Get current active condition
+        $currentCondition = Condition::find()
+            ->where(['fault_id' => $liveFault->fault_id, 'status' => Condition::STATUS_ACTIVE])
             ->one();
 
         return [            'success' => true,
             'data' => [
-                'experiment_id' => $liveExperiment->experiment_id,
-                'device_id' => $liveExperiment->device_id,
-                'duration' => $liveExperiment->getDuration(),
-                'phenomena_count' => Phenomena::find()->where(['experiment_id' => $liveExperiment->experiment_id])->count(),                'current_phenomenon' => $currentPhenomenon ? [
-                    'phenomenon_id' => $currentPhenomenon->phenomenon_id,
-                    'name' => $currentPhenomenon->name,
-                    'description' => $currentPhenomenon->description,
-                    'status' => $currentPhenomenon->status,
-                    'duration' => time() - strtotime($currentPhenomenon->start_time),
+                'fault_id' => $liveFault->fault_id,
+                'device_id' => $liveFault->device_id,
+                'duration' => $liveFault->getDuration(),
+                'conditions_count' => Condition::find()->where(['fault_id' => $liveFault->fault_id])->count(),                'current_condition' => $currentCondition ? [
+                    'condition_id' => $currentCondition->condition_id,
+                    'name' => $currentCondition->name,
+                    'description' => $currentCondition->description,
+                    'status' => $currentCondition->status,
+                    'duration' => time() - strtotime($currentCondition->start_time),
                 ] : null,
-                'start_time' => $liveExperiment->start_time,
-                'end_time' => $liveExperiment->end_time,
+                'start_time' => $liveFault->start_time,
+                'end_time' => $liveFault->end_time,
             ]
         ];
     }
 
     /**
-     * Start a live experiment
+     * Start a live fault
      */
-    protected function startLiveExperiment($deviceId)
+    protected function startLiveFault($deviceId)
     {
         $device = $this->findDevice($deviceId);
         
         // Check if device is active
         if ($device->status !== 'Active') {
-            throw new BadRequestHttpException('Device must be active to start a live experiment');
-        }        // Check if there's already an active live experiment
-        $existingLive = Experiments::findActiveByDevice($deviceId);
+            throw new BadRequestHttpException('Device must be active to start a live fault');
+        }        // Check if there's already an active live fault
+        $existingLive = Faults::findActiveByDevice($deviceId);
 
         if ($existingLive) {
-            throw new BadRequestHttpException('Device already has an active live experiment');
+            throw new BadRequestHttpException('Device already has an active live fault');
         }
 
         $data = Json::decode(Yii::$app->request->rawBody);
-        $experimentName = $data['name'] ?? 'Live Experiment - ' . date('Y-m-d H:i:s');        $transaction = Yii::$app->db->beginTransaction();
+        $faultName = $data['name'] ?? 'Live Fault - ' . date('Y-m-d H:i:s');        $transaction = Yii::$app->db->beginTransaction();
         try {
-            // Create the experiment
+            // Create the fault
 
-            $experiment = Experiments::findOne(['device_id' => $deviceId, 'type' => Experiments::STREAM, 'status' => Experiments::STATUS_RUNNING]);
-            if ($experiment) {
-                throw new BadRequestHttpException('Device already has an active live experiment');
+            $fault = Faults::findOne(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE]);
+            if ($fault) {
+                throw new BadRequestHttpException('Device already has an active fault');
             }
-            $experiment = new Experiments();
-            $experiment->experiment_id = uniqid('exp_');
-            $experiment->experiment_name = $experimentName;
-            $experiment->description = 'Live experiment for real-time data collection';
-            $experiment->device_id = $deviceId;
-            $experiment->type = Experiments::STREAM;
-            $experiment->status = 'Running'; // This is key for frontend access
-            $experiment->start_time = date('Y-m-d H:i:s');
+            $fault = new Faults();
+            $fault->fault_id = uniqid('flt_');
+            $fault->fault_name = $faultName;
+            $fault->description = 'Live fault for real-time data collection';
+            $fault->device_id = $deviceId;
+            $fault->status = Faults::STATUS_ACTIVE;
+            $fault->start_time = date('Y-m-d H:i:s');
 
-            if (!$experiment->save()) {
-                throw new ServerErrorHttpException('Failed to create experiment: ' . Json::encode($experiment->errors));
+            if (!$fault->save()) {
+                throw new ServerErrorHttpException('Failed to create fault: ' . Json::encode($fault->errors));
             }
 
             $transaction->commit();            return [
                 'success' => true,
                 'data' => [
-                    'experiment_id' => $experiment->experiment_id,
+                    'fault_id' => $fault->fault_id,
                     'device_id' => $deviceId,
                     'duration' => 0,
-                    'phenomena_count' => 0,
-                    'current_phenomenon' => null,
-                    'start_time' => $experiment->start_time,
-                    'end_time' => $experiment->end_time,
+                    'conditions_count' => 0,
+                    'current_condition' => null,
+                    'start_time' => $fault->start_time,
+                    'end_time' => $fault->end_time,
                 ]
             ];
 
         } catch (\Exception $e) {
             $transaction->rollBack();
-            throw new ServerErrorHttpException('Failed to start live experiment: ' . $e->getMessage());
+            throw new ServerErrorHttpException('Failed to start live fault: ' . $e->getMessage());
         }
     }
 
     /**
-     * Stop a live experiment
+     * Stop a live fault
      */
-    protected function stopLiveExperiment($deviceId)
+    protected function stopLiveFault($deviceId)
     {
         $device = $this->findDevice($deviceId);
-          $liveExperiment = Experiments::findActiveByDevice($deviceId);
+          $liveFault = Faults::findActiveByDevice($deviceId);
 
-        if (!$liveExperiment) {
-            throw new NotFoundHttpException('No active live experiment found for this device');
+        if (!$liveFault) {
+            throw new NotFoundHttpException('No active live fault found for this device');
         }
 
         $transaction = Yii::$app->db->beginTransaction();
         try {
-            // Stop any active phenomena
-            Phenomena::updateAll(
-                ['status' => 'Completed', 'end_time' => date('Y-m-d H:i:s')],
-                ['experiment_id' => $liveExperiment->experiment_id, 'status' => Phenomena::STATUS_FINISHED]
+            // Deactivate any active conditions
+            Condition::updateAll(
+                ['status' => Condition::STATUS_INACTIVE, 'end_time' => date('Y-m-d H:i:s')],
+                ['fault_id' => $liveFault->fault_id, 'status' => Condition::STATUS_ACTIVE]
             );
 
-            // Stop the experiment
-            $experiment = Experiments::findOne($liveExperiment->experiment_id);
-            if ($experiment) {
-                $experiment->status = Experiments::STATUS_COMPLETED;
-                $experiment->end_time = date('Y-m-d H:i:s');
-                $experiment->save();
+            // Deactivate the fault
+            $fault = Faults::findOne($liveFault->fault_id);
+            if ($fault) {
+                $fault->status = Faults::STATUS_INACTIVE;
+                $fault->end_time = date('Y-m-d H:i:s');
+                $fault->save();
             }
 
             $transaction->commit();
 
             return [
                 'success' => true,
-                'message' => 'Live experiment stopped successfully'
+                'message' => 'Live fault stopped successfully'
             ];
 
         } catch (\Exception $e) {
             $transaction->rollBack();
-            throw new ServerErrorHttpException('Failed to stop live experiment: ' . $e->getMessage());
+            throw new ServerErrorHttpException('Failed to stop live fault: ' . $e->getMessage());
         }
     }
 
     /**
-     * Start a phenomenon in a live experiment
-     * POST /api/devices/{deviceId}/start-phenomenon
+     * Start a condition in a live fault
+     * POST /api/devices/{deviceId}/start-condition
      */
-    public function actionStartPhenomenon($deviceId)
+    public function actionStartCondition($deviceId)
     {
         $device = $this->findDevice($deviceId);
-          $liveExperiment = Experiments::findActiveByDevice($deviceId);
+          $liveFault = Faults::findActiveByDevice($deviceId);
 
-        if (!$liveExperiment) {
-            throw new BadRequestHttpException('No active live experiment found for this device');
+        if (!$liveFault) {
+            throw new BadRequestHttpException('No active live fault found for this device');
         }
 
         $data = Json::decode(Yii::$app->request->rawBody);
@@ -220,75 +220,77 @@ class DevicesController extends Controller
         $description = $data['description'] ?? '';
 
         if (!$name) {
-            throw new BadRequestHttpException('Phenomenon name is required');
+            throw new BadRequestHttpException('Condition name is required');
         }
 
         $transaction = Yii::$app->db->beginTransaction();
-        try {            // Stop any currently active phenomenon
-            Phenomena::updateAll(
-                ['status' => Phenomena::STATUS_FINISHED, 'end_time' => date('Y-m-d H:i:s')],
-                ['experiment_id' => $liveExperiment->experiment_id, 'status' => Phenomena::STATUS_ACTIVE]
-            );// Create new phenomenon
-            $phenomenon = new Phenomena();
-            $phenomenon->phenomenon_id = uniqid('phen_');
-            $phenomenon->name = $name;
-            $phenomenon->description = $description;            $phenomenon->experiment_id = $liveExperiment->experiment_id;
-            $phenomenon->status = Phenomena::STATUS_ACTIVE;
-            $phenomenon->start_time = date('Y-m-d H:i:s');
+        try {            // Deactivate any currently active condition
+            Conditions::updateAll(
+                ['status' => Conditions::STATUS_INACTIVE, 'end_time' => date('Y-m-d H:i:s')],
+                ['fault_id' => $liveFault->fault_id, 'status' => Conditions::STATUS_ACTIVE]
+            );// Create new condition
+            $condition = new Conditions();
+            $condition->condition_id = uniqid('cnd_');
+            $condition->name = $name;
+            $condition->description = $description;            $condition->fault_id = $liveFault->fault_id;
+            $condition->status = Conditions::STATUS_ACTIVE;
+            $condition->start_time = date('Y-m-d H:i:s');
 
-            if (!$phenomenon->save()) {
-                throw new ServerErrorHttpException('Failed to create phenomenon: ' . Json::encode($phenomenon->errors));
+            if (!$condition->save()) {
+                throw new ServerErrorHttpException('Failed to create condition: ' . Json::encode($condition->errors));
             }
 
             $transaction->commit();            return [
                 'success' => true,
                 'data' => [
-                    'phenomenon_id' => $phenomenon->phenomenon_id,
-                    'name' => $phenomenon->name,
-                    'description' => $phenomenon->description,
-                    'status' => $phenomenon->status,
-                    'start_time' => $phenomenon->start_time,
+                    'condition_id' => $condition->condition_id,
+                    'name' => $condition->name,
+                    'description' => $condition->description,
+                    'status' => $condition->status,
+                    'start_time' => $condition->start_time,
                     'duration' => 0,
                 ]
             ];
 
         } catch (\Exception $e) {
             $transaction->rollBack();
-            throw new ServerErrorHttpException('Failed to start phenomenon: ' . $e->getMessage());
+            throw new ServerErrorHttpException('Failed to start condition: ' . $e->getMessage());
         }
     }
 
     /**
-     * Stop a phenomenon
-     * POST /api/devices/{deviceId}/stop-phenomenon
-     */    public function actionStopPhenomenon($deviceId)
+     * Stop a condition
+     * POST /api/devices/{deviceId}/stop-condition
+     */    public function actionStopCondition($deviceId)
     {
         $device = $this->findDevice($deviceId);
         
         $data = Json::decode(Yii::$app->request->rawBody);
-        $phenomenonId = $data['phenomenon_id'] ?? null;
+        $conditionId = $data['condition_id'] ?? null;
 
-        if (!$phenomenonId) {
-            throw new BadRequestHttpException('Phenomenon ID is required');
-        }        // Find the phenomenon by phenomenon_id and ensure it belongs to an experiment for this device
-        $phenomenon = Phenomena::find()
-            ->alias('p')
-            ->leftJoin('experiments e', 'p.experiment_id = e.experiment_id')
-            ->where(['p.phenomenon_id' => $phenomenonId, 'e.device_id' => $deviceId, 'p.status' => Phenomena::STATUS_ACTIVE])
+        if (!$conditionId) {
+            throw new BadRequestHttpException('Condition ID is required');
+        }        // Find the condition by condition_id and ensure it belongs to a fault for this device
+        $condition = Conditions::find()
+            ->alias('c')
+            ->leftJoin('faults f', 'c.fault_id = f.fault_id')
+            ->where(['c.condition_id' => $conditionId, 'f.device_id' => $deviceId, 'c.status' => Conditions::STATUS_ACTIVE])
             ->one();
 
-        if (!$phenomenon) {
-            throw new NotFoundHttpException('Active phenomenon not found');
-        }        $phenomenon->status = Phenomena::STATUS_STOPPED;
-        $phenomenon->end_time = date('Y-m-d H:i:s');
+        if (!$condition) {
+            throw new NotFoundHttpException('Active condition not found');
+        }
 
-        if (!$phenomenon->save()) {
-            throw new ServerErrorHttpException('Failed to stop phenomenon: ' . Json::encode($phenomenon->errors));
+        $condition->status = Conditions::STATUS_INACTIVE;
+        $condition->end_time = date('Y-m-d H:i:s');
+
+        if (!$condition->save()) {
+            throw new ServerErrorHttpException('Failed to stop condition: ' . Json::encode($condition->errors));
         }
 
         return [
             'success' => true,
-            'message' => 'Phenomenon stopped successfully'
+            'message' => 'Condition stopped successfully'
         ];
     }
 

@@ -6,9 +6,9 @@ import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import {
 	deviceApi,
-	experimentApi,
+	faultApi,
 	Device,
-	Experiment,
+	Fault,
 	getAllMeasurements,
 	getLatestMeasurement,
 	getMeasurementStats,
@@ -47,14 +47,12 @@ export default function DeviceDetailPage() {
 	const [latestMeasurement, setLatestMeasurement] =
 		useState<Measurement | null>(null);
 	const [stats, setStats] = useState<MeasurementStats | null>(null);
-	const [activeExperiments, setActiveExperiments] = useState<Experiment[]>(
-		[]
-	);
-	const [allExperiments, setAllExperiments] = useState<Experiment[]>([]);
+	const [activeFaults, setActiveFaults] = useState<Fault[]>([]);
+	const [allFaults, setAllFaults] = useState<Fault[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState<
-		"overview" | "live-experiments" | "data-explorer" | "channels"
+		"overview" | "live-faults" | "data-explorer" | "channels"
 	>("overview");
 	// Unassigned data state
 	const [unassignedData, setUnassignedData] = useState<MeasurementData[]>([]);
@@ -94,7 +92,9 @@ export default function DeviceDetailPage() {
 
 	// Token regeneration state
 	const [showTokenModal, setShowTokenModal] = useState(false);
-	const [regeneratedToken, setRegeneratedToken] = useState<string | null>(null);
+	const [regeneratedToken, setRegeneratedToken] = useState<string | null>(
+		null
+	);
 	const [tokenLoading, setTokenLoading] = useState(false);
 
 	// Fetch channels from backend
@@ -234,17 +234,17 @@ export default function DeviceDetailPage() {
 				return;
 			}
 			setDevice(deviceData);
-			// Load active experiments for this device
-			const experimentsData = await experimentApi.getExperiments();
-			const deviceExperiments = experimentsData.filter(
-				(exp) => exp.device_id === deviceData.device_id
+			// Load active faults for this device
+			const faultsData = await faultApi.getFaults();
+			const deviceFaults = faultsData.filter(
+				(fault) => fault.device_id === deviceData.device_id
 			);
-			const activeDeviceExperiments = deviceExperiments.filter(
-				(exp) => exp.status === "Running" || exp.status === "Created"
+			const activeDeviceFaults = deviceFaults.filter(
+				(fault) => fault.status === "Active"
 			);
 
-			setAllExperiments(deviceExperiments);
-			setActiveExperiments(activeDeviceExperiments);
+			setAllFaults(deviceFaults);
+			setActiveFaults(activeDeviceFaults);
 
 			// Load measurement data using device ID
 			const [latestRes, measurementsRes, statsRes] =
@@ -315,7 +315,7 @@ export default function DeviceDetailPage() {
 		try {
 			const success = await deviceApi.deactivateDevice(device.device_id);
 			if (success) {
-				setDevice({ ...device, status: "Not-Active" });
+				setDevice({ ...device, status: "Inactive" });
 			} else {
 				console.log("Success:", success);
 				setError("Failed to deactivate device");
@@ -366,7 +366,9 @@ export default function DeviceDetailPage() {
 			}
 		} catch (err) {
 			setError(
-				err instanceof Error ? err.message : "Failed to regenerate token"
+				err instanceof Error
+					? err.message
+					: "Failed to regenerate token"
 			);
 		} finally {
 			setTokenLoading(false);
@@ -376,10 +378,8 @@ export default function DeviceDetailPage() {
 		switch (status) {
 			case "Active":
 				return "bg-green-100 text-green-800";
-			case "Not-Active":
-				return "bg-yellow-100 text-yellow-800";
-			case "Pending-Registration":
-				return "bg-gray-100 text-gray-800";
+			case "Inactive":
+				return "bg-red-100 text-red-800";
 			default:
 				return "bg-gray-100 text-gray-800";
 		}
@@ -388,10 +388,8 @@ export default function DeviceDetailPage() {
 		switch (status) {
 			case "Active":
 				return "Active";
-			case "Not-Active":
-				return "Not Active";
-			case "Pending-Registration":
-				return "Pending Registration";
+			case "Inactive":
+				return "Inactive";
 			default:
 				return status;
 		}
@@ -476,18 +474,8 @@ export default function DeviceDetailPage() {
 						</div>
 					</div>{" "}
 					<div className='flex space-x-2'>
-						{/* Regenerate Token - Only for Pending Registration devices */}
-						{device.status === "Pending-Registration" && (
-							<button
-								onClick={handleRegenerateToken}
-								disabled={tokenLoading}
-								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50'
-							>
-								{tokenLoading ? "Regenerating..." : "🔄 Regenerate Token"}
-							</button>
-						)}
-						{/* Activate Controls - For Not-Active devices */}
-						{device.status === "Not-Active" && (
+						{/* Activate Controls - For Inactive devices */}
+						{device.status === "Inactive" && (
 							<button
 								onClick={handleActivateDevice}
 								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700'
@@ -504,15 +492,15 @@ export default function DeviceDetailPage() {
 								⏸️ Deactivate
 							</button>
 						)}{" "}
-						{/* Experiment Controls - Only for Active devices */}
+						{/* Fault Controls - Only for Active devices */}
 						{device.status === "Active" && (
 							<>
-								{/* Always show option to create Offline experiment */}{" "}
+								{/* Always show option to create Offline fault */}{" "}
 								<Link
-									href={`/devices/${deviceId}/experiments/create`}
+									href={`/devices/${deviceId}/faults/create`}
 									className='inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'
 								>
-									Create Experiment
+									Create Fault
 								</Link>
 							</>
 						)}
@@ -561,7 +549,7 @@ export default function DeviceDetailPage() {
 					<nav className='-mb-px flex space-x-8'>
 						{[
 							"overview",
-							"live-experiments",
+							"live-faults",
 							"data-explorer",
 							"channels",
 						].map((tab) => (
@@ -577,8 +565,8 @@ export default function DeviceDetailPage() {
 								}`}
 							>
 								{" "}
-								{tab === "live-experiments"
-									? "Experiments"
+								{tab === "live-faults"
+									? "Faults"
 									: tab === "data-explorer"
 									? "Unassigned Data Explorer"
 									: tab === "channels"
@@ -732,29 +720,29 @@ export default function DeviceDetailPage() {
 								</div>{" "}
 								<div>
 									<dt className='text-sm font-medium text-gray-500'>
-										Experiments
+										Faults
 									</dt>
 									<dd className='text-sm text-gray-900'>
-										{allExperiments.length} total
-										{activeExperiments.length > 0
-											? ` (${activeExperiments.length} active)`
+										{allFaults.length} total
+										{activeFaults.length > 0
+											? ` (${activeFaults.length} active)`
 											: ""}
 									</dd>
 								</div>{" "}
 							</dl>
 						</div>
 
-						{/* Experiment Summary */}
-						{allExperiments.length > 0 && (
+						{/* Fault Summary */}
+						{allFaults.length > 0 && (
 							<div className='bg-white p-6 rounded-lg border border-gray-200'>
 								<h3 className='text-lg font-medium text-gray-900 mb-4'>
-									Experiment Summary
+									Fault Summary
 								</h3>{" "}
 								<div className='grid grid-cols-1 md:grid-cols-6 gap-4'>
 									<div className='text-center'>
 										<div className='text-2xl mb-1'>🧪</div>
 										<div className='text-2xl font-bold text-blue-600'>
-											{allExperiments.length}
+											{allFaults.length}
 										</div>
 										<div className='text-sm text-gray-500'>
 											Total
@@ -763,86 +751,51 @@ export default function DeviceDetailPage() {
 									<div className='text-center'>
 										<div className='text-2xl mb-1'>🟢</div>
 										<div className='text-2xl font-bold text-green-600'>
-											{activeExperiments.length}
+											{activeFaults.length}
 										</div>
 										<div className='text-sm text-gray-500'>
 											Active
 										</div>
 									</div>
 									<div className='text-center'>
-										<div className='text-2xl mb-1'>🔄</div>
-										<div className='text-2xl font-bold text-purple-600'>
-											{
-												allExperiments.filter(
-													(exp) =>
-														exp.type === "stream"
-												).length
-											}
-										</div>
-										<div className='text-sm text-gray-500'>
-											Stream
-										</div>
-									</div>
-									<div className='text-center'>
-										<div className='text-2xl mb-1'>📦</div>
-										<div className='text-2xl font-bold text-orange-600'>
-											{
-												allExperiments.filter(
-													(exp) =>
-														exp.type === "batch"
-												).length
-											}
-										</div>
-										<div className='text-sm text-gray-500'>
-											Batch
-										</div>
-									</div>
-									<div className='text-center'>
-										<div className='text-2xl mb-1'>✅</div>
+										<div className='text-2xl mb-1'>�</div>
 										<div className='text-2xl font-bold text-blue-600'>
-											{
-												allExperiments.filter(
-													(exp) =>
-														exp.status ===
-														"Completed"
-												).length
-											}
+											{allFaults.length}
 										</div>
 										<div className='text-sm text-gray-500'>
-											Completed
+											Total Faults
 										</div>
 									</div>
 									<div className='text-center'>
 										<div className='text-2xl mb-1'>⏸️</div>
 										<div className='text-2xl font-bold text-yellow-600'>
 											{
-												allExperiments.filter(
-													(exp) =>
-														exp.status ===
-															"Paused" ||
-														exp.status === "Failed"
+												allFaults.filter(
+													(fault) =>
+														fault.status ===
+														"Inactive"
 												).length
 											}
 										</div>
 										<div className='text-sm text-gray-500'>
-											Paused/Failed
+											Inactive
 										</div>
 									</div>
 								</div>
 								{/* Quick Actions */}
 								{/* <div className='mt-6 flex flex-wrap gap-3'>
 									<Link
-										href={`/devices/${deviceId}/experiments/create`}
+										href={`/devices/${deviceId}/faults/create`}
 										className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
 									>
-										➕ Create New Experiment
+										➕ Create New Fault
 									</Link>
-									{activeExperiments.length > 0 && (
+									{activeFaults.length > 0 && (
 										<Link
-											href={`/devices/${deviceId}/experiments/${activeExperiments[0].experiment_id}`}
+											href={`/devices/${deviceId}/faults/${activeFaults[0].fault_id}`}
 											className='inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'
 										>
-											👁️ View Active Experiment
+											👁️ View Active Fault
 										</Link>
 									)}
 								</div> */}
@@ -850,12 +803,12 @@ export default function DeviceDetailPage() {
 						)}
 					</div>
 				)}
-				{activeTab === "live-experiments" && (
+				{activeTab === "live-faults" && (
 					<div className='space-y-6'>
-						{/* Live Experiment Management */}
+						{/* Live Fault Management */}
 						<div className='bg-white p-6 rounded-lg border border-gray-200'>
 							<h3 className='text-lg font-medium text-gray-900 mb-4'>
-								🧪 Live Experiment Management
+								🧪 Live Fault Management
 							</h3>
 
 							{device.status !== "Active" ? (
@@ -871,11 +824,11 @@ export default function DeviceDetailPage() {
 												</h4>
 												<p className='text-sm text-yellow-700 mt-1'>
 													The device must be active to
-													start live experiments.
+													start live faults.
 												</p>
 											</div>
 										</div>
-										{device.status === "Not-Active" && (
+										{device.status === "Inactive" && (
 											<button
 												onClick={handleActivateDevice}
 												className='inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700'
@@ -887,80 +840,65 @@ export default function DeviceDetailPage() {
 								</div>
 							) : (
 								<>
-									{/* Current Live Experiment Status */}
-									{activeExperiments.filter(
-										(exp) => exp.status === "Running"
+									{/* Current Live Fault Status */}
+									{activeFaults.filter(
+										(fault) => fault.status === "Active"
 									).length > 0 ? (
 										<div className='bg-green-50 border border-green-200 rounded-lg p-4 mb-4'>
 											<div className='flex justify-between items-center'>
 												<div>
 													<h4 className='font-medium text-green-800'>
-														🟢 Live Experiment
-														Active
+														🟢 Live Fault Active
 													</h4>
-													{activeExperiments
+													{activeFaults
 														.filter(
-															(exp) =>
-																exp.status ===
-																"Running"
+															(fault) =>
+																fault.status ===
+																"Active"
 														)
-														.map((exp) => (
+														.map((fault) => (
 															<div
 																key={
-																	exp.experiment_id
+																	fault.fault_id
 																}
 																className='text-sm text-green-700 mt-1'
 															>
 																{" "}
 																<div>
 																	Name:{" "}
-																	{exp.experiment_name ||
-																		exp.experiment_id}
+																	{fault.fault_name ||
+																		fault.fault_id}
 																</div>
 																<div className='flex items-center space-x-2'>
 																	<span>
 																		Type:
 																	</span>
-																	<span
-																		className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-																			exp.type ===
-																			"stream"
-																				? "bg-purple-100 text-purple-800"
-																				: "bg-orange-100 text-orange-800"
-																		}`}
-																	>
-																		{exp.type ===
-																		"stream"
-																			? "🔄 Stream"
-																			: "📦 Batch"}
-																	</span>
 																</div>
 																<div>
 																	Started:{" "}
 																	{new Date(
-																		exp.start_date
+																		fault.start_date
 																	).toLocaleString()}
 																</div>
 															</div>
 														))}
 												</div>
 												<div className='space-x-2'>
-													{activeExperiments
+													{activeFaults
 														.filter(
-															(exp) =>
-																exp.status ===
-																"Running"
+															(fault) =>
+																fault.status ===
+																"Active"
 														)
-														.map((exp) => (
+														.map((fault) => (
 															<Link
 																key={
-																	exp.experiment_id
+																	fault.fault_id
 																}
-																href={`/devices/${deviceId}/experiments/${exp.experiment_id}`}
+																href={`/devices/${deviceId}/faults/${fault.fault_id}`}
 																className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
 															>
-																Manage
-																Experiment
+																Manage Fault
 															</Link>
 														))}
 												</div>
@@ -969,44 +907,44 @@ export default function DeviceDetailPage() {
 									) : (
 										<div className='bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4'>
 											<h4 className='font-medium text-blue-800 mb-2'>
-												No Active Live Experiments
+												No Active Live Faults
 											</h4>
 											<p className='text-sm text-blue-700'>
-												View experiment history below or
-												create a new experiment.
+												View fault history below or
+												create a new fault.
 											</p>
 										</div>
 									)}
 								</>
 							)}
 						</div>
-						{/* Experiments History */}
+						{/* Faults History */}
 						<div className='bg-white p-6 rounded-lg border border-gray-200'>
 							<h3 className='text-lg font-medium text-gray-900 mb-4'>
-								📋 All Experiments
+								📋 All Faults
 							</h3>{" "}
-							{allExperiments.length > 0 ? (
+							{allFaults.length > 0 ? (
 								<div className='space-y-6'>
-									{/* Previous Experiments */}
-									{allExperiments.filter(
-										(exp) =>
-											!activeExperiments.some(
+									{/* Previous Faults */}
+									{allFaults.filter(
+										(fault) =>
+											!activeFaults.some(
 												(active) =>
-													active.experiment_id ===
-													exp.experiment_id
+													active.fault_id ===
+													fault.fault_id
 											)
 									).length > 0 && (
 										<div>
 											<h4 className='text-md font-medium text-gray-700 mb-3 flex items-center'>
 												<span className='w-3 h-3 bg-gray-400 rounded-full mr-2'></span>
-												Previous Experiments (
+												Previous Faults (
 												{
-													allExperiments.filter(
-														(exp) =>
-															!activeExperiments.some(
+													allFaults.filter(
+														(fault) =>
+															!activeFaults.some(
 																(active) =>
-																	active.experiment_id ===
-																	exp.experiment_id
+																	active.fault_id ===
+																	fault.fault_id
 															)
 													).length
 												}
@@ -1018,7 +956,7 @@ export default function DeviceDetailPage() {
 													<thead className='bg-gray-50'>
 														<tr>
 															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-																Experiment
+																Fault
 															</th>
 															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
 																Type
@@ -1038,97 +976,72 @@ export default function DeviceDetailPage() {
 														</tr>
 													</thead>
 													<tbody className='bg-white divide-y divide-gray-200'>
-														{allExperiments
+														{allFaults
 															.filter(
-																(exp) =>
-																	!activeExperiments.some(
+																(fault) =>
+																	!activeFaults.some(
 																		(
 																			active
 																		) =>
-																			active.experiment_id ===
-																			exp.experiment_id
+																			active.fault_id ===
+																			fault.fault_id
 																	)
 															)
-															.map(
-																(
-																	experiment
-																) => (
-																	<tr
-																		key={
-																			experiment.experiment_id
-																		}
-																		className='opacity-75'
-																	>
-																		{" "}
-																		<td className='px-6 py-4 whitespace-nowrap'>
-																			<div className='text-sm font-medium text-gray-900'>
-																				{experiment.experiment_name ||
-																					experiment.experiment_id}
-																			</div>
-																			<div className='text-sm text-gray-500'>
-																				{experiment.description ||
-																					"No description"}
-																			</div>
-																		</td>
-																		<td className='px-6 py-4 whitespace-nowrap'>
-																			<span
-																				className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-																					experiment.type ===
-																					"stream"
-																						? "bg-purple-100 text-purple-800"
-																						: "bg-orange-100 text-orange-800"
-																				}`}
-																			>
-																				{experiment.type ===
-																				"stream"
-																					? "🔄 Stream"
-																					: "📦 Batch"}
-																			</span>
-																		</td>
-																		<td className='px-6 py-4 whitespace-nowrap'>
-																			<span
-																				className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-																					experiment.status ===
-																					"Completed"
-																						? "bg-blue-100 text-blue-800"
-																						: experiment.status ===
-																						  "Failed"
-																						? "bg-red-100 text-red-800"
-																						: experiment.status ===
-																						  "Paused"
-																						? "bg-yellow-100 text-yellow-800"
-																						: "bg-gray-100 text-gray-800"
-																				}`}
-																			>
-																				{
-																					experiment.status
-																				}
-																			</span>
-																		</td>
-																		<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-																			{new Date(
-																				experiment.start_date
-																			).toLocaleDateString()}
-																		</td>
-																		<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-																			{experiment.end_date
-																				? new Date(
-																						experiment.end_date
-																				  ).toLocaleDateString()
-																				: "-"}
-																		</td>
-																		<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-																			<Link
-																				href={`/devices/${deviceId}/experiments/${experiment.experiment_id}`}
-																				className='text-blue-600 hover:text-blue-900'
-																			>
-																				View
-																				Details
-																			</Link>
-																		</td>
-																	</tr>
-																)
-															)}
+															.map((fault) => (
+																<tr
+																	key={
+																		fault.fault_id
+																	}
+																	className='opacity-75'
+																>
+																	{" "}
+																	<td className='px-6 py-4 whitespace-nowrap'>
+																		<div className='text-sm font-medium text-gray-900'>
+																			{fault.fault_name ||
+																				fault.fault_id}
+																		</div>
+																		<div className='text-sm text-gray-500'>
+																			{fault.description ||
+																				"No description"}
+																		</div>
+																	</td>
+																	<td className='px-6 py-4 whitespace-nowrap'>
+																		<span
+																			className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+																				fault.status ===
+																				"Active"
+																					? "bg-green-100 text-green-800"
+																					: "bg-red-100 text-red-800"
+																			}`}
+																		>
+																			{
+																				fault.status
+																			}
+																		</span>
+																	</td>
+																	<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+																		{new Date(
+																			fault.start_date
+																		).toLocaleDateString()}
+																	</td>
+																	<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+																		{fault.end_date
+																			? new Date(
+																					fault.end_date
+																			  ).toLocaleDateString()
+																			: "-"}
+																	</td>
+																	<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+																		<Link
+																			href={`/devices/${deviceId}/faults/${fault.fault_id}`}
+																			className='text-blue-600 hover:text-blue-900'
+																		>
+																			View
+																			Details
+																		</Link>
+																	</td>
+																</tr>
+															))}
 													</tbody>
 												</table>
 											</div>
@@ -1138,9 +1051,9 @@ export default function DeviceDetailPage() {
 							) : (
 								<div className='text-center py-6 text-gray-500'>
 									<div className='text-4xl mb-2'>🧪</div>
-									<p>No experiments found for this device.</p>
+									<p>No faults found for this device.</p>
 									<p className='text-sm'>
-										Start your first live experiment above.
+										Start your first live fault above.
 									</p>
 								</div>
 							)}{" "}
@@ -1159,7 +1072,7 @@ export default function DeviceDetailPage() {
 									</h3>
 									<p className='text-sm text-gray-500'>
 										Interactive visualization of measurement
-										data not assigned to any experiment
+										data not assigned to any fault
 									</p>
 								</div>{" "}
 								<div className='flex items-center space-x-4'>
@@ -1518,8 +1431,8 @@ export default function DeviceDetailPage() {
 											<p className='text-sm text-gray-400 mt-2'>
 												Data appears here when
 												measurements are uploaded
-												without being assigned to an
-												experiment.
+												without being assigned to a
+												fault.
 											</p>
 										</div>
 									)}
@@ -2205,7 +2118,6 @@ export default function DeviceDetailPage() {
 						)}
 					</div>
 				)}{" "}
-
 				{/* Token Regeneration Modal */}
 				{showTokenModal && regeneratedToken && (
 					<div className='fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50'>
@@ -2235,7 +2147,9 @@ export default function DeviceDetailPage() {
 												Token Generated Successfully
 											</h4>
 											<p className='text-sm text-green-700 mt-1'>
-												Use this token to register your device. It will expire in 1 hour.
+												Use this token to register your
+												device. It will expire in 1
+												hour.
 											</p>
 										</div>
 									</div>
@@ -2247,12 +2161,16 @@ export default function DeviceDetailPage() {
 									<div className='flex'>
 										<input
 											type='text'
-											value={device?.device_id || ''}
+											value={device?.device_id || ""}
 											readOnly
 											className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-500'
 										/>
 										<button
-											onClick={() => navigator.clipboard.writeText(device?.device_id || '')}
+											onClick={() =>
+												navigator.clipboard.writeText(
+													device?.device_id || ""
+												)
+											}
 											className='px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 text-sm'
 										>
 											Copy
@@ -2271,7 +2189,11 @@ export default function DeviceDetailPage() {
 											className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-500'
 										/>
 										<button
-											onClick={() => navigator.clipboard.writeText(regeneratedToken)}
+											onClick={() =>
+												navigator.clipboard.writeText(
+													regeneratedToken
+												)
+											}
 											className='px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 text-sm'
 										>
 											Copy
@@ -2279,13 +2201,22 @@ export default function DeviceDetailPage() {
 									</div>
 								</div>
 								<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
-									<h5 className='font-medium text-blue-800 mb-2'>Registration Command</h5>
-									<p className='text-sm text-blue-700 mb-2'>Use this command to register your device:</p>
+									<h5 className='font-medium text-blue-800 mb-2'>
+										Registration Command
+									</h5>
+									<p className='text-sm text-blue-700 mb-2'>
+										Use this command to register your
+										device:
+									</p>
 									<div className='bg-gray-800 text-green-400 p-2 rounded text-xs font-mono overflow-x-auto'>
 										{`python register_device.py --token ${regeneratedToken} --device-id ${device?.device_id}`}
 									</div>
 									<button
-										onClick={() => navigator.clipboard.writeText(`python register_device.py --token ${regeneratedToken} --device-id ${device?.device_id}`)}
+										onClick={() =>
+											navigator.clipboard.writeText(
+												`python register_device.py --token ${regeneratedToken} --device-id ${device?.device_id}`
+											)
+										}
 										className='mt-2 text-xs text-blue-600 hover:text-blue-800'
 									>
 										📋 Copy command
@@ -2306,34 +2237,33 @@ export default function DeviceDetailPage() {
 						</div>
 					</div>
 				)}
-
-				{/* Remove old experiments tab - replaced with live-experiments and data-explorer */}
+				{/* Remove old faults tab - replaced with live-faults and data-explorer */}
 				<div className='space-y-6'>
-					{/* Experiment Creation Actions */}
+					{/* Fault Creation Actions */}
 					<div className='bg-white p-6 rounded-lg border border-gray-200'>
 						<h3 className='text-lg font-medium text-gray-900 mb-4'>
-							Create New Experiment
+							Create New Fault
 						</h3>
 						<div className='space-y-4'>
 							{device.status === "Active" ? (
 								<div className='grid grid-cols-1 gap-4'>
-									{/* Offline Experiment */}
+									{/* Offline Fault */}
 									<div className='border border-gray-200 rounded-lg p-4'>
 										<div className='flex items-center mb-3'>
 											<div className='w-2 h-2 bg-blue-500 rounded-full mr-2'></div>
 											<h4 className='text-lg font-medium text-gray-900'>
-												Experiment
+												Fault
 											</h4>
 										</div>
 										<p className='text-sm text-gray-600 mb-4'>
-											Create a new experiment for data
+											Create a new fault for data
 											collection and analysis.
 										</p>
 										<Link
-											href={`/devices/${deviceId}/experiments/create`}
+											href={`/devices/${deviceId}/faults/create`}
 											className='w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
 										>
-											Create Experiment
+											Create Fault
 										</Link>
 									</div>
 								</div>
@@ -2349,12 +2279,13 @@ export default function DeviceDetailPage() {
 											</h4>{" "}
 											<p className='text-sm text-yellow-700 mt-1'>
 												This device must be activated
-												before you can create
-												experiments.
+												before you can create faults.
 											</p>
-											{(device.status === "Pending-Registration" || device.status === "Not-Active") && (
+											{device.status === "Inactive" && (
 												<button
-													onClick={handleActivateDevice}
+													onClick={
+														handleActivateDevice
+													}
 													className='mt-3 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700'
 												>
 													✅ Activate Device
@@ -2366,13 +2297,13 @@ export default function DeviceDetailPage() {
 							)}
 						</div>
 					</div>
-					{activeExperiments.length === 0 && (
+					{activeFaults.length === 0 && (
 						<div className='bg-gray-50 border border-gray-200 rounded-lg p-6 text-center'>
 							<h3 className='text-lg font-medium text-gray-900 mb-2'>
-								No Active Experiments
+								No Active Faults
 							</h3>{" "}
 							<p className='text-gray-600'>
-								This device doesn't have any active experiments.
+								This device doesn't have any active faults.
 								Create one to start collecting data.
 							</p>
 						</div>

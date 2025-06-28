@@ -181,7 +181,11 @@ export default function DeviceRegisterPage() {
 												className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-900'
 											/>
 											<button
-												onClick={() => navigator.clipboard.writeText(success.device_id)}
+												onClick={() =>
+													navigator.clipboard.writeText(
+														success.device_id
+													)
+												}
 												className='px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 text-sm'
 											>
 												Copy
@@ -195,12 +199,19 @@ export default function DeviceRegisterPage() {
 										<div className='flex'>
 											<input
 												type='text'
-												value={success.verification_token}
+												value={
+													success.verification_token
+												}
 												readOnly
 												className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-900'
 											/>
 											<button
-												onClick={() => navigator.clipboard.writeText(success.verification_token || '')}
+												onClick={() =>
+													navigator.clipboard.writeText(
+														success.verification_token ||
+															""
+													)
+												}
 												className='px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 text-sm'
 											>
 												Copy
@@ -208,13 +219,22 @@ export default function DeviceRegisterPage() {
 										</div>
 									</div>
 									<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
-										<h5 className='font-medium text-blue-800 mb-2'>Registration Command</h5>
-										<p className='text-sm text-blue-700 mb-2'>Use this command to register your device:</p>
+										<h5 className='font-medium text-blue-800 mb-2'>
+											Registration Command
+										</h5>
+										<p className='text-sm text-blue-700 mb-2'>
+											Use this command to register your
+											device:
+										</p>
 										<div className='bg-gray-800 text-green-400 p-2 rounded text-xs font-mono overflow-x-auto'>
 											{`python register_device.py --token ${success.verification_token} --device-id ${success.device_id}`}
 										</div>
 										<button
-											onClick={() => navigator.clipboard.writeText(`python register_device.py --token ${success.verification_token} --device-id ${success.device_id}`)}
+											onClick={() =>
+												navigator.clipboard.writeText(
+													`python register_device.py --token ${success.verification_token} --device-id ${success.device_id}`
+												)
+											}
 											className='mt-2 text-xs text-blue-600 hover:text-blue-800'
 										>
 											📋 Copy command
@@ -230,7 +250,11 @@ export default function DeviceRegisterPage() {
 													Important
 												</h5>
 												<p className='text-xs text-yellow-700 mt-1'>
-													The verification token will expire in 1 hour. If you need a new token later, you can regenerate it from the device details page.
+													The verification token will
+													expire in 1 hour. If you
+													need a new token later, you
+													can regenerate it from the
+													device details page.
 												</p>
 											</div>
 										</div>
@@ -245,19 +269,24 @@ export default function DeviceRegisterPage() {
 							</h4>{" "}
 							<ul className='text-sm text-blue-700 space-y-1 list-disc list-inside'>
 								<li>
-									Copy the device ID and verification token from above
+									Copy the device ID and verification token
+									from above
 								</li>
 								<li>
-									Run the registration command on your device to activate it
+									Run the registration command on your device
+									to activate it
 								</li>
 								<li>
-									Once registered, start sending measurement data
+									Once registered, start sending measurement
+									data
 								</li>
 								<li>
-									Monitor device status and measurements in the dashboard
+									Monitor device status and measurements in
+									the dashboard
 								</li>
 								<li>
-									Create experiments to organize your data collection
+									Create faults to organize your data
+									collection
 								</li>
 							</ul>
 						</div>

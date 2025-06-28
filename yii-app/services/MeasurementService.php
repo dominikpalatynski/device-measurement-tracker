@@ -7,7 +7,8 @@ use app\models\Measurement;
 use yii\base\Component;
 use yii\helpers\Json;
 use yii\web\ServerErrorHttpException;
-use app\models\Experiments;
+use app\models\Faults;
+use app\models\Conditions;
 use app\models\MeasurementData;
 class MeasurementService extends Component
 {
@@ -107,21 +108,22 @@ class MeasurementService extends Component
                 throw new \Exception("Device not found: $deviceId");
             }
 
-            $activeExperiment = $device->getExperiments()
-                ->where(['type' => Experiments::STREAM, 'status' => Experiments::STATUS_RUNNING])
+            $activeFault = $device->getFaults()
+                ->where(['status' => Faults::STATUS_ACTIVE])
                 ->one();
-            if ($activeExperiment) {
-                echo "\033[32m[MQTT] Found active experiment for device: $deviceId\033[0m\n";
-                $activePhenomena = $activeExperiment->getPhenomena()
+            if ($activeFault) {
+                echo "\033[32m[MQTT] Found active fault for device: $deviceId\033[0m\n";
+                $activeConditions = $activeFault->getConditions()
                     ->where(['status' => 'Active'])
                     ->all();
                 
-                if (!empty($activePhenomena)) {
-                    echo "\033[32m[MQTT] Found active experiment and phenomena for device: $deviceId\033[0m\n";
-                    // ... Twoja logika dla aktywnych phenomena ...
+                if (!empty($activeConditions)) {
+                    echo "\033[32m[MQTT] Found active fault and conditions for device: $deviceId\033[0m\n";
+                    // ... Your logic for active conditions ...
                     $measurement = new \app\models\MeasurementData();
                     $measurement->device_id = $deviceId;
-                    $measurement->phenomenon_id = $activePhenomena[0]->phenomenon_id;
+                    $measurement->condition_id = $activeConditions[0]->condition_id;
+                    $measurement->fault_id = $activeFault->fault_id;
                     $measurement->data_payload = $data['data'];
                     $measurement->timestamp = date('Y-m-d H:i:s');
                     $measurement->save();
@@ -129,7 +131,7 @@ class MeasurementService extends Component
                 }
             }
 
-            echo "\033[33m[MQTT] No active experiment or phenomena, saving to UnassignedData for device: $deviceId\033[0m\n";
+            echo "\033[33m[MQTT] No active fault or conditions, saving to UnassignedData for device: $deviceId\033[0m\n";
             $measurement = new \app\models\MeasurementData();
             $measurement->device_id = $deviceId;
             $measurement->data_payload = $data['data'];

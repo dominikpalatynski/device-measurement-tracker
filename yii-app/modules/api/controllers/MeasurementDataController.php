@@ -31,23 +31,23 @@ class MeasurementDataController extends Controller
         
         return $behaviors;
     }    /**
-     * Get measurement data for a specific phenomenon
+     * Get measurement data for a specific condition
      * 
-     * @param string $phenomenonId Phenomenon ID
+     * @param string $conditionId Condition ID
      * @param string $startDate Start date filter (optional)
      * @param string $endDate End date filter (optional)
      * @return array
      */
-    public function actionPhenomenon($phenomenonId, $startDate = null, $endDate = null)
+    public function actionCondition($conditionId, $startDate = null, $endDate = null)
     {
         try {
             // Force proper JSON response type
             Yii::$app->response->format = Response::FORMAT_JSON;
             
-            Yii::info("Fetching measurement data for phenomenon: {$phenomenonId}, startDate: {$startDate}, endDate: {$endDate}", 'api.measurement-data');
+            Yii::info("Fetching measurement data for condition: {$conditionId}, startDate: {$startDate}, endDate: {$endDate}", 'api.measurement-data');
             
             $query = MeasurementData::find()
-                ->where(['phenomenon_id' => $phenomenonId]);
+                ->where(['condition_id' => $conditionId]);
             
             // Add date range filtering if provided
             if ($startDate) {
@@ -65,7 +65,7 @@ class MeasurementDataController extends Controller
                 return $measurement->data_payload; // Assuming data_payload is already in the desired format
             }, $measurements);
             
-            Yii::info("Successfully retrieved " . count($data) . " measurement data records for phenomenon: {$phenomenonId}", 'api.measurement-data');
+            Yii::info("Successfully retrieved " . count($data) . " measurement data records for condition: {$conditionId}", 'api.measurement-data');
             
             return [
                 'success' => true,
@@ -73,11 +73,11 @@ class MeasurementDataController extends Controller
             ];
             
         } catch (\Throwable $e) {
-            Yii::error("Error retrieving measurement data for phenomenon {$phenomenonId}: " . $e->getMessage() . "\n" . $e->getTraceAsString(), 'api.measurement-data');
+            Yii::error("Error retrieving measurement data for condition {$conditionId}: " . $e->getMessage() . "\n" . $e->getTraceAsString(), 'api.measurement-data');
             Yii::$app->response->statusCode = 500;
             return [
                 'success' => false,
-                'error' => "Error retrieving measurement data for phenomenon {$phenomenonId}"
+                'error' => "Error retrieving measurement data for condition {$conditionId}"
             ];
         }
     }
@@ -107,7 +107,7 @@ class MeasurementDataController extends Controller
                 return [
                     'data_id' => (int)$measurement->data_id,
                     'device_id' => $measurement->device_id,
-                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'condition_id' => $measurement->condition_id,
                     'data_payload' => $measurement->data_payload,
                     'timestamp' => $measurement->timestamp,
                 ];
@@ -153,7 +153,7 @@ class MeasurementDataController extends Controller
                 return [
                     'data_id' => (int)$measurement->data_id,
                     'device_id' => $measurement->device_id,
-                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'condition_id' => $measurement->condition_id,
                     'data_payload' => $measurement->data_payload,
                     'timestamp' => $measurement->timestamp,
                 ];
@@ -195,23 +195,23 @@ class MeasurementDataController extends Controller
     }
 
     /**
-     * Get live measurement data for a specific phenomenon with real-time polling support
+     * Get live measurement data for a specific condition with real-time polling support
      * 
-     * @param string $phenomenonId Phenomenon ID
+     * @param string $conditionId Condition ID
      * @param int $limit Maximum number of records to return (default: 50)
      * @param string|null $since Timestamp to get measurements since (optional)
      * @return array
      */
-    public function actionPhenomenonLive($phenomenonId, $limit = 50, $since = null)
+    public function actionConditionLive($conditionId, $limit = 50, $since = null)
     {
         try {
             // Force proper JSON response type
             Yii::$app->response->format = Response::FORMAT_JSON;
             
-            Yii::info("Fetching live measurement data for phenomenon: {$phenomenonId}, limit: {$limit}, since: {$since}", 'api.measurement-data');
+            Yii::info("Fetching live measurement data for condition: {$conditionId}, limit: {$limit}, since: {$since}", 'api.measurement-data');
             
             $query = MeasurementData::find()
-                ->where(['phenomenon_id' => $phenomenonId]);
+                ->where(['condition_id' => $conditionId]);
             
             // If 'since' timestamp is provided, filter for newer records
             if ($since) {
@@ -222,12 +222,12 @@ class MeasurementDataController extends Controller
                 ->orderBy(['timestamp' => SORT_DESC])
                 ->limit((int)$limit)
                 ->all();
-              // Convert to array with proper data types
+            // Convert to array with proper data types
             $data = array_map(function($measurement) {
                 return [
                     'data_id' => (int)$measurement->data_id,
                     'device_id' => $measurement->device_id,
-                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'condition_id' => $measurement->condition_id,
                     'data_payload' => $measurement->data_payload,
                     'timestamp' => $measurement->timestamp,
                 ];
@@ -254,21 +254,21 @@ class MeasurementDataController extends Controller
     }
 
     /**
-     * Get the latest measurement data for a specific phenomenon
+     * Get the latest measurement data for a specific condition
      * 
-     * @param string $phenomenonId Phenomenon ID
+     * @param string $conditionId Condition ID
      * @return array
      */
-    public function actionPhenomenonLatest($phenomenonId)
+    public function actionConditionLatest($conditionId)
     {
         try {
             // Force proper JSON response type
             Yii::$app->response->format = Response::FORMAT_JSON;
             
-            Yii::info("Fetching latest measurement data for phenomenon: {$phenomenonId}", 'api.measurement-data');
+            Yii::info("Fetching latest measurement data for condition: {$conditionId}", 'api.measurement-data');
             
             $measurement = MeasurementData::find()
-                ->where(['phenomenon_id' => $phenomenonId])
+                ->where(['condition_id' => $conditionId])
                 ->orderBy(['timestamp' => SORT_DESC])
                 ->one();
             
@@ -276,14 +276,14 @@ class MeasurementDataController extends Controller
                 return [
                     'success' => true,
                     'data' => [],
-                    'message' => 'No measurement data found for this phenomenon'
+                    'message' => 'No measurement data found for this condition'
                 ];
             }
             
             $data = [
                 'data_id' => (int)$measurement->data_id,
                 'device_id' => $measurement->device_id,
-                'phenomenon_id' => $measurement->phenomenon_id,
+                'condition_id' => $measurement->condition_id,
                 'data_payload' => $measurement->data_payload,
                 'timestamp' => $measurement->timestamp,
             ];
@@ -312,10 +312,10 @@ class MeasurementDataController extends Controller
      * 
      * @param int $limit Maximum number of records to return (default: 50)
      * @param string|null $deviceId Optional device filter
-     * @param string|null $phenomenonId Optional phenomenon filter
+     * @param string|null $conditionId Optional condition filter
      * @return array
      */
-    public function actionLatestAll($limit = 50, $deviceId = null, $phenomenonId = null)
+    public function actionLatestAll($limit = 50, $deviceId = null, $conditionId = null)
     {
         try {
             // Force proper JSON response type
@@ -329,8 +329,8 @@ class MeasurementDataController extends Controller
             if ($deviceId) {
                 $query->andWhere(['device_id' => $deviceId]);
             }
-            if ($phenomenonId) {
-                $query->andWhere(['phenomenon_id' => $phenomenonId]);
+            if ($conditionId) {
+                $query->andWhere(['condition_id' => $conditionId]);
             }
             
             $measurements = $query
@@ -343,7 +343,7 @@ class MeasurementDataController extends Controller
                 return [
                     'data_id' => (int)$measurement->data_id,
                     'device_id' => $measurement->device_id,
-                    'phenomenon_id' => $measurement->phenomenon_id,
+                    'condition_id' => $measurement->condition_id,
                     'data_payload' => $measurement->data_payload,
                     'timestamp' => $measurement->timestamp,
                 ];
@@ -358,7 +358,7 @@ class MeasurementDataController extends Controller
                 'query_time' => date('Y-m-d H:i:s'),
                 'filters' => [
                     'device_id' => $deviceId,
-                    'phenomenon_id' => $phenomenonId,
+                    'condition_id' => $conditionId,
                     'limit' => $limit
                 ]
             ];
