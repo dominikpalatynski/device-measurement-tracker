@@ -42,7 +42,7 @@ def read_file_data(file_path: Path) -> List[float]:
 
 # --- MQTT Sender ---
 class MQTTDataSender:
-    def __init__(self, device_id: str, mqtt_config: Dict[str, Any], included_channels: List[str]):
+    def __init__(self, device_id: str, mqtt_config: Dict[str, Any], included_channels: List[str], condition_name: str, data_series: str):
         self.device_id = device_id
         self.mqtt_config = mqtt_config
         self.client = None
@@ -50,6 +50,8 @@ class MQTTDataSender:
         self.message_count = 0
         self.included_channels = included_channels  # list of channel names (file stems)
         self.channel_counters = {ch: 1 for ch in included_channels}  # start from 1 for each channel
+        self.condition_name = condition_name
+        self.data_series = data_series
     
     def setup_mqtt(self) -> bool:
         """Setup MQTT connection"""
@@ -112,6 +114,8 @@ class MQTTDataSender:
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'sequenceNumber': self.message_count,
             'data': data,
+            "condition_name": self.mqtt_config.get('condition_name', 'normal'),
+            "data_series": self.mqtt_config.get('data_series', '1'),
         }
     
     def publish_data(self, data: Dict[str, Any]) -> bool:
@@ -251,7 +255,15 @@ Examples:
         included_files = mqtt_config.get('included_files', [])
         included_channels = [Path(f).stem for f in included_files]
         interval = args.interval if args.interval is not None else mqtt_config.get('send_interval', 1)
-        sender = MQTTDataSender(device_id, mqtt_config, included_channels)
+        condition_name = mqtt_config.get('condition_name')
+        if not condition_name:
+            print("✗ Condition name not specified in config")
+            return 1
+        data_series = mqtt_config.get('data_series')
+        if not data_series:
+            print("✗ Data series not specified in config")
+            return 1
+        sender = MQTTDataSender(device_id, mqtt_config, included_channels, condition_name, data_series)
         if not sender.setup_mqtt():
             print("✗ Failed to setup MQTT connection")
             sys.exit(1)

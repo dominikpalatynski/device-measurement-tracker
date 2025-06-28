@@ -8,7 +8,7 @@ use yii\base\Component;
 use yii\helpers\Json;
 use yii\web\ServerErrorHttpException;
 use app\models\Faults;
-use app\models\Conditions;
+use app\models\Condition;
 use app\models\MeasurementData;
 
 require_once __DIR__ . '/InfluxDBService.php';
@@ -124,63 +124,36 @@ class MeasurementService extends Component
                 throw new \Exception("Device not found: $deviceId");
             }
 
-            // $activeFault = $device->getFaults()
-            //     ->where(['status' => Faults::STATUS_ACTIVE])
-            //     ->one();
-            // if ($activeFault) {
-            //     echo "\033[32m[MQTT] Found active fault for device: $deviceId\033[0m\n";
-            //     $activeConditions = $activeFault->getConditions()
-            //         ->where(['status' => 'Active'])
-            //         ->all();
-                
-            //     if (!empty($activeConditions)) {
-            //         echo "\033[32m[MQTT] Found active fault and conditions for device: $deviceId\033[0m\n";
-            //         // ... Your logic for active conditions ...
-            //         $measurement = new \app\models\MeasurementData();
-            //         $measurement->device_id = $deviceId;
-            //         $measurement->condition_id = $activeConditions[0]->condition_id;
-            //         $measurement->fault_id = $activeFault->fault_id;
-            //         $measurement->data_payload = $data['data'];
-            //         $measurement->timestamp = date('Y-m-d H:i:s');
-            //         $measurement->save();
-            //         return $measurement;
-            //     }
-            // }
+            $condition = Condition::find()->where(['name' => $data['condition_name']])->one();
+            if (!$condition) {
+                $fault = Faults::find()
+                ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
+                ->one();
+                if (!$fault) {
+                    throw new \Exception("Fault not found: $deviceId");
+                }
+                $condition = new Condition();
+                $condition->condition_id = Condition::generateConditionId();
+                $condition->name = $data['condition_name'];
+                $condition->status = Condition::STATUS_ACTIVE;
+                $condition->fault_id = $fault->fault_id;
+                $condition->save();
+            }
 
-            // Prepare measurement data for InfluxDB
+            $fault = Faults::find()
+                ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
+                ->one();
+            if (!$fault) {
+                throw new \Exception("Fault not found: $deviceId");
+            }
+
             $measurementData = [
-                'dataSeriesId' => "MOTOR_TEST_001",
-                'conditionId' => 'normal', // Default condition
-                'faultId' => 'none',       // Default no fault
-                'data_payload' => $data['data'] // Raw electrical measurement data
+                'dataSeriesId' => $data['data_series'],
+                'conditionId' => $condition->condition_id,
+                'faultId' => $fault->fault_id,
+                'data_payload' => $data['data'],
+                'condition_name' => $data['condition_name'],
             ];
-
-            // $activeExperiment = $device->getExperiments()
-            //     ->where(['type' => Experiments::STREAM, 'status' => Experiments::STATUS_RUNNING])
-            //     ->one();
-            
-            // if ($activeExperiment) {
-            //     echo "\033[32m[MQTT] Found active experiment for device: $deviceId\033[0m\n";
-            //     $activePhenomena = $activeExperiment->getPhenomena()
-            //         ->where(['status' => 'Active'])
-            //         ->all();
-                
-            //     if (!empty($activePhenomena)) {
-            //         echo "\033[32m[MQTT] Found active experiment and phenomena for device: $deviceId\033[0m\n";
-                    
-            //         // Update measurement metadata with experiment info
-            //         $measurementData['dataSeriesId'] = $activeExperiment->experiment_id . '_' . $activePhenomena[0]->phenomenon_id . '_' . time();
-                    
-            //         // Determine condition based on phenomenon or experiment type
-            //         if (strpos(strtolower($activePhenomena[0]->name ?? ''), 'fault') !== false) {
-            //             $measurementData['conditionId'] = 'fault';
-            //             $measurementData['faultId'] = $activePhenomena[0]->phenomenon_id;
-            //         }
-            //     }
-            // } else {
-            //     echo "\033[33m[MQTT] No active experiment or phenomena for device: $deviceId\033[0m\n";
-            //     $measurementData['dataSeriesId'] = 'unassigned_' . $deviceId . '_' . time();
-            // }
 
             // Write to InfluxDB instead of MySQL
             if ($this->influxClient) {

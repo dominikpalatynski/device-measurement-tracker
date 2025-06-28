@@ -144,17 +144,17 @@ class FaultsController extends Controller
             }
             
             // Create initial conditions if provided
-            if (!empty($data['conditions']) && is_array($data['conditions'])) {
-                foreach ($data['conditions'] as $conditionData) {
-                    if (isset($conditionData['name'])) {
-                        Conditions::createCondition(
-                            $fault->fault_id,
-                            $conditionData['name'],
-                            $conditionData['description'] ?? null
-                        );
-                    }
-                }
-            }
+            // if (!empty($data['conditions']) && is_array($data['conditions'])) {
+            //     foreach ($data['conditions'] as $conditionData) {
+            //         if (isset($conditionData['name'])) {
+            //             Conditions::createCondition(
+            //                 $fault->fault_id,
+            //                 $conditionData['name'],
+            //                 $conditionData['description'] ?? null
+            //             );
+            //         }
+            //     }
+            // }
             
             return [
                 'success' => true,

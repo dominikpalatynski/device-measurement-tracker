@@ -572,6 +572,575 @@ class ElectricalMeasurementInfluxClient
         return $this->buckets;
     }
     
+    /**
+     * ========================================
+     * HIERARCHICAL DATA FETCHING HELPERS
+     * ========================================
+     */
+    
+    /**
+     * Level 1: Fetch all measurements for a specific DataSeries and combine them
+     */
+    public function fetchDataSeriesMeasurements($dataSeriesId, $timeRange = '-24h') 
+    {
+        $fluxQuery = "
+            from(bucket: \"{$this->buckets['raw']}\")
+            |> range(start: {$timeRange})
+            |> filter(fn: (r) => r._measurement == \"electrical_waveform\")
+            |> filter(fn: (r) => r.dataSeriesId == \"{$dataSeriesId}\")
+            |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")
+            |> sort(columns: [\"_time\"])
+        ";
+        
+        $result = $this->query($fluxQuery);
+        
+        if (!$result['success']) {
+            return [
+                'success' => false,
+                'error' => $result['error'],
+                'data' => null
+            ];
+        }
+        
+        $combinedData = $this->combineDataSeriesMeasurements($result['results'], $dataSeriesId);
+        
+        return [
+            'success' => true,
+            'dataSeriesId' => $dataSeriesId,
+            'totalMeasurements' => $combinedData['measurementCount'],
+            'timeRange' => $timeRange,
+            'data' => $combinedData
+        ];
+    }
+    
+    /**
+     * Level 2: Fetch all DataSeries under one Condition
+     */
+    public function fetchConditionData($conditionId, $timeRange = '-24h') 
+    {
+        $fluxQuery = "
+            from(bucket: \"{$this->buckets['raw']}\")
+            |> range(start: {$timeRange})
+            |> filter(fn: (r) => r._measurement == \"electrical_waveform\")
+            |> filter(fn: (r) => r.conditionId == \"{$conditionId}\")
+            |> filter(fn: (r) => r._field == \"compressed_data\")
+            |> sort(columns: [\"_time\"])
+        ";
+        
+        $result = $this->query($fluxQuery);
+        
+        if (!$result['success']) {
+            return [
+                'success' => false,
+                'error' => $result['error'],
+                'data' => null
+            ];
+        }
+        
+        $conditionData = $this->organizeDataByCondition($result['results'], $conditionId);
+        
+        return [
+            'success' => true,
+            'conditionId' => $conditionId,
+            'dataSeriesCount' => count($conditionData['dataSeries']),
+            'timeRange' => $timeRange,
+            'data' => $conditionData
+        ];
+    }
+    
+    /**
+     * Level 3: Fetch all Conditions with their DataSeries and Measurements
+     */
+    public function fetchAllConditionsData($deviceId = null, $timeRange = '-24h') 
+    {
+        $deviceFilter = $deviceId ? "|> filter(fn: (r) => r.deviceId == \"{$deviceId}\")" : "";
+        
+        $fluxQuery = "
+            from(bucket: \"{$this->buckets['raw']}\")
+            |> range(start: {$timeRange})
+            |> filter(fn: (r) => r._measurement == \"electrical_waveform\")
+            |> filter(fn: (r) => r._field == \"compressed_data\")
+            {$deviceFilter}
+            |> sort(columns: [\"_time\"])
+        ";
+        
+        $result = $this->query($fluxQuery);
+        
+        if (!$result['success']) {
+            return [
+                'success' => false,
+                'error' => $result['error'],
+                'data' => null
+            ];
+        }
+        
+        $allConditions = $this->organizeAllConditionsData($result['results']);
+        
+        return [
+            'success' => true,
+            'deviceId' => $deviceId,
+            'conditionsCount' => count($allConditions),
+            'timeRange' => $timeRange,
+            'conditions' => $allConditions
+        ];
+    }
+    
+    /**
+     * Level 4: Fetch all data under a specific Fault
+     */
+    public function fetchFaultData($faultId, $timeRange = '-24h') 
+    {
+        $fluxQuery = "
+            from(bucket: \"{$this->buckets['raw']}\")
+            |> range(start: {$timeRange})
+            |> filter(fn: (r) => r._measurement == \"electrical_waveform\")
+            |> filter(fn: (r) => r.faultId == \"{$faultId}\")
+            |> filter(fn: (r) => r._field == \"compressed_data\")
+            |> sort(columns: [\"_time\"])
+        ";
+        
+        $result = $this->query($fluxQuery);
+        
+        if (!$result['success']) {
+            return [
+                'success' => false,
+                'error' => $result['error'],
+                'data' => null
+            ];
+        }
+        
+        $faultData = $this->organizeFaultData($result['results'], $faultId);
+        
+        return [
+            'success' => true,
+            'faultId' => $faultId,
+            'conditionsCount' => count($faultData['conditions']),
+            'timeRange' => $timeRange,
+            'data' => $faultData
+        ];
+    }
+    
+    /**
+     * Level 5: Fetch ALL data under a Device (Faults -> Conditions -> DataSeries)
+     */
+    public function fetchDeviceData($deviceId, $timeRange = '-24h') 
+    {
+        $fluxQuery = "
+            from(bucket: \"{$this->buckets['raw']}\")
+            |> range(start: {$timeRange})
+            |> filter(fn: (r) => r._measurement == \"electrical_waveform\")
+            |> filter(fn: (r) => r.deviceId == \"{$deviceId}\")
+            |> filter(fn: (r) => r._field == \"compressed_data\")
+            |> sort(columns: [\"_time\"])
+        ";
+        
+        $result = $this->query($fluxQuery);
+        
+        if (!$result['success']) {
+            return [
+                'success' => false,
+                'error' => $result['error'],
+                'data' => null
+            ];
+        }
+        
+        $deviceData = $this->organizeDeviceData($result['results'], $deviceId);
+        
+        return [
+            'success' => true,
+            'deviceId' => $deviceId,
+            'faultsCount' => count($deviceData['faults']),
+            'timeRange' => $timeRange,
+            'data' => $deviceData
+        ];
+    }
+    
+    /**
+     * ========================================
+     * DATA ORGANIZATION HELPERS
+     * ========================================
+     */
+    
+    /**
+     * Get value from InfluxDB record safely
+     */
+    private function getRecordValue($record, $key) 
+    {
+        // Check if this is the field we're looking for
+        if (isset($record->values['_field']) && $record->values['_field'] === $key) {
+            return isset($record->values['_value']) ? $record->values['_value'] : null;
+        }
+        
+        // Try accessing direct values (for tags)
+        if (isset($record->values[$key])) {
+            return $record->values[$key];
+        }
+        
+        // Try accessing via getValue() if this record's field matches
+        if (method_exists($record, 'getField') && $record->getField() === $key) {
+            if (method_exists($record, 'getValue')) {
+                return $record->getValue();
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Combine multiple measurements for a single DataSeries
+     */
+    private function combineDataSeriesMeasurements($queryResults, $dataSeriesId) 
+    {
+        $combinedChannels = [
+            'w' => [], 'udc' => [], 'uc' => [], 'ub' => [], 
+            'ua' => [], 'ib' => [], 'ic' => [], 'idc' => []
+        ];
+        $measurements = [];
+        $totalSamples = 0;
+        
+        foreach ($queryResults as $table) {
+            foreach ($table->records as $record) {
+                $timestamp = $record->getTime();
+                
+                // Access pivoted data directly from record values
+                $compressedData = isset($record->values['compressed_data']) ? $record->values['compressed_data'] : null;
+                $sampleCount = isset($record->values['sample_count_per_channel']) ? (int)$record->values['sample_count_per_channel'] : 0;
+                $compressionRatio = isset($record->values['compression_ratio']) ? (float)$record->values['compression_ratio'] : 0;
+                
+                if ($compressedData) {
+                    $decompressed = $this->decompressWaveformData($compressedData);
+                    if ($decompressed) {
+                        $measurements[] = [
+                            'timestamp' => $timestamp,
+                            'data' => $decompressed,
+                            'sampleCount' => $sampleCount,
+                            'compressionRatio' => $compressionRatio
+                        ];
+                        
+                        // Combine channel data
+                        foreach ($decompressed as $channel => $samples) {
+                            if (isset($combinedChannels[$channel])) {
+                                $combinedChannels[$channel] = array_merge($combinedChannels[$channel], $samples);
+                                $totalSamples += count($samples);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return [
+            'dataSeriesId' => $dataSeriesId,
+            'measurementCount' => count($measurements),
+            'totalSamples' => $totalSamples,
+            'combinedChannels' => $combinedChannels,
+            'measurements' => $measurements,
+            'statistics' => $this->calculateChannelStatistics($combinedChannels)
+        ];
+    }
+    
+    /**
+     * Organize data by condition
+     */
+    private function organizeDataByCondition($queryResults, $conditionId) 
+    {
+        $dataSeries = [];
+        
+        foreach ($queryResults as $table) {
+            foreach ($table->records as $record) {
+                // Get dataSeriesId from record tags/values
+                $dataSeriesId = isset($record->values['dataSeriesId']) ? $record->values['dataSeriesId'] : null;
+                
+                if (!$dataSeriesId) continue;
+                
+                if (!isset($dataSeries[$dataSeriesId])) {
+                    $dataSeries[$dataSeriesId] = [
+                        'dataSeriesId' => $dataSeriesId,
+                        'measurements' => [],
+                        'totalSamples' => 0
+                    ];
+                }
+                
+                // Get compressed data from the _value field
+                $compressedData = isset($record->values['_value']) ? $record->values['_value'] : null;
+                if ($compressedData) {
+                    $decompressed = $this->decompressWaveformData($compressedData);
+                    if ($decompressed) {
+                        $dataSeries[$dataSeriesId]['measurements'][] = [
+                            'timestamp' => $record->getTime(),
+                            'data' => $decompressed
+                        ];
+                        
+                        // Calculate total samples from the decompressed data
+                        $sampleCount = 0;
+                        foreach ($decompressed as $channelData) {
+                            $sampleCount += count($channelData);
+                        }
+                        $dataSeries[$dataSeriesId]['totalSamples'] += $sampleCount;
+                    }
+                }
+            }
+        }
+        
+        return [
+            'conditionId' => $conditionId,
+            'dataSeriesCount' => count($dataSeries),
+            'dataSeries' => array_values($dataSeries)
+        ];
+    }
+    
+    /**
+     * Organize all conditions data
+     */
+    private function organizeAllConditionsData($queryResults) 
+    {
+        $conditions = [];
+        
+        foreach ($queryResults as $table) {
+            foreach ($table->records as $record) {
+                $conditionId = isset($record->values['conditionId']) ? $record->values['conditionId'] : null;
+                $dataSeriesId = isset($record->values['dataSeriesId']) ? $record->values['dataSeriesId'] : null;
+                
+                if (!$conditionId || !$dataSeriesId) continue;
+                
+                if (!isset($conditions[$conditionId])) {
+                    $conditions[$conditionId] = [
+                        'conditionId' => $conditionId,
+                        'dataSeries' => []
+                    ];
+                }
+                
+                if (!isset($conditions[$conditionId]['dataSeries'][$dataSeriesId])) {
+                    $conditions[$conditionId]['dataSeries'][$dataSeriesId] = [
+                        'dataSeriesId' => $dataSeriesId,
+                        'measurements' => [],
+                        'totalSamples' => 0
+                    ];
+                }
+                
+                $compressedData = isset($record->values['_value']) ? $record->values['_value'] : null;
+                if ($compressedData) {
+                    $decompressed = $this->decompressWaveformData($compressedData);
+                    if ($decompressed) {
+                        $conditions[$conditionId]['dataSeries'][$dataSeriesId]['measurements'][] = [
+                            'timestamp' => $record->getTime(),
+                            'data' => $decompressed
+                        ];
+                        
+                        // Calculate samples from decompressed data
+                        $sampleCount = 0;
+                        foreach ($decompressed as $channelData) {
+                            $sampleCount += count($channelData);
+                        }
+                        $conditions[$conditionId]['dataSeries'][$dataSeriesId]['totalSamples'] += $sampleCount;
+                    }
+                }
+            }
+        }
+        
+        // Convert to indexed array and clean up
+        foreach ($conditions as &$condition) {
+            $condition['dataSeries'] = array_values($condition['dataSeries']);
+            $condition['dataSeriesCount'] = count($condition['dataSeries']);
+        }
+        
+        return array_values($conditions);
+    }
+    
+    /**
+     * Organize fault data with conditions hierarchy
+     */
+    private function organizeFaultData($queryResults, $faultId) 
+    {
+        $conditions = [];
+        
+        foreach ($queryResults as $table) {
+            foreach ($table->records as $record) {
+                $conditionId = isset($record->values['conditionId']) ? $record->values['conditionId'] : null;
+                $dataSeriesId = isset($record->values['dataSeriesId']) ? $record->values['dataSeriesId'] : null;
+                
+                if (!$conditionId || !$dataSeriesId) continue;
+                
+                if (!isset($conditions[$conditionId])) {
+                    $conditions[$conditionId] = [
+                        'conditionId' => $conditionId,
+                        'dataSeries' => []
+                    ];
+                }
+                
+                if (!isset($conditions[$conditionId]['dataSeries'][$dataSeriesId])) {
+                    $conditions[$conditionId]['dataSeries'][$dataSeriesId] = [
+                        'dataSeriesId' => $dataSeriesId,
+                        'combinedData' => $this->initializeChannelArrays()
+                    ];
+                }
+                
+                $compressedData = isset($record->values['_value']) ? $record->values['_value'] : null;
+                if ($compressedData) {
+                    $decompressed = $this->decompressWaveformData($compressedData);
+                    if ($decompressed) {
+                        // Combine the data
+                        foreach ($decompressed as $channel => $samples) {
+                            if (isset($conditions[$conditionId]['dataSeries'][$dataSeriesId]['combinedData'][$channel])) {
+                                $conditions[$conditionId]['dataSeries'][$dataSeriesId]['combinedData'][$channel] = 
+                                    array_merge($conditions[$conditionId]['dataSeries'][$dataSeriesId]['combinedData'][$channel], $samples);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Clean up structure
+        foreach ($conditions as &$condition) {
+            $condition['dataSeries'] = array_values($condition['dataSeries']);
+        }
+        
+        return [
+            'faultId' => $faultId,
+            'conditionsCount' => count($conditions),
+            'conditions' => array_values($conditions)
+        ];
+    }
+    
+    /**
+     * Organize device data with full hierarchy (Faults -> Conditions -> DataSeries)
+     */
+    private function organizeDeviceData($queryResults, $deviceId) 
+    {
+        $faults = [];
+        
+        foreach ($queryResults as $table) {
+            foreach ($table->records as $record) {
+                $faultId = $this->getRecordValue($record, 'faultId');
+                $conditionId = $this->getRecordValue($record, 'conditionId');
+                $dataSeriesId = $this->getRecordValue($record, 'dataSeriesId');
+                
+                // Initialize fault
+                if (!isset($faults[$faultId])) {
+                    $faults[$faultId] = [
+                        'faultId' => $faultId,
+                        'conditions' => []
+                    ];
+                }
+                
+                // Initialize condition
+                if (!isset($faults[$faultId]['conditions'][$conditionId])) {
+                    $faults[$faultId]['conditions'][$conditionId] = [
+                        'conditionId' => $conditionId,
+                        'dataSeries' => []
+                    ];
+                }
+                
+                // Initialize data series
+                if (!isset($faults[$faultId]['conditions'][$conditionId]['dataSeries'][$dataSeriesId])) {
+                    $faults[$faultId]['conditions'][$conditionId]['dataSeries'][$dataSeriesId] = [
+                        'dataSeriesId' => $dataSeriesId,
+                        'combinedData' => $this->initializeChannelArrays()
+                    ];
+                }
+                
+                $compressedData = $this->getRecordValue($record, 'compressed_data');
+                if ($compressedData) {
+                    $decompressed = $this->decompressWaveformData($compressedData);
+                    if ($decompressed) {
+                        foreach ($decompressed as $channel => $samples) {
+                            if (isset($faults[$faultId]['conditions'][$conditionId]['dataSeries'][$dataSeriesId]['combinedData'][$channel])) {
+                                $faults[$faultId]['conditions'][$conditionId]['dataSeries'][$dataSeriesId]['combinedData'][$channel] = 
+                                    array_merge($faults[$faultId]['conditions'][$conditionId]['dataSeries'][$dataSeriesId]['combinedData'][$channel], $samples);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Clean up structure - convert associative arrays to indexed arrays
+        foreach ($faults as &$fault) {
+            foreach ($fault['conditions'] as &$condition) {
+                $condition['dataSeries'] = array_values($condition['dataSeries']);
+                $condition['dataSeriesCount'] = count($condition['dataSeries']);
+            }
+            $fault['conditions'] = array_values($fault['conditions']);
+            $fault['conditionsCount'] = count($fault['conditions']);
+        }
+        
+        return [
+            'deviceId' => $deviceId,
+            'faultsCount' => count($faults),
+            'faults' => array_values($faults)
+        ];
+    }
+    
+    /**
+     * ========================================
+     * UTILITY HELPERS
+     * ========================================
+     */
+    
+    /**
+     * Decompress waveform data
+     */
+    private function decompressWaveformData($compressedBase64) 
+    {
+        try {
+            $compressed = base64_decode($compressedBase64);
+            if ($compressed === false) {
+                return null;
+            }
+            
+            // Suppress warnings for corrupted data and handle gracefully
+            $jsonData = @gzdecode($compressed);
+            if ($jsonData === false) {
+                // Data might not be compressed, try as plain JSON
+                $jsonData = $compressed;
+            }
+            
+            $decoded = json_decode($jsonData, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return null;
+            }
+            
+            return $decoded;
+        } catch (Exception $e) {
+            $this->logError("Failed to decompress waveform data: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Initialize empty channel arrays
+     */
+    private function initializeChannelArrays() 
+    {
+        return [
+            'w' => [], 'udc' => [], 'uc' => [], 'ub' => [], 
+            'ua' => [], 'ib' => [], 'ic' => [], 'idc' => []
+        ];
+    }
+    
+    /**
+     * Calculate statistics for combined channel data
+     */
+    private function calculateChannelStatistics($channels) 
+    {
+        $stats = [];
+        
+        foreach ($channels as $channel => $samples) {
+            if (!empty($samples)) {
+                $stats[$channel] = [
+                    'count' => count($samples),
+                    'min' => min($samples),
+                    'max' => max($samples),
+                    'avg' => array_sum($samples) / count($samples),
+                    'rms' => sqrt(array_sum(array_map(function($x) { return $x * $x; }, $samples)) / count($samples))
+                ];
+            }
+        }
+        
+        return $stats;
+    }
+    
     public function __destruct() 
     {
         $this->close();
