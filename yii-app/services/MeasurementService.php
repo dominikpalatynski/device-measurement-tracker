@@ -3,7 +3,6 @@ namespace app\services;
 
 use Yii;
 use app\models\Devices;
-use app\models\Measurement;
 use yii\base\Component;
 use yii\helpers\Json;
 use yii\web\ServerErrorHttpException;
@@ -15,7 +14,8 @@ require_once __DIR__ . '/InfluxDBService.php';
 class MeasurementService extends Component
 {
     private $influxClient;
-    
+    private $redisService;
+
     public function __construct($config = [])
     {
         parent::__construct($config);

@@ -66,6 +66,16 @@ services:
             - ./docker/influxdb/influxdb2-config:/etc/influxdb2
         networks:
             - iot-network
+    redis:
+        image: redis:7
+        container_name: iot-redis
+        restart: always
+        ports:
+        - "6379:6379"
+        volumes:
+        - ./docker/redis/data:/data
+        networks:
+        - iot-network
 networks:
     iot-network:
         driver: bridge

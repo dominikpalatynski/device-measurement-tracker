@@ -20,7 +20,8 @@
         "yiisoft/yii2-symfonymailer": "~2.0.3",
         "php-mqtt/client": "^2.2",
         "influxdata/influxdb-client-php": "^3.8",
-        "php-http/guzzle7-adapter": "^1.1"
+        "php-http/guzzle7-adapter": "^1.1",
+        "predis/predis": "^3.0"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
