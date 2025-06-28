@@ -374,3 +374,4 @@
 1751123732: Outgoing messages are being dropped for client yii-mqtt-6851099b64748.
 1751123738: Outgoing messages are being dropped for client yii-mqtt-68510a7f16fde.
 1751123749: Client device_YTdzQYiThAuY disconnected.
+1751124057: Saving in-memory database to /mosquitto/data//mosquitto.db.

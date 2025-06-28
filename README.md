@@ -525,3 +525,7 @@ This project represents a significant achievement in full-stack development, dem
 
 
 php test_influx_hierarchical_fetch.php dataseries "8"
+
+
+command to run redis
+ while true; do php yii redis/consume; sleep 0.5; done
