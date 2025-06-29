@@ -1,7 +1,8 @@
 {
-    "deviceId": "q4Z_ooBVKFJA",
-    "phenomenomId": "phenom_6857e062bfb73",
+    "deviceId": "YTdzQYiThAuY",
     "sampling_frequency": 20000,
+    "condition_name": "pomiar_prądu_21",
+    "data_series": "21",
     "included_files": [
       "w.dat",
       "udc.dat", 

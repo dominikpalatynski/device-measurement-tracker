@@ -86,17 +86,15 @@ services:
             - mongodb
         networks:
             - iot-network
-
-    redis:
-        image: redis:7
-        container_name: iot-redis
-        restart: always
+    rabbitmq:
+        image: rabbitmq:management
+        container_name: rabbitmq
+        environment:
+        - RABBITMQ_DEFAULT_USER=user
+        - RABBITMQ_DEFAULT_PASS=password
         ports:
-        - "6379:6379"
-        volumes:
-        - ./docker/redis/data:/data
-        networks:
-        - iot-network
+        - "5672:5672"
+        - "15672:15672"
 networks:
     iot-network:
         driver: bridge

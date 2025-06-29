@@ -225,15 +225,15 @@ class DevicesController extends Controller
 
         $transaction = Yii::$app->db->beginTransaction();
         try {            // Deactivate any currently active condition
-            Conditions::updateAll(
-                ['status' => Conditions::STATUS_INACTIVE, 'end_time' => date('Y-m-d H:i:s')],
-                ['fault_id' => $liveFault->fault_id, 'status' => Conditions::STATUS_ACTIVE]
+            Condition::updateAll(
+                ['status' => Condition::STATUS_INACTIVE, 'end_time' => date('Y-m-d H:i:s')],
+                ['fault_id' => $liveFault->fault_id, 'status' => Condition::STATUS_ACTIVE]
             );// Create new condition
-            $condition = new Conditions();
+            $condition = new Condition();
             $condition->condition_id = uniqid('cnd_');
             $condition->name = $name;
             $condition->description = $description;            $condition->fault_id = $liveFault->fault_id;
-            $condition->status = Conditions::STATUS_ACTIVE;
+            $condition->status = Condition::STATUS_ACTIVE;
             $condition->start_time = date('Y-m-d H:i:s');
 
             if (!$condition->save()) {
@@ -271,7 +271,7 @@ class DevicesController extends Controller
         if (!$conditionId) {
             throw new BadRequestHttpException('Condition ID is required');
         }        // Find the condition by condition_id and ensure it belongs to a fault for this device
-        $condition = Conditions::find()
+        $condition = Condition::find()
             ->alias('c')
             ->leftJoin('faults f', 'c.fault_id = f.fault_id')
             ->where(['c.condition_id' => $conditionId, 'f.device_id' => $deviceId, 'c.status' => Conditions::STATUS_ACTIVE])
@@ -281,7 +281,7 @@ class DevicesController extends Controller
             throw new NotFoundHttpException('Active condition not found');
         }
 
-        $condition->status = Conditions::STATUS_INACTIVE;
+        $condition->status = Condition::STATUS_INACTIVE;
         $condition->end_time = date('Y-m-d H:i:s');
 
         if (!$condition->save()) {

@@ -21,7 +21,8 @@
         "php-mqtt/client": "^2.2",
         "mongodb/mongodb": "^2.1",
         "php-http/guzzle7-adapter": "^1.1",
-        "predis/predis": "^3.0"
+        "predis/predis": "^3.0",
+        "php-amqplib/php-amqplib": "^3.7"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",

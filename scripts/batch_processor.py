@@ -15,13 +15,25 @@ from typing import Dict, Any, List
 
 class FileDataMapper:
     def __init__(self, config: Dict[str, Any], data_dir: str):
+
+        if not config.get('deviceId'):
+            print("✗ Device ID is required")
+            sys.exit(1)
+        if not config.get('condition_name'):
+            print("✗ Condition name is required")
+            sys.exit(1)
+        if not config.get('data_series'):
+            print("✗ Data series is required")
+            sys.exit(1)
+
         self.config = config
         self.device_id = config.get('deviceId')
         self.data_dir = Path(data_dir)
         self.included_files = config.get('included_files', [])
         self.server_config = config.get('server', {})
-        self.phenomenon_id = config.get('phenomenomId')
         self.sampling_frequency = config.get('sampling_frequency')
+        self.condition_name = config.get('condition_name')
+        self.data_series = config.get('data_series')
     def read_file_data(self, file_path: Path) -> List[float]:
         """Read numerical data from file, one value per line"""
         try:
@@ -78,11 +90,12 @@ class FileDataMapper:
     def create_measurement_payload(self, channel_data: Dict[str, List[float]]) -> Dict[str, Any]:
         """Create measurement payload in required format"""
         payload = {
-            "phenomenomId": self.phenomenon_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "data": channel_data,
             "sampling_frequency": self.sampling_frequency,
-            "deviceId": self.device_id
+            "deviceId": self.device_id,
+            "condition_name": self.condition_name,
+            "data_series": self.data_series
         }
         
         return payload
@@ -138,8 +151,7 @@ class FileDataMapper:
         print(f"🔧 Processing files for device: {self.device_id}")
         print(f"📁 Data directory: {self.data_dir}")
         print(f"📋 Files to include: {', '.join(self.included_files)}")
-        print(f"🎯 Phenomenon ID: {self.phenomenon_id if self.phenomenon_id else 'null'}")
-        
+
         # Read and map file data
         channel_data = self.map_files_to_channels()
         
@@ -166,74 +178,6 @@ def load_config(config_path: str) -> Dict[str, Any]:
     except json.JSONDecodeError as e:
         print(f"✗ Invalid JSON in config file: {e}")
         sys.exit(1)
-
-def create_sample_config(filename: str = "mapping_config.json"):
-    """Create sample mapping configuration"""
-    sample_config = {
-        "deviceId": "DEVICE001",
-        "phenomenomId": 12345,
-        "included_files": [
-            "idc.dat",
-            "acc_x.dat", 
-            "acc_y.dat",
-            "temperature.dat"
-        ],
-        "server": {
-            "url": "https://your-server.com/api/measurements"
-        }
-    }
-    
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(sample_config, f, indent=2)
-    
-    print(f"✓ Sample mapping config created: {filename}")
-    print("📝 Edit the config file with your server details")
-    
-    # Also create sample data files
-    sample_data_dir = Path("sample_data")
-    sample_data_dir.mkdir(exist_ok=True)
-    
-    # Create sample idc.dat file like in the example
-    sample_idc_data = [
-        "1041245004",
-        "1040017923", 
-        "1040621906",
-        "1039083277"
-    ]
-    
-    with open("sample_data/idc.dat", 'w') as f:
-        f.write('\n'.join(sample_idc_data))
-    
-    # Create sample acc files
-    with open("sample_data/acc_x.dat", 'w') as f:
-        f.write('\n'.join(["105", "104", "103"]))
-    
-    with open("sample_data/acc_y.dat", 'w') as f:
-        f.write('\n'.join(["95", "94", "93"]))
-        
-    with open("sample_data/temperature.dat", 'w') as f:
-        f.write("26")
-    
-    print("✓ Sample data files created in ./sample_data/ directory")
-    print("Usage: python file_mapper.py --config mapping_config.json --data-dir ./sample_data")
-
-def create_null_phenomenon_config(filename: str = "mapping_config_null.json"):
-    """Create config with null phenomenomId"""
-    config = {
-        "deviceId": "SENSOR001", 
-        "phenomenomId": None,
-        "included_files": [
-            "sensor.dat"
-        ],
-        "server": {
-            "url": "https://your-server.com/api/measurements"
-        }
-    }
-    
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=2)
-    
-    print(f"✓ Null phenomenon config created: {filename}")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -272,14 +216,6 @@ Examples:
     )
     
     args = parser.parse_args()
-    
-    if args.create_sample_config:
-        create_sample_config()
-        return 0
-    
-    if args.create_null_config:
-        create_null_phenomenon_config()
-        return 0
     
     if not all([args.config, args.data_dir]):
         print("✗ Missing required arguments: --config and --data-dir")
