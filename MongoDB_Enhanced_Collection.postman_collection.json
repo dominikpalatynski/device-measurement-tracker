@@ -1,0 +1,573 @@
+{
+    "info": {
+        "_postman_id": "unified-mongodb-api-test",
+        "name": "MongoDB Unified API - Comprehensive Tests",
+        "description": "Test collection for the unified MongoDB measurement data endpoint with flexible filtering capabilities",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8080",
+            "type": "string"
+        },
+        {
+            "key": "deviceId",
+            "value": "q4Z_ooBVKFJA",
+            "type": "string"
+        },
+        {
+            "key": "condition_name",
+            "value": "pomiar_prądu_9",
+            "type": "string"
+        },
+        {
+            "key": "data_series",
+            "value": "8",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "MongoDB Connection Test",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/ping",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "ping"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('MongoDB Connection Successful', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get All Measurements (No Filters)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get All Measurements Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    console.log('Total measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get Measurements by Device ID",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?deviceId={{deviceId}}",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "deviceId",
+                            "value": "{{deviceId}}"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get Device Measurements Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    if (response.data.length > 0) {",
+                            "        pm.expect(response.data[0].deviceId).to.equal(pm.variables.get('deviceId'));",
+                            "    }",
+                            "    console.log('Device measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get Measurements by Condition Name",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?condition_name={{condition_name}}",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "condition_name",
+                            "value": "{{condition_name}}"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get Condition Measurements Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    if (response.data.length > 0) {",
+                            "        pm.expect(response.data[0].condition_name).to.equal(pm.variables.get('condition_name'));",
+                            "    }",
+                            "    console.log('Condition measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get Measurements by Data Series",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?data_series={{data_series}}",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "data_series",
+                            "value": "{{data_series}}"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get Data Series Measurements Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    if (response.data.length > 0) {",
+                            "        pm.expect(response.data[0].data_series).to.equal(pm.variables.get('data_series'));",
+                            "    }",
+                            "    console.log('Data series measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get Combined Filter (Device + Condition)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?deviceId={{deviceId}}&condition_name={{condition_name}}",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "deviceId",
+                            "value": "{{deviceId}}"
+                        },
+                        {
+                            "key": "condition_name",
+                            "value": "{{condition_name}}"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get Combined Filter Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    if (response.data.length > 0) {",
+                            "        pm.expect(response.data[0].deviceId).to.equal(pm.variables.get('deviceId'));",
+                            "        pm.expect(response.data[0].condition_name).to.equal(pm.variables.get('condition_name'));",
+                            "    }",
+                            "    console.log('Combined filter measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get All Filter (Device + Condition + Data Series)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?deviceId={{deviceId}}&condition_name={{condition_name}}&data_series={{data_series}}",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "deviceId",
+                            "value": "{{deviceId}}"
+                        },
+                        {
+                            "key": "condition_name",
+                            "value": "{{condition_name}}"
+                        },
+                        {
+                            "key": "data_series",
+                            "value": "{{data_series}}"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get All Filters Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    if (response.data.length > 0) {",
+                            "        pm.expect(response.data[0].deviceId).to.equal(pm.variables.get('deviceId'));",
+                            "        pm.expect(response.data[0].condition_name).to.equal(pm.variables.get('condition_name'));",
+                            "        pm.expect(response.data[0].data_series).to.equal(pm.variables.get('data_series'));",
+                            "    }",
+                            "    console.log('All filters measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get Latest Measurement Only",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?latest=true",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "latest",
+                            "value": "true"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get Latest Measurement Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    pm.expect(response.data.length).to.be.at.most(1);",
+                            "    console.log('Latest measurement:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get Measurements with Limit",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?limit=5",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "limit",
+                            "value": "5"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get Limited Measurements Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    pm.expect(response.data.length).to.be.at.most(5);",
+                            "    console.log('Limited measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get Measurements Last 1 Hour",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?timeRange=-1h",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "timeRange",
+                            "value": "-1h"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get Last Hour Measurements Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    console.log('Last hour measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Get Measurements Custom Time Range",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?startTime={{$timestamp}}&endTime={{$timestamp}}",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "startTime",
+                            "value": "{{$timestamp}}",
+                            "description": "Unix timestamp - 1 hour ago"
+                        },
+                        {
+                            "key": "endTime",
+                            "value": "{{$timestamp}}",
+                            "description": "Unix timestamp - now"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            "// Set timestamps for 1 hour range",
+                            "const now = Math.floor(Date.now() / 1000);",
+                            "const oneHourAgo = now - 3600;",
+                            "pm.variables.set('startTime', oneHourAgo);",
+                            "pm.variables.set('endTime', now);"
+                        ],
+                        "type": "text/javascript"
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Get Custom Time Range Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    console.log('Custom time range measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Complex Filter Test (Device + Time + Limit)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?deviceId={{deviceId}}&timeRange=-24h&limit=10",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "deviceId",
+                            "value": "{{deviceId}}"
+                        },
+                        {
+                            "key": "timeRange",
+                            "value": "-24h"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Complex Filter Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data).to.be.an('array');",
+                            "    pm.expect(response.data.length).to.be.at.most(10);",
+                            "    if (response.data.length > 0) {",
+                            "        pm.expect(response.data[0].deviceId).to.equal(pm.variables.get('deviceId'));",
+                            "    }",
+                            "    console.log('Complex filter measurements:', response.data.length);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Error Test - Invalid Time Range",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?timeRange=invalid",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "timeRange",
+                            "value": "invalid"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Invalid Time Range Handled', function () {",
+                            "    // Should either return error or handle gracefully",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    console.log('Invalid time range response:', response);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Statistics Test - Count by Device",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/api/mongodb/measurements?deviceId={{deviceId}}&count=true",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "mongodb", "measurements"],
+                    "query": [
+                        {
+                            "key": "deviceId",
+                            "value": "{{deviceId}}"
+                        },
+                        {
+                            "key": "count",
+                            "value": "true"
+                        }
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Count Statistics Success', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    console.log('Device measurement count:', response);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        }
+    ]
+}

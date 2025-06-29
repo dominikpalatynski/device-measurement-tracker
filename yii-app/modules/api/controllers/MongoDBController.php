@@ -73,85 +73,96 @@ class MongoDBController extends Controller
     }
     
     /**
-     * POST /api/mongodb/measurement
-     * Save measurement data
-     */
-    public function actionMeasurement()
-    {
-        $request = Yii::$app->request;
-        
-        if (!$request->isPost) {
-            return [
-                'success' => false,
-                'error' => 'Only POST method allowed'
-            ];
-        }
-        
-        try {
-            $data = Json::decode($request->getRawBody());
-            
-            if (!isset($data['deviceId'])) {
-                return [
-                    'success' => false,
-                    'error' => 'deviceId is required'
-                ];
-            }
-            
-            $deviceId = $data['deviceId'];
-            $measurementData = $data['data'] ?? $data;
-            
-            $result = $this->mongoService->saveMeasurementData($deviceId, $measurementData);
-            
-            if ($result) {
-                return [
-                    'success' => true,
-                    'message' => 'Measurement data saved successfully',
-                    'deviceId' => $deviceId,
-                    'timestamp' => date('Y-m-d H:i:s')
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'error' => 'Failed to save measurement data'
-                ];
-            }
-            
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'error' => 'Invalid JSON data: ' . $e->getMessage()
-            ];
-        }
-    }
-    
-    /**
-     * GET /api/mongodb/measurements?deviceId={deviceId}&limit={limit}
-     * Get measurement data
+     * GET /api/mongodb/measurements
+     * Get measurement data with flexible filtering
+     * 
+     * Supported parameters:
+     * - deviceId: Filter by device ID
+     * - faultId: Filter by fault ID
+     * - conditionId: Filter by condition ID
+     * - dataSeriesId: Filter by data series ID
+     * - conditionName: Filter by condition name
+     * - dataSeriesValue: Filter by data series value
+     * - startTime: Start time (timestamp or date string)
+     * - endTime: End time (timestamp or date string)
+     * - timeRange: Relative time range (e.g., '1h', '1d', '1w')
+     * - limit: Maximum number of results (default: 100)
+     * - sort: Sort order ('asc' or 'desc', default: 'desc')
      */
     public function actionMeasurements()
     {
         $request = Yii::$app->request;
         
         try {
-            $deviceId = $request->get('deviceId');
-            $limit = (int)$request->get('limit', 10);
+            // Build filters array from query parameters
+            $filters = [];
             
-            $data = $this->mongoService->getMeasurementData($deviceId, $limit);
+            // Basic filters
+            if ($deviceId = $request->get('deviceId')) {
+                $filters['deviceId'] = $deviceId;
+            }
+            
+            if ($faultId = $request->get('faultId')) {
+                $filters['faultId'] = $faultId;
+            }
+            
+            if ($conditionId = $request->get('conditionId')) {
+                $filters['conditionId'] = $conditionId;
+            }
+            
+            if ($dataSeriesId = $request->get('dataSeriesId')) {
+                $filters['dataSeriesId'] = $dataSeriesId;
+            }
+            
+            if ($conditionName = $request->get('conditionName')) {
+                $filters['conditionName'] = $conditionName;
+            }
+            
+            if ($dataSeriesValue = $request->get('dataSeriesValue')) {
+                $filters['dataSeriesValue'] = $dataSeriesValue;
+            }
+            
+            // Time range filters
+            if ($startTime = $request->get('startTime')) {
+                $filters['startTime'] = $startTime;
+            }
+            
+            if ($endTime = $request->get('endTime')) {
+                $filters['endTime'] = $endTime;
+            }
+            
+            if ($timeRange = $request->get('timeRange')) {
+                $filters['timeRange'] = $timeRange;
+            }
+            
+            // Pagination and sorting
+            if ($limit = $request->get('limit')) {
+                $filters['limit'] = (int)$limit;
+            } else {
+                $filters['limit'] = 100; // Default limit
+            }
+            
+            if ($sort = $request->get('sort')) {
+                $filters['sort'] = $sort;
+            }
+            
+            // Call the unified getMeasurements method
+            $data = $this->mongoService->getMeasurements($filters);
             
             return [
                 'success' => true,
                 'data' => $data,
                 'count' => count($data),
-                'filters' => [
-                    'deviceId' => $deviceId,
-                    'limit' => $limit
-                ]
+                'filters' => $filters,
+                'timestamp' => date('Y-m-d H:i:s')
             ];
             
         } catch (\Exception $e) {
+            Yii::error("MongoDB measurements API error: " . $e->getMessage());
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'timestamp' => date('Y-m-d H:i:s')
             ];
         }
     }

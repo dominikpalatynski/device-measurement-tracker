@@ -117,16 +117,11 @@ class MongoDBService extends Component
                 'faultId' => $faultId,
                 'conditionId' => $conditionId,
                 'dataSeriesId' => $dataSeriesId,
-                
-                // ORIGINAL FLAT STRUCTURE (for backward compatibility)
-                'condition_name' => $conditionName,
-                'data_series' => $dataSeriesValue,
                 'sequenceNumber' => $data['sequenceNumber'] ?? null,
                 
                 // TIMESTAMP AND METADATA
                 'timestamp' => new UTCDateTime(),
                 'created_at' => new UTCDateTime(),
-                'measurement_type' => 'electrical_waveform',
                 
                 // ACTUAL DATA (preserve original structure)
                 'data' => $data['data'] ?? $data
@@ -1018,5 +1013,293 @@ class MongoDBService extends Component
     {
         $this->close();
     }
+    
+    // ==============================================
+    // BACKWARD COMPATIBILITY METHODS
+    // ==============================================
+    
+    /**
+     * Test MongoDB connection
+     */
+    public function testConnection()
+    {
+        try {
+            // Test connection by listing collections
+            $collections = $this->getCollections();
+            
+            return [
+                'success' => true,
+                'message' => 'MongoDB connection successful',
+                'database' => $this->databaseName,
+                'collections' => $collections
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'MongoDB connection failed: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Get list of collections in the database
+     */
+    public function getCollections()
+    {
+        try {
+            $collections = [];
+            $collectionsList = $this->database->listCollections();
+            
+            foreach ($collectionsList as $collection) {
+                $collections[] = $collection->getName();
+            }
+            
+            return $collections;
+        } catch (\Exception $e) {
+            \Yii::error("Failed to get collections: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Get device statistics using the unified getMeasurements method
+     */
+    public function getDeviceStats($deviceId)
+    {
+        try {
+            if (!$deviceId) {
+                throw new \InvalidArgumentException("Device ID is required");
+            }
+            
+            // Get total count
+            $totalMeasurements = $this->getMeasurements(['deviceId' => $deviceId, 'limit' => 0]);
+            $totalCount = count($totalMeasurements);
+            
+            // Get latest measurement
+            $latest = $this->getMeasurements(['deviceId' => $deviceId, 'limit' => 1, 'sort' => 'desc']);
+            $latestTimestamp = !empty($latest) ? $latest[0]['timestamp'] ?? null : null;
+            
+            // Get oldest measurement
+            $oldest = $this->getMeasurements(['deviceId' => $deviceId, 'limit' => 1, 'sort' => 'asc']);
+            $oldestTimestamp = !empty($oldest) ? $oldest[0]['timestamp'] ?? null : null;
+            
+            return [
+                'deviceId' => $deviceId,
+                'totalMeasurements' => $totalCount,
+                'latestTimestamp' => $latestTimestamp,
+                'oldestTimestamp' => $oldestTimestamp,
+                'timespan' => $latestTimestamp && $oldestTimestamp ? 
+                    ($latestTimestamp - $oldestTimestamp) : 0
+            ];
+            
+        } catch (\Exception $e) {
+            \Yii::error("Failed to get device stats for device $deviceId: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    /**
+     * Get latest measurement for a device
+     */
+    public function getLatestMeasurement($deviceId)
+    {
+        try {
+            if (!$deviceId) {
+                throw new \InvalidArgumentException("Device ID is required");
+            }
+            
+            $measurements = $this->getMeasurements([
+                'deviceId' => $deviceId,
+                'limit' => 1,
+                'sort' => 'desc'
+            ]);
+            
+            return !empty($measurements) ? $measurements[0] : null;
+            
+        } catch (\Exception $e) {
+            \Yii::error("Failed to get latest measurement for device $deviceId: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    /**
+     * Get aggregated data for analytics (simplified implementation)
+     */
+    public function getAggregatedData($deviceId, $timeRange = '1h')
+    {
+        try {
+            if (!$deviceId) {
+                throw new \InvalidArgumentException("Device ID is required");
+            }
+            
+            // Get measurements for the specified time range
+            $measurements = $this->getMeasurements([
+                'deviceId' => $deviceId,
+                'timeRange' => $timeRange,
+                'limit' => 1000 // Reasonable limit for aggregation
+            ]);
+            
+            if (empty($measurements)) {
+                return [];
+            }
+            
+            // Simple aggregation - group by hour
+            $aggregated = [];
+            foreach ($measurements as $measurement) {
+                $timestamp = $measurement['timestamp'];
+                $hour = date('Y-m-d H:00:00', $timestamp);
+                
+                if (!isset($aggregated[$hour])) {
+                    $aggregated[$hour] = [
+                        'timestamp' => strtotime($hour),
+                        'hour' => $hour,
+                        'count' => 0,
+                        'deviceId' => $deviceId
+                    ];
+                }
+                
+                $aggregated[$hour]['count']++;
+            }
+            
+            return array_values($aggregated);
+            
+        } catch (\Exception $e) {
+            \Yii::error("Failed to get aggregated data for device $deviceId: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    /**
+     * Get measurements within a time range
+     */
+    public function getMeasurementsInRange($deviceId, $startTime, $endTime)
+    {
+        try {
+            if (!$deviceId || !$startTime || !$endTime) {
+                throw new \InvalidArgumentException("Device ID, start time, and end time are required");
+            }
+            
+            return $this->getMeasurements([
+                'deviceId' => $deviceId,
+                'startTime' => $startTime,
+                'endTime' => $endTime,
+                'limit' => 1000 // Reasonable default limit
+            ]);
+            
+        } catch (\Exception $e) {
+            \Yii::error("Failed to get measurements in range for device $deviceId: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    /**
+     * Delete old measurements
+     */
+    public function deleteOldMeasurements($days = 30)
+    {
+        try {
+            $cutoffTime = time() - ($days * 24 * 60 * 60);
+            
+            $result = $this->measurementCollection->deleteMany([
+                'timestamp' => ['$lt' => $cutoffTime]
+            ]);
+            
+            $deletedCount = $result->getDeletedCount();
+            \Yii::info("Deleted $deletedCount old measurements (older than $days days)");
+            
+            return $deletedCount;
+            
+        } catch (\Exception $e) {
+            \Yii::error("Failed to delete old measurements: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    /**
+     * Get database information
+     */
+    public function getDatabaseInfo()
+    {
+        try {
+            $collections = $this->getCollections();
+            $stats = [];
+            
+            foreach ($collections as $collectionName) {
+                try {
+                    $collection = $this->database->selectCollection($collectionName);
+                    $count = $collection->countDocuments();
+                    $stats[$collectionName] = [
+                        'name' => $collectionName,
+                        'count' => $count
+                    ];
+                } catch (\Exception $e) {
+                    $stats[$collectionName] = [
+                        'name' => $collectionName,
+                        'count' => 0,
+                        'error' => $e->getMessage()
+                    ];
+                }
+            }
+            
+            return [
+                'database' => $this->databaseName,
+                'collections' => $stats,
+                'totalCollections' => count($collections)
+            ];
+            
+        } catch (\Exception $e) {
+            \Yii::error("Failed to get database info: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    /**
+     * Migrate existing documents (placeholder implementation)
+     */
+    public function migrateExistingDocuments($limit = 1000)
+    {
+        try {
+            // This is a placeholder implementation
+            // In a real scenario, this would migrate old document structures to new ones
+            
+            $measurements = $this->measurementCollection->find([], ['limit' => $limit]);
+            $migratedCount = 0;
+            
+            foreach ($measurements as $measurement) {
+                // Check if migration is needed (example: add missing fields)
+                $updateData = [];
+                
+                if (!isset($measurement['deviceId']) && isset($measurement['device_id'])) {
+                    $updateData['deviceId'] = $measurement['device_id'];
+                }
+                
+                if (!empty($updateData)) {
+                    $this->measurementCollection->updateOne(
+                        ['_id' => $measurement['_id']],
+                        ['$set' => $updateData]
+                    );
+                    $migratedCount++;
+                }
+            }
+            
+            return [
+                'success' => true,
+                'message' => "Migration completed",
+                'migratedCount' => $migratedCount,
+                'limit' => $limit
+            ];
+            
+        } catch (\Exception $e) {
+            \Yii::error("Failed to migrate documents: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    // ==============================================
+    // END BACKWARD COMPATIBILITY METHODS
+    // ==============================================
 }
 ?>
