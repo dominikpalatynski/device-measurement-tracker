@@ -124,7 +124,7 @@ class MongoDBService extends Component
                 'created_at' => new UTCDateTime(),
                 
                 // ACTUAL DATA (preserve original structure)
-                'data' => $data['data'] ?? $data
+                'data' => $data['data_payload'] ?? $data
             ];
             
             // Copy additional fields from original data if they exist

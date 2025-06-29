@@ -146,7 +146,7 @@ class MeasurementService extends Component
             }
 
             $measurementData = [
-                'dataSeriesId' => $data['data_series'],
+                'data_series' => $data['data_series'],
                 'conditionId' => $condition->condition_id,
                 'faultId' => $fault->fault_id,
                 'data_payload' => $data['data'],
