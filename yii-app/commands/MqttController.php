@@ -7,14 +7,14 @@ use app\components\MqttComponent;
 use app\services\MeasurementService;
 use app\services\DeviceRegisterService;
 use app\models\VerificationToken;
-
+use app\services\RedisService;
 class MqttController extends Controller
 {
     /**
      * @var MeasurementService
      */
     private $measurementService;
-
+    private $redisService;
     /**
      * @var DeviceRegisterService
      */
@@ -25,6 +25,7 @@ class MqttController extends Controller
         // Create the measurement service
         $this->measurementService = new MeasurementService();
         $this->deviceRegisterService = new DeviceRegisterService();
+        $this->redisService = new RedisService();
         parent::__construct($id, $module, $config);
     }
     
@@ -211,13 +212,13 @@ class MqttController extends Controller
     {
         try {
             $this->stdout("Processing real time data message...\n");
-            $result = $this->measurementService->processRealTimeDataMqttMessage($topic, $message);
-            
-            if ($result) {
-                $this->stdout("Successfully processed real time data from device ");
-            } else {
-                $this->stderr("Failed to process device real time data\n");
-            }
+            // $result = $this->measurementService->processRealTimeDataMqttMessage($topic, $message);
+            $this->redisService->pushMqttMessage($topic, $message);
+            // if ($result) {
+            //     $this->stdout("Successfully processed real time data from device ");
+            // } else {
+            //     $this->stderr("Failed to process device real time data\n");
+            // }
         } catch (\Exception $e) {
             $this->stderr("Error processing device real time data: " . $e->getMessage() . "\n");
         }

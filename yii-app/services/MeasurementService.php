@@ -3,7 +3,6 @@ namespace app\services;
 
 use Yii;
 use app\models\Devices;
-use app\models\Measurement;
 use yii\base\Component;
 use yii\helpers\Json;
 use yii\web\ServerErrorHttpException;
@@ -14,7 +13,8 @@ use app\models\MeasurementData;
 class MeasurementService extends Component
 {
     private $mongoService;
-    
+    private $redisService;
+
     public function __construct($config = [])
     {
         parent::__construct($config);
