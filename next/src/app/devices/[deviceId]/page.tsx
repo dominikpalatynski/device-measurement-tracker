@@ -19,23 +19,8 @@ import {
 	measurementChannelApi,
 	MeasurementChannel,
 } from "@/services/api";
-import {
-	LineChart,
-	Line,
-	XAxis,
-	YAxis,
-	CartesianGrid,
-	Tooltip,
-	Legend,
-	ResponsiveContainer,
-	AreaChart,
-	Area,
-	BarChart,
-	Bar,
-	ScatterChart,
-	Scatter,
-} from "recharts";
 import { formatDate, formatDateShort } from "@/utils/dateUtils";
+import AdvancedZoomChart from "@/components/AdvancedZoomChart";
 
 export default function DeviceDetailPage() {
 	const params = useParams();
@@ -57,9 +42,6 @@ export default function DeviceDetailPage() {
 	// Unassigned data state
 	const [unassignedData, setUnassignedData] = useState<MeasurementData[]>([]);
 	const [unassignedDataLoading, setUnassignedDataLoading] = useState(false);
-	const [chartType, setChartType] = useState<
-		"line" | "area" | "bar" | "scatter"
-	>("line");
 	const [activeChartTab, setActiveChartTab] = useState<string>("");
 
 	// Date range state for filtering charts
@@ -152,7 +134,7 @@ export default function DeviceDetailPage() {
 		const chartData: Record<
 			string,
 			Array<{
-				timestamp: string;
+				timestamp: number;
 				value: number;
 				timestampFormatted: string;
 				index: number;
@@ -193,7 +175,7 @@ export default function DeviceDetailPage() {
 						value.forEach((val, arrayIndex) => {
 							if (typeof val === "number") {
 								chartData[key].push({
-									timestamp: `${timestamp}_${arrayIndex}`,
+									timestamp: Date.parse(timestamp),
 									value: val,
 									timestampFormatted: `${timestampFormatted} [${arrayIndex}]`,
 									index: measurementIndex * 1000 + arrayIndex,
@@ -203,7 +185,7 @@ export default function DeviceDetailPage() {
 					} else if (typeof value === "number") {
 						// If it's a single number, create one data point
 						chartData[key].push({
-							timestamp,
+							timestamp: Date.parse(timestamp),
 							value,
 							timestampFormatted,
 							index: measurementIndex,
@@ -1141,26 +1123,9 @@ export default function DeviceDetailPage() {
 									>
 										Clear
 									</button>
-									<select
-										value={chartType}
-										onChange={(e) =>
-											setChartType(
-												e.target
-													.value as typeof chartType
-											)
-										}
-										className='px-3 py-2 border border-gray-300 rounded-md text-sm'
-									>
-										<option value='line'>Line Chart</option>
-										<option value='area'>Area Chart</option>
-										<option value='bar'>Bar Chart</option>
-										<option value='scatter'>
-											Scatter Plot
-										</option>
-									</select>
 								</div>
 							</div>
-						</div>
+						</div>{" "}
 						{/* Charts Section */}
 						{unassignedData.length > 0 ? (
 							<div className='bg-white p-6 rounded-lg border border-gray-200'>
@@ -1212,148 +1177,32 @@ export default function DeviceDetailPage() {
 														</button>
 													))}
 												</nav>
-											</div>{" "}
-											{/* Chart Display */}
+											</div>
+
+											{/* Advanced Chart Display */}
 											{chartData[currentKey] && (
-												<div className='h-96'>
-													<ResponsiveContainer
-														width='100%'
-														height='100%'
-													>
-														{(() => {
-															switch (chartType) {
-																case "area":
-																	return (
-																		<AreaChart
-																			data={
-																				chartData[
-																					currentKey
-																				]
-																			}
-																		>
-																			<CartesianGrid strokeDasharray='3 3' />
-																			<XAxis
-																				dataKey='timestampFormatted'
-																				angle={
-																					-45
-																				}
-																				textAnchor='end'
-																				height={
-																					60
-																				}
-																			/>
-																			<YAxis />
-																			<Tooltip />
-																			<Legend />
-																			<Area
-																				type='monotone'
-																				dataKey='value'
-																				stroke='#2563eb'
-																				fill='#3b82f6'
-																				fillOpacity={
-																					0.3
-																				}
-																			/>
-																		</AreaChart>
-																	);
-																case "bar":
-																	return (
-																		<BarChart
-																			data={
-																				chartData[
-																					currentKey
-																				]
-																			}
-																		>
-																			<CartesianGrid strokeDasharray='3 3' />
-																			<XAxis
-																				dataKey='timestampFormatted'
-																				angle={
-																					-45
-																				}
-																				textAnchor='end'
-																				height={
-																					60
-																				}
-																			/>
-																			<YAxis />
-																			<Tooltip />
-																			<Legend />
-																			<Bar
-																				dataKey='value'
-																				fill='#3b82f6'
-																			/>
-																		</BarChart>
-																	);
-																case "scatter":
-																	return (
-																		<ScatterChart
-																			data={
-																				chartData[
-																					currentKey
-																				]
-																			}
-																		>
-																			<CartesianGrid strokeDasharray='3 3' />
-																			<XAxis
-																				dataKey='index'
-																				type='number'
-																				domain={[
-																					"auto",
-																					"auto",
-																				]}
-																			/>
-																			<YAxis dataKey='value' />
-																			<Tooltip />
-																			<Legend />
-																			<Scatter
-																				dataKey='value'
-																				fill='#3b82f6'
-																			/>
-																		</ScatterChart>
-																	);
-																default:
-																case "line":
-																	return (
-																		<LineChart
-																			data={
-																				chartData[
-																					currentKey
-																				]
-																			}
-																		>
-																			<CartesianGrid strokeDasharray='3 3' />
-																			<XAxis
-																				dataKey='timestampFormatted'
-																				angle={
-																					-45
-																				}
-																				textAnchor='end'
-																				height={
-																					60
-																				}
-																			/>
-																			<YAxis />
-																			<Tooltip />
-																			<Legend />
-																			<Line
-																				type='monotone'
-																				dataKey='value'
-																				stroke='#2563eb'
-																				strokeWidth={
-																					2
-																				}
-																				dot={{
-																					r: 3,
-																				}}
-																			/>
-																		</LineChart>
-																	);
-															}
-														})()}
-													</ResponsiveContainer>
+												<div className='space-y-6'>
+													<AdvancedZoomChart
+														data={
+															chartData[
+																currentKey
+															]
+														}
+														dataKey='value'
+														xAxisKey='timestampFormatted'
+														title={`${currentKey} - Advanced Data Analysis`}
+														color='#2563eb'
+														height={500}
+														enableBrush={true}
+														enableMagnifier={true}
+														enableCrosshair={true}
+														downsampleThreshold={
+															10000
+														}
+													/>
 												</div>
 											)}
+
 											{/* Data Summary */}
 											<div className='mt-6 grid grid-cols-1 md:grid-cols-3 gap-4'>
 												{chartData[currentKey] && (

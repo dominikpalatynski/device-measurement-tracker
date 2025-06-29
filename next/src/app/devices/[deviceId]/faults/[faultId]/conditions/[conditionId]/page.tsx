@@ -3,22 +3,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-	LineChart,
-	Line,
-	XAxis,
-	YAxis,
-	CartesianGrid,
-	Tooltip,
-	Legend,
-	ResponsiveContainer,
-	AreaChart,
-	Area,
-	BarChart,
-	Bar,
-	ScatterChart,
-	Scatter,
-} from "recharts";
 import PageLayout from "@/components/PageLayout";
 import {
 	deviceApi,
@@ -36,6 +20,7 @@ import {
 	MeasurementData,
 } from "@/services/api";
 import { formatDate, formatDateShort } from "@/utils/dateUtils";
+import AdvancedZoomChart from "@/components/AdvancedZoomChart";
 
 export default function ConditionDetailPage() {
 	const params = useParams();
@@ -55,10 +40,6 @@ export default function ConditionDetailPage() {
 	const [lastUpdateTime, setLastUpdateTime] = useState<string | null>(null);
 	const [viewMode, setViewMode] = useState<"charts" | "live">("charts");
 	const [activeChartTab, setActiveChartTab] = useState<string>("");
-	const [chartType, setChartType] = useState<
-		"line" | "area" | "bar" | "scatter"
-	>("line");
-	const [autoZoom, setAutoZoom] = useState(true);
 
 	// Date range state for filtering charts
 	const [startDate, setStartDate] = useState<string>("");
@@ -335,9 +316,7 @@ export default function ConditionDetailPage() {
 		if (!data.length) return ["dataMin", "dataMax"];
 
 		// If auto-zoom is disabled, use full range
-		if (!autoZoom) {
-			return ["dataMin", "dataMax"];
-		}
+		return ["dataMin", "dataMax"];
 
 		const values = data.map((d) => d.value);
 		const min = Math.min(...values);
@@ -389,276 +368,6 @@ export default function ConditionDetailPage() {
 			// Normal range - standard 5% padding
 			const padding = range * 0.05;
 			return [min - padding, max + padding];
-		}
-	};
-
-	// Render chart based on selected type with auto-zoom and sampling
-	const renderChart = (
-		rawData: Array<{
-			timestamp: string;
-			value: number;
-			timestampFormatted: string;
-			index: number;
-		}>,
-		dataKey: string
-	) => {
-		if (!rawData.length) return null;
-
-		// Sample data if too many points
-		const data = sampleData(rawData, 1000);
-		const yDomain = calculateOptimalDomain(data);
-
-		const chartProps = {
-			width: 800,
-			height: 400,
-			data: data,
-			margin: { top: 20, right: 30, left: 20, bottom: 5 },
-		};
-
-		// Calculate tick count for X-axis based on data size
-		const maxXTicks = Math.min(
-			10,
-			Math.max(3, Math.floor(data.length / 10))
-		);
-
-		switch (chartType) {
-			case "area":
-				return (
-					<ResponsiveContainer
-						width='100%'
-						height={400}
-					>
-						<AreaChart {...chartProps}>
-							<CartesianGrid strokeDasharray='3 3' />
-							<XAxis
-								dataKey='timestampFormatted'
-								angle={-45}
-								textAnchor='end'
-								height={100}
-								interval='preserveStartEnd'
-								tick={{ fontSize: 12 }}
-								tickCount={maxXTicks}
-							/>
-							<YAxis
-								domain={yDomain}
-								tick={{ fontSize: 12 }}
-								tickCount={8}
-								tickFormatter={(value) => {
-									if (Math.abs(value) >= 1000000) {
-										return `${(value / 1000000).toFixed(
-											1
-										)}M`;
-									} else if (Math.abs(value) >= 1000) {
-										return `${(value / 1000).toFixed(1)}K`;
-									} else if (
-										Math.abs(value) < 0.01 &&
-										value !== 0
-									) {
-										return value.toExponential(2);
-									} else {
-										return value.toFixed(3);
-									}
-								}}
-							/>
-							<Tooltip
-								labelFormatter={(label) => `Time: ${label}`}
-								formatter={(value: number) => [
-									typeof value === "number"
-										? value.toFixed(6)
-										: value,
-									dataKey,
-								]}
-							/>
-							<Legend />
-							<Area
-								type='monotone'
-								dataKey='value'
-								stroke='#3B82F6'
-								fill='#3B82F6'
-								fillOpacity={0.3}
-								name={dataKey}
-								dot={false} // Disable dots for performance
-							/>
-						</AreaChart>
-					</ResponsiveContainer>
-				);
-			case "bar":
-				return (
-					<ResponsiveContainer
-						width='100%'
-						height={400}
-					>
-						<BarChart {...chartProps}>
-							<CartesianGrid strokeDasharray='3 3' />
-							<XAxis
-								dataKey='timestampFormatted'
-								angle={-45}
-								textAnchor='end'
-								height={100}
-								interval='preserveStartEnd'
-								tick={{ fontSize: 12 }}
-								tickCount={maxXTicks}
-							/>
-							<YAxis
-								domain={yDomain}
-								tick={{ fontSize: 12 }}
-								tickCount={8}
-								tickFormatter={(value) => {
-									if (Math.abs(value) >= 1000000) {
-										return `${(value / 1000000).toFixed(
-											1
-										)}M`;
-									} else if (Math.abs(value) >= 1000) {
-										return `${(value / 1000).toFixed(1)}K`;
-									} else if (
-										Math.abs(value) < 0.01 &&
-										value !== 0
-									) {
-										return value.toExponential(2);
-									} else {
-										return value.toFixed(3);
-									}
-								}}
-							/>
-							<Tooltip
-								labelFormatter={(label) => `Time: ${label}`}
-								formatter={(value: number) => [
-									typeof value === "number"
-										? value.toFixed(6)
-										: value,
-									dataKey,
-								]}
-							/>
-							<Legend />
-							<Bar
-								dataKey='value'
-								fill='#3B82F6'
-								name={dataKey}
-							/>
-						</BarChart>
-					</ResponsiveContainer>
-				);
-			case "scatter":
-				return (
-					<ResponsiveContainer
-						width='100%'
-						height={400}
-					>
-						<ScatterChart {...chartProps}>
-							<CartesianGrid strokeDasharray='3 3' />
-							<XAxis
-								type='number'
-								dataKey='index'
-								name='sequence'
-								domain={["dataMin", "dataMax"]}
-								tick={{ fontSize: 12 }}
-							/>
-							<YAxis
-								dataKey='value'
-								name={dataKey}
-								domain={yDomain}
-								tick={{ fontSize: 12 }}
-								tickCount={8}
-								tickFormatter={(value) => {
-									if (Math.abs(value) >= 1000000) {
-										return `${(value / 1000000).toFixed(
-											1
-										)}M`;
-									} else if (Math.abs(value) >= 1000) {
-										return `${(value / 1000).toFixed(1)}K`;
-									} else if (
-										Math.abs(value) < 0.01 &&
-										value !== 0
-									) {
-										return value.toExponential(2);
-									} else {
-										return value.toFixed(3);
-									}
-								}}
-							/>
-							<Tooltip
-								cursor={{ strokeDasharray: "3 3" }}
-								formatter={(
-									value: number,
-									name,
-									props: any
-								) => [
-									typeof value === "number"
-										? value.toFixed(6)
-										: value,
-									dataKey,
-									props.payload.timestampFormatted,
-								]}
-							/>
-							<Legend />
-							<Scatter
-								dataKey='value'
-								fill='#3B82F6'
-								name={dataKey}
-							/>
-						</ScatterChart>
-					</ResponsiveContainer>
-				);
-			case "line":
-			default:
-				return (
-					<ResponsiveContainer
-						width='100%'
-						height={400}
-					>
-						<LineChart {...chartProps}>
-							<CartesianGrid strokeDasharray='3 3' />
-							<XAxis
-								dataKey='timestampFormatted'
-								angle={-45}
-								textAnchor='end'
-								height={100}
-								interval='preserveStartEnd'
-								tick={{ fontSize: 12 }}
-								tickCount={maxXTicks}
-							/>
-							<YAxis
-								domain={yDomain}
-								tick={{ fontSize: 12 }}
-								tickCount={8}
-								tickFormatter={(value) => {
-									if (Math.abs(value) >= 1000000) {
-										return `${(value / 1000000).toFixed(
-											1
-										)}M`;
-									} else if (Math.abs(value) >= 1000) {
-										return `${(value / 1000).toFixed(1)}K`;
-									} else if (
-										Math.abs(value) < 0.01 &&
-										value !== 0
-									) {
-										return value.toExponential(2);
-									} else {
-										return value.toFixed(3);
-									}
-								}}
-							/>
-							<Tooltip
-								labelFormatter={(label) => `Time: ${label}`}
-								formatter={(value: number) => [
-									typeof value === "number"
-										? value.toFixed(6)
-										: value,
-									dataKey,
-								]}
-							/>
-							<Legend />
-							<Line
-								type='monotone'
-								dataKey='value'
-								stroke='#3B82F6'
-								strokeWidth={2}
-								dot={data.length <= 50} // Only show dots for small datasets
-								name={dataKey}
-							/>
-						</LineChart>
-					</ResponsiveContainer>
-				);
 		}
 	};
 
@@ -1107,60 +816,28 @@ export default function ConditionDetailPage() {
 												return (
 													<div className='space-y-4'>
 														{/* Chart for first data parameter */}
-														<ResponsiveContainer
-															width='100%'
+														<AdvancedZoomChart
+															data={chartData[
+																firstKeyWithData
+															].map(
+																(
+																	item,
+																	index
+																) => ({
+																	...item,
+																	timestamp:
+																		Date.parse(
+																			item.timestamp
+																		) ||
+																		index,
+																	index: index,
+																})
+															)}
+															dataKey='value'
+															xAxisKey='timestamp'
+															title={`${firstKeyWithData} Analysis`}
 															height={300}
-														>
-															<LineChart
-																data={
-																	chartData[
-																		firstKeyWithData
-																	]
-																}
-															>
-																<CartesianGrid strokeDasharray='3 3' />
-																<XAxis
-																	dataKey='timestampFormatted'
-																	tick={{
-																		fontSize: 12,
-																	}}
-																	interval='preserveStartEnd'
-																/>
-																<YAxis
-																	tick={{
-																		fontSize: 12,
-																	}}
-																/>
-																<Tooltip
-																	labelFormatter={(
-																		label
-																	) =>
-																		`Time: ${label}`
-																	}
-																	formatter={(
-																		value: any
-																	) => [
-																		value,
-																		firstKeyWithData,
-																	]}
-																/>
-																<Legend />
-																<Line
-																	type='monotone'
-																	dataKey='value'
-																	stroke='#3B82F6'
-																	strokeWidth={
-																		2
-																	}
-																	dot={{
-																		r: 4,
-																	}}
-																	name={
-																		firstKeyWithData
-																	}
-																/>
-															</LineChart>
-														</ResponsiveContainer>
+														/>
 
 														{/* Chart info */}
 														<div className='flex justify-between items-center text-sm text-gray-600'>
@@ -1200,61 +877,31 @@ export default function ConditionDetailPage() {
 																		{key}{" "}
 																		Parameter
 																	</h6>
-																	<ResponsiveContainer
-																		width='100%'
+																	<AdvancedZoomChart
+																		data={chartData[
+																			key
+																		].map(
+																			(
+																				item,
+																				index
+																			) => ({
+																				...item,
+																				timestamp:
+																					Date.parse(
+																						item.timestamp
+																					) ||
+																					index,
+																				index: index,
+																			})
+																		)}
+																		dataKey='value'
+																		xAxisKey='timestamp'
+																		title={`${key} Analysis`}
 																		height={
 																			200
 																		}
-																	>
-																		<LineChart
-																			data={
-																				chartData[
-																					key
-																				]
-																			}
-																		>
-																			<CartesianGrid strokeDasharray='3 3' />
-																			<XAxis
-																				dataKey='timestampFormatted'
-																				tick={{
-																					fontSize: 10,
-																				}}
-																				interval='preserveStartEnd'
-																			/>
-																			<YAxis
-																				tick={{
-																					fontSize: 10,
-																				}}
-																			/>
-																			<Tooltip
-																				labelFormatter={(
-																					label
-																				) =>
-																					`Time: ${label}`
-																				}
-																				formatter={(
-																					value: any
-																				) => [
-																					value,
-																					key,
-																				]}
-																			/>
-																			<Line
-																				type='monotone'
-																				dataKey='value'
-																				stroke='#10B981'
-																				strokeWidth={
-																					2
-																				}
-																				dot={{
-																					r: 3,
-																				}}
-																				name={
-																					key
-																				}
-																			/>
-																		</LineChart>
-																	</ResponsiveContainer>
+																		color='#10B981'
+																	/>
 																</div>
 															))}
 													</div>
@@ -1503,92 +1150,39 @@ export default function ConditionDetailPage() {
 														{/* Auto-zoom Toggle */}
 														<div className='flex items-center space-x-2'>
 															<label className='text-sm text-gray-700'>
-																Auto-zoom:
+																Advanced Chart
+																Mode Enabled -
+																Professional
+																zoom & analysis
+																tools active
 															</label>
-															<button
-																onClick={() =>
-																	setAutoZoom(
-																		!autoZoom
-																	)
-																}
-																className={`px-2 py-1 rounded text-xs ${
-																	autoZoom
-																		? "bg-green-600 text-white"
-																		: "bg-gray-200 text-gray-700 hover:bg-gray-300"
-																}`}
-																title={
-																	autoZoom
-																		? "Auto-zoom enabled: Charts will zoom to show data variation clearly"
-																		: "Auto-zoom disabled: Charts will show full data range"
-																}
-															>
-																🔍{" "}
-																{autoZoom
-																	? "ON"
-																	: "OFF"}
-															</button>
-														</div>{" "}
-														{/* Chart Type Selector */}
-														<div className='flex space-x-2'>
-															{[
-																{
-																	type: "line" as const,
-																	icon: "Line",
-																	name: "Line",
-																},
-																{
-																	type: "area" as const,
-																	icon: "Area",
-																	name: "Area",
-																},
-																{
-																	type: "bar" as const,
-																	icon: "Bar",
-																	name: "Bar",
-																},
-																{
-																	type: "scatter" as const,
-																	icon: "•",
-																	name: "Scatter",
-																},
-															].map(
-																({
-																	type,
-																	icon,
-																	name,
-																}) => (
-																	<button
-																		key={
-																			type
-																		}
-																		onClick={() =>
-																			setChartType(
-																				type
-																			)
-																		}
-																		className={`px-3 py-1 rounded text-sm ${
-																			chartType ===
-																			type
-																				? "bg-blue-600 text-white"
-																				: "bg-gray-200 text-gray-700 hover:bg-gray-300"
-																		}`}
-																	>
-																		{icon}{" "}
-																		{name}
-																	</button>
-																)
-															)}
 														</div>
 													</div>
 												</div>
-												{/* Recharts Chart */}
+												{/* Advanced Chart Display */}
 												<div className='bg-gray-50 border border-gray-200 rounded-lg p-4'>
-													{renderChart(
-														chartData[
+													<AdvancedZoomChart
+														data={chartData[
 															activeChartTab
-														],
-														activeChartTab
-													)}
+														].map((item) => ({
+															...item,
+															timestamp:
+																Date.parse(
+																	item.timestamp
+																) || item.index, // Convert to number
+														}))}
+														dataKey='value'
+														xAxisKey='timestampFormatted'
+														title={`${activeChartTab} - Advanced Data Analysis`}
+														color='#3B82F6'
+														height={400}
+														enableBrush={true}
+														enableMagnifier={true}
+														enableCrosshair={true}
+														downsampleThreshold={
+															10000
+														}
+													/>
 												</div>{" "}
 												{/* Chart Statistics */}
 												<div className='mt-6 grid grid-cols-2 md:grid-cols-4 gap-4'>
@@ -1673,262 +1267,7 @@ export default function ConditionDetailPage() {
 															</div>
 														));
 													})()}
-												</div>{" "}
-												{/* Zoom Information Panel */}
-												{autoZoom && (
-													<div className='mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3'>
-														<div className='flex items-center justify-between'>
-															<div className='flex items-center space-x-2'>
-																<span className='text-blue-600'>
-																	🔍
-																</span>
-																<div className='text-sm text-blue-800'>
-																	{(() => {
-																		const values =
-																			chartData[
-																				activeChartTab
-																			].map(
-																				(
-																					d
-																				) =>
-																					d.value
-																			);
-																		if (
-																			values.length ===
-																			0
-																		)
-																			return "No data to analyze";
-
-																		const min =
-																			Math.min(
-																				...values
-																			);
-																		const max =
-																			Math.max(
-																				...values
-																			);
-																		const range =
-																			max -
-																			min;
-																		const mean =
-																			values.reduce(
-																				(
-																					sum,
-																					val
-																				) =>
-																					sum +
-																					val,
-																				0
-																			) /
-																			values.length;
-																		const avgAbsValue =
-																			(Math.abs(
-																				min
-																			) +
-																				Math.abs(
-																					max
-																				)) /
-																			2;
-																		const relativeRange =
-																			avgAbsValue >
-																			0
-																				? range /
-																				  avgAbsValue
-																				: 1;
-
-																		if (
-																			range ===
-																			0
-																		) {
-																			return (
-																				<span>
-																					<strong>
-																						Auto-zoom
-																						active:
-																					</strong>{" "}
-																					All
-																					values
-																					are
-																					identical
-																					(
-																					{min.toFixed(
-																						6
-																					)}
-																					).
-																					Showing
-																					padded
-																					view
-																					for
-																					better
-																					visualization.
-																				</span>
-																			);
-																		} else if (
-																			relativeRange <
-																			0.001
-																		) {
-																			return (
-																				<span>
-																					<strong>
-																						Auto-zoom
-																						active:
-																					</strong>{" "}
-																					Very
-																					concentrated
-																					data
-																					detected.
-																					Data
-																					range:{" "}
-																					{range.toExponential(
-																						3
-																					)}{" "}
-																					(
-																					{(
-																						(range /
-																							Math.abs(
-																								mean
-																							)) *
-																						100
-																					).toFixed(
-																						3
-																					)}
-
-																					%
-																					of
-																					mean
-																					value)
-																				</span>
-																			);
-																		} else if (
-																			relativeRange <
-																			0.01
-																		) {
-																			return (
-																				<span>
-																					<strong>
-																						Auto-zoom
-																						active:
-																					</strong>{" "}
-																					Concentrated
-																					data
-																					detected.
-																					Data
-																					range:{" "}
-																					{range.toFixed(
-																						6
-																					)}{" "}
-																					(
-																					{(
-																						(range /
-																							Math.abs(
-																								mean
-																							)) *
-																						100
-																					).toFixed(
-																						2
-																					)}
-
-																					%
-																					of
-																					mean
-																					value)
-																				</span>
-																			);
-																		} else if (
-																			relativeRange <
-																			0.1
-																		) {
-																			return (
-																				<span>
-																					<strong>
-																						Auto-zoom
-																						active:
-																					</strong>{" "}
-																					Slightly
-																					concentrated
-																					data.
-																					Data
-																					range:{" "}
-																					{range.toFixed(
-																						3
-																					)}{" "}
-																					(
-																					{(
-																						(range /
-																							Math.abs(
-																								mean
-																							)) *
-																						100
-																					).toFixed(
-																						1
-																					)}
-
-																					%
-																					of
-																					mean
-																					value)
-																				</span>
-																			);
-																		} else {
-																			return (
-																				<span>
-																					<strong>
-																						Auto-zoom
-																						active:
-																					</strong>{" "}
-																					Normal
-																					data
-																					spread.
-																					Data
-																					range:{" "}
-																					{range.toFixed(
-																						3
-																					)}
-																				</span>
-																			);
-																		}
-																	})()}
-																</div>
-															</div>
-															<div className='text-xs text-blue-600'>
-																💡 Turn off
-																auto-zoom to see
-																full data range
-															</div>
-														</div>
-													</div>
-												)}
-												{!autoZoom && (
-													<div className='mt-4 bg-gray-50 border border-gray-200 rounded-lg p-3'>
-														<div className='flex items-center justify-between'>
-															<div className='flex items-center space-x-2'>
-																<span className='text-gray-600'>
-																	📏
-																</span>
-																<div className='text-sm text-gray-700'>
-																	<strong>
-																		Full
-																		range
-																		view:
-																	</strong>{" "}
-																	Showing
-																	complete
-																	data range
-																	without zoom
-																	optimization
-																</div>
-															</div>
-															<div className='text-xs text-gray-600'>
-																💡 Turn on
-																auto-zoom for
-																better
-																visualization of
-																concentrated
-																data{" "}
-															</div>
-														</div>
-													</div>
-												)}
+												</div>
 											</div>
 										)}
 								</div>

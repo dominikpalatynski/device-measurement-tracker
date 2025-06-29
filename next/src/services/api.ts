@@ -272,23 +272,63 @@ export async function getMeasurementStats(deviceUuid: string): Promise<Measureme
 }
 
 /**
- * Get measurement data for a specific condition from measurement_data table
+ * Get measurement data for a specific condition from MongoDB
  */
 export async function getConditionMeasurements(
   conditionId: string, 
   startDate?: string, 
   endDate?: string
-): Promise<MeasurementDataResponse> {
-  let url = `measurement-data/condition?conditionId=${conditionId}`;
-  
-  if (startDate) {
-    url += `&startDate=${encodeURIComponent(startDate)}`;
+): Promise<{
+  success: boolean;
+  data: any[];
+  error?: string;
+}> {
+  try {
+    let timeRange: string | undefined;
+    
+    // Convert date range to time range if provided
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate).getTime() / 1000 : 0;
+      const end = endDate ? new Date(endDate).getTime() / 1000 : Date.now() / 1000;
+      timeRange = `${start}-${end}`;
+    }
+    
+    const response = await getMongoMeasurements(
+      undefined, // deviceId
+      undefined, // faultId
+      conditionId,
+      undefined, // dataSeriesId
+      timeRange,
+      1000, // limit - get more data for charts
+      0, // offset
+      true // includeData - include payload for charts
+    );
+    
+    if (response.success && response.data) {
+      // Convert MongoDB data to the format expected by the frontend
+      const convertedData = response.data.map(item => {
+        return item.data_payload || {};
+      });
+      
+      return {
+        success: true,
+        data: convertedData,
+        error: response.error
+      };
+    } else {
+      return {
+        success: false,
+        data: [],
+        error: response.error || 'Failed to fetch data'
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
-  if (endDate) {
-    url += `&endDate=${encodeURIComponent(endDate)}`;
-  }
-  
-  return fetchApi<MeasurementDataResponse>(url);
 }
 
 /**
@@ -1006,43 +1046,237 @@ export const measurementChannelApi = {
 };
 
 /**
- * Get live measurement data for a specific condition from measurement_data table
- * with optional limit and sorting by timestamp DESC for real-time updates
+ * Get live condition measurements from MongoDB (last N measurements since timestamp)
  */
 export async function getLiveConditionMeasurements(
-  conditionId: string, 
-  limit: number = 50,
-  since?: string
-): Promise<MeasurementDataResponse> {
-  let endpoint = `measurement-data/condition/live?conditionId=${conditionId}&limit=${limit}`;
-  if (since) {
-    endpoint += `&since=${encodeURIComponent(since)}`;
+  conditionId: string,
+  limit: number = 100,
+  sinceTimestamp?: string
+): Promise<MongoMeasurementResponse> {
+  const params = new URLSearchParams();
+  params.append('conditionId', conditionId);
+  params.append('limit', limit.toString());
+  params.append('includeData', 'true'); // Include payload for live data
+  
+  if (sinceTimestamp) {
+    // Convert timestamp to time range
+    const sinceUnix = new Date(sinceTimestamp).getTime() / 1000;
+    const nowUnix = Date.now() / 1000;
+    params.append('timeRange', `${sinceUnix}-${nowUnix}`);
   }
-  return fetchApi<MeasurementDataResponse>(endpoint);
+  
+  const url = `mongo-data/fetch?${params.toString()}`;
+  return fetchApi<MongoMeasurementResponse>(url);
 }
 
 /**
- * Get the latest measurement data for a specific condition
- * (just the most recent entry)
+ * Get latest condition measurement from MongoDB
  */
-export async function getLatestConditionMeasurement(conditionId: string): Promise<MeasurementDataResponse> {
-  return fetchApi<MeasurementDataResponse>(`measurement-data/condition/latest?conditionId=${conditionId}`);
+export async function getLatestConditionMeasurement(
+  conditionId: string
+): Promise<{
+  success: boolean;
+  data: MongoMeasurementData | null;
+  error?: string;
+}> {
+  try {
+    const response = await getMongoMeasurements(
+      undefined, // deviceId
+      undefined, // faultId
+      conditionId,
+      undefined, // dataSeriesId
+      undefined, // timeRange
+      1, // limit - just get the latest one
+      0, // offset
+      true // includeData
+    );
+    
+    return {
+      success: response.success,
+      data: response.data && response.data.length > 0 ? response.data[0] : null,
+      error: response.error
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
 }
 
 /**
- * Get the latest measurement data from measurement_data table with real-time support
+ * Get latest measurement data for a device from MongoDB
  */
 export async function getLatestMeasurementData(
-  limit: number = 50,
   deviceId?: string,
-  conditionId?: string
-): Promise<MeasurementDataResponse> {
-  let endpoint = `measurement-data/latest-all?limit=${limit}`;
-  if (deviceId) {
-    endpoint += `&deviceId=${encodeURIComponent(deviceId)}`;
+  conditionId?: string,
+  limit: number = 50
+): Promise<{
+  success: boolean;
+  data: MongoMeasurementData | null;
+  error?: string;
+}> {
+  try {
+    const response = await getMongoMeasurements(
+      deviceId,
+      undefined, // faultId
+      conditionId,
+      undefined, // dataSeriesId
+      undefined, // timeRange
+      1, // limit - just get the latest one
+      0, // offset
+      true // includeData
+    );
+    
+    return {
+      success: response.success,
+      data: response.data && response.data.length > 0 ? response.data[0] : null,
+      error: response.error
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
-  if (conditionId) {
-    endpoint += `&conditionId=${encodeURIComponent(conditionId)}`;
-  }
-  return fetchApi<MeasurementDataResponse>(endpoint);
 }
+
+/**
+ * MongoDB Time-Series Data Functions
+ */
+
+/**
+ * Interface for MongoDB measurement data
+ */
+export interface MongoMeasurementData {
+  id: string;
+  dataSeriesId: string;
+  conditionId: string;
+  faultId: string;
+  timestamp: number;
+  metadata: {
+    channels: string[];
+    sample_count_per_channel: number;
+    channel_count: number;
+    total_samples: number;
+    compression_ratio: number;
+    original_size_bytes: number;
+    compressed_size_bytes: number;
+  };
+  data_payload?: any; // Only included when includeData=true
+}
+
+export interface MongoMeasurementResponse {
+  success: boolean;
+  message: string;
+  data: MongoMeasurementData[];
+  count: number;
+  error?: string;
+}
+
+export interface MongoStatsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    database: {
+      name: string;
+      collections: number;
+      dataSize: number;
+      indexSize: number;
+    };
+    collections: Record<string, {
+      count: number;
+      size: number;
+      avgObjSize: number;
+    }>;
+    write_stats: {
+      total_writes: number;
+      successful_writes: number;
+      failed_writes: number;
+      average_write_time: number;
+    };
+    config: {
+      uri: string;
+      database: string;
+      timeout: number;
+    };
+  };
+  error?: string;
+}
+
+/**
+ * Fetch measurement data from MongoDB
+ */
+export async function getMongoMeasurements(
+  deviceId?: string,
+  faultId?: string,
+  conditionId?: string,
+  dataSeriesId?: string,
+  timeRange?: string,
+  limit: number = 100,
+  offset: number = 0,
+  includeData: boolean = false
+): Promise<MongoMeasurementResponse> {
+  const params = new URLSearchParams();
+  
+  if (deviceId) params.append('deviceId', deviceId);
+  if (faultId) params.append('faultId', faultId);
+  if (conditionId) params.append('conditionId', conditionId);
+  if (dataSeriesId) params.append('dataSeriesId', dataSeriesId);
+  if (timeRange) params.append('timeRange', timeRange);
+  if (limit) params.append('limit', limit.toString());
+  if (offset) params.append('offset', offset.toString());
+  if (includeData) params.append('includeData', 'true');
+  
+  const url = `mongo-data/fetch${params.toString() ? '?' + params.toString() : ''}`;
+  return fetchApi<MongoMeasurementResponse>(url);
+}
+
+/**
+ * Get hierarchical data structure from MongoDB
+ */
+export async function getMongoHierarchy(): Promise<{
+  success: boolean;
+  message: string;
+  data: Array<{
+    dataSeriesId: string;
+    conditions: Array<{
+      conditionId: string;
+      faults: Array<{
+        faultId: string;
+        measurements: number;
+        latest_timestamp: number;
+        earliest_timestamp: number;
+        total_samples: number;
+        avg_compression_ratio: number;
+      }>;
+    }>;
+  }>;
+  error?: string;
+}> {
+  return fetchApi('mongo-data/hierarchy');
+}
+
+/**
+ * Get MongoDB statistics
+ */
+export async function getMongoStats(): Promise<MongoStatsResponse> {
+  return fetchApi<MongoStatsResponse>('mongo-data/stats');
+}
+
+/**
+ * Test MongoDB connection
+ */
+export async function testMongoConnection(): Promise<{
+  success: boolean;
+  message: string;
+  timestamp: number;
+  database?: string;
+  error?: string;
+}> {
+  return fetchApi('mongo-data/ping');
+}
+
+// ...existing code...

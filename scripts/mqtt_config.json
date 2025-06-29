@@ -2,7 +2,7 @@
     "host": "localhost", 
     "port": 1883,
     "send_interval": 0.8,
-    "deviceId": "YTdzQYiThAuY",
+    "deviceId": "q4Z_ooBVKFJA",
     "condition_name": "pomiar_prądu_9",
     "data_series": "8",
     "included_files": [

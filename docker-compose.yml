@@ -50,22 +50,43 @@ services:
             - db
         networks:
             - iot-network
-    influxdb2:
-        image: influxdb:2
-        ports:
-            - 8086:8086
+
+    # MongoDB Database for time-series data
+    mongodb:
+        image: mongo:7.0
+        container_name: iot-mongodb
+        restart: always
         environment:
-            DOCKER_INFLUXDB_INIT_MODE: setup
-            DOCKER_INFLUXDB_INIT_USERNAME: admin
-            DOCKER_INFLUXDB_INIT_PASSWORD: password
-            DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: mytoken
-            DOCKER_INFLUXDB_INIT_ORG: myorg
-            DOCKER_INFLUXDB_INIT_BUCKET: bucket
+            MONGO_INITDB_ROOT_USERNAME: admin
+            MONGO_INITDB_ROOT_PASSWORD: password
+            MONGO_INITDB_DATABASE: iot_timeseries
+        ports:
+            - "27017:27017"
         volumes:
-            - ./docker/influxdb/influxdb2-data:/var/lib/influxdb2
-            - ./docker/influxdb/influxdb2-config:/etc/influxdb2
+            - ./docker/mongodb/data:/data/db
+            - ./docker/mongodb/config:/data/configdb
         networks:
             - iot-network
+
+    # MongoDB Express for MongoDB management
+    mongo-express:
+        image: mongo-express:latest
+        container_name: iot-mongo-express
+        restart: always
+        environment:
+            ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+            ME_CONFIG_MONGODB_ADMINPASSWORD: password
+            ME_CONFIG_MONGODB_SERVER: mongodb
+            ME_CONFIG_MONGODB_PORT: 27017
+            ME_CONFIG_BASICAUTH_USERNAME: admin
+            ME_CONFIG_BASICAUTH_PASSWORD: admin
+        ports:
+            - "8082:8081"
+        depends_on:
+            - mongodb
+        networks:
+            - iot-network
+
 networks:
     iot-network:
         driver: bridge

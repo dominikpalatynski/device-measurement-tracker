@@ -11,21 +11,19 @@ use app\models\Faults;
 use app\models\Condition;
 use app\models\MeasurementData;
 
-require_once __DIR__ . '/InfluxDBService.php';
 class MeasurementService extends Component
 {
-    private $influxClient;
+    private $mongoService;
     
     public function __construct($config = [])
     {
         parent::__construct($config);
         try {
-            $this->influxClient = new \ElectricalMeasurementInfluxClient();
-            echo "\033[32m[InfluxDB] Client initialized successfully\033[0m\n";
+            $this->mongoService = new MongoDBService();
+            Yii::info("MongoDB service initialized successfully");
         } catch (\Exception $e) {
-            echo "\033[31m[InfluxDB] Failed to initialize client: " . $e->getMessage() . "\033[0m\n";
-            Yii::error("Failed to initialize InfluxDB client: " . $e->getMessage(), 'influxdb');
-            $this->influxClient = null;
+            Yii::error("Failed to initialize MongoDB service: " . $e->getMessage(), 'mongodb');
+            $this->mongoService = null;
         }
     }
     /**
@@ -155,24 +153,24 @@ class MeasurementService extends Component
                 'condition_name' => $data['condition_name'],
             ];
 
-            // Write to InfluxDB instead of MySQL
-            if ($this->influxClient) {
-                $result = $this->influxClient->writeMeasurement($measurementData);
+            // Write to MongoDB
+            if ($this->mongoService) {
+                // Handle both deviceId (camelCase from real-time sender) and device_id (snake_case)
+                $deviceIdFromPayload = $data['deviceId'] ?? $data['device_id'] ?? $deviceId;
                 
-                if ($result['success']) {
-                    echo "\033[32m[InfluxDB] Successfully wrote measurement data in " . $result['write_time_ms'] . "ms\033[0m\n";
-                    Yii::info("Measurement written to InfluxDB successfully", 'influxdb');
+                $result = $this->mongoService->saveMeasurementData($deviceIdFromPayload, $measurementData);
+                
+                if ($result) {
+                    Yii::info("Measurement written to MongoDB successfully", 'mongodb');
                     
                     return [
                         'success' => true,
                         'dataSeriesId' => $measurementData['dataSeriesId'],
-                        'timestamp' => $result['timestamp'],
-                        'bucket' => $result['bucket'],
-                        'write_time_ms' => $result['write_time_ms']
+                        'timestamp' => time(),
+                        'deviceId' => $deviceIdFromPayload
                     ];
                 } else {
-                    echo "\033[31m[InfluxDB] Failed to write measurement: " . $result['error'] . "\033[0m\n";
-                    Yii::error("Failed to write measurement to InfluxDB: " . $result['error'], 'influxdb');
+                    Yii::error("Failed to write measurement to MongoDB", 'mongodb');
                 }
             } 
         } catch (\Exception $e) {

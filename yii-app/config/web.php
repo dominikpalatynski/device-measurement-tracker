@@ -180,6 +180,51 @@ $config = [
                 'api/measurement-data/latest-all' => 'api/measurement-data/latest-all',
                 'api/measurement-data/<action>' => 'api/measurement-data/<action>',
                 
+                // MongoDB Data endpoints
+                'api/mongo-data/ping' => 'api/mongo-data/ping',
+                'api/mongo-data/fetch' => 'api/mongo-data/fetch',
+                'api/mongo-data/hierarchy' => 'api/mongo-data/hierarchy',
+                'api/mongo-data/stats' => 'api/mongo-data/stats',
+                
+                // MongoDB API endpoints for testing
+                'api/mongodb/test' => 'api/mongo-d-b/test',
+                'api/mongodb/measurement' => 'api/mongo-d-b/measurement',
+                'api/mongodb/measurements' => 'api/mongo-d-b/measurements',
+                'api/mongodb/stats' => 'api/mongo-d-b/stats',
+                'api/mongodb/latest' => 'api/mongo-d-b/latest',
+                'api/mongodb/aggregated' => 'api/mongo-d-b/aggregated',
+                'api/mongodb/cleanup' => 'api/mongo-d-b/cleanup',
+                'api/mongodb/range' => 'api/mongo-d-b/range',
+                'api/mongodb/db-info' => 'api/mongo-d-b/db-info',
+                // Enhanced hierarchy endpoints
+                'api/mongodb/data-series' => 'api/mongo-d-b/data-series',
+                'api/mongodb/condition' => 'api/mongo-d-b/condition',
+                'api/mongodb/fault' => 'api/mongo-d-b/fault',
+                'api/mongodb/device' => 'api/mongo-d-b/device',
+                'api/mongodb/all-conditions' => 'api/mongo-d-b/all-conditions',
+                'api/mongodb/devices' => 'api/mongo-d-b/devices',
+                'api/mongodb/create-device' => 'api/mongo-d-b/create-device',
+                'api/mongodb/create-fault' => 'api/mongo-d-b/create-fault',
+                'api/mongodb/create-condition' => 'api/mongo-d-b/create-condition',
+                'api/mongodb/create-data-series' => 'api/mongo-d-b/create-data-series',
+                // Current data structure endpoints
+                'api/mongodb/condition-name' => 'api/mongo-d-b/condition-name',
+                'api/mongodb/data-series-value' => 'api/mongo-d-b/data-series-value',
+                'api/mongodb/hierarchy' => 'api/mongo-d-b/hierarchy',
+                
+                // Enhanced MongoDB API endpoints (InfluxDB feature-parity)
+                'api/mongodb/data-series' => 'api/mongo-d-b/data-series',
+                'api/mongodb/condition' => 'api/mongo-d-b/condition',
+                'api/mongodb/fault' => 'api/mongo-d-b/fault',
+                'api/mongodb/device' => 'api/mongo-d-b/device',
+                'api/mongodb/all-conditions' => 'api/mongo-d-b/all-conditions',
+                'api/mongodb/devices' => 'api/mongo-d-b/devices',
+                'api/mongodb/create-device' => 'api/mongo-d-b/create-device',
+                'api/mongodb/create-fault' => 'api/mongo-d-b/create-fault',
+                'api/mongodb/create-condition' => 'api/mongo-d-b/create-condition',
+                'api/mongodb/create-data-series' => 'api/mongo-d-b/create-data-series',
+                'api/mongodb/db-info' => 'api/mongo-d-b/db-info',
+                
                 // Other existing rules
                 'api/measurements/device/<id:\w+>' => 'api/measurement/device',
                 'api/dashboard-data' => 'api/measurement/dashboard-data',
