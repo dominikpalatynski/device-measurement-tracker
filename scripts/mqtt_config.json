@@ -1,10 +1,10 @@
 {
     "host": "localhost", 
     "port": 1883,
-    "send_interval": 0.005,
+    "send_interval": 0.08,
     "deviceId": "YTdzQYiThAuY",
-    "condition_name": "pomiar_prądu_13",
-    "data_series": "16",
+    "condition_name": "pomiar_prądu_17",
+    "data_series": "17",
     "included_files": [
       "w.dat",
       "udc.dat", 

@@ -7,7 +7,6 @@ use app\components\MqttComponent;
 use app\services\MeasurementService;
 use app\services\DeviceRegisterService;
 use app\models\VerificationToken;
-use app\services\RedisService;
 use app\services\RabbitMQService;
 class MqttController extends Controller
 {
@@ -15,7 +14,6 @@ class MqttController extends Controller
      * @var MeasurementService
      */
     private $measurementService;
-    private $redisService;
     /**
      * @var DeviceRegisterService
      */
@@ -31,7 +29,6 @@ class MqttController extends Controller
         // Create the measurement service
         $this->measurementService = new MeasurementService();
         $this->deviceRegisterService = new DeviceRegisterService();
-        $this->redisService = new RedisService();
         $this->rabbitMQService = new RabbitMQService();
         parent::__construct($id, $module, $config);
     }
