@@ -117,33 +117,33 @@ class MeasurementService extends Component
             $deviceId = isset($parts[1]) ? $parts[1] : null;
             echo "\033[32m[MQTT] Processing real time data message: $payload\033[0m\n";
             $data = Json::decode($payload);
-            // $device = Devices::findByDeviceId($deviceId);
-            // if (!$device) {
-            //     throw new \Exception("Device not found: $deviceId");
-            // }
+            $device = Devices::findByDeviceId($deviceId);
+            if (!$device) {
+                throw new \Exception("Device not found: $deviceId");
+            }
 
-            // $condition = Condition::find()->where(['name' => $data['condition_name']])->one();
-            // if (!$condition) {
-            //     $fault = Faults::find()
-            //     ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
-            //     ->one();
-            //     if (!$fault) {
-            //         throw new \Exception("Fault not found: $deviceId");
-            //     }
-            //     $condition = new Condition();
-            //     $condition->condition_id = Condition::generateConditionId();
-            //     $condition->name = $data['condition_name'];
-            //     $condition->status = Condition::STATUS_ACTIVE;
-            //     $condition->fault_id = $fault->fault_id;
-            //     $condition->save();
-            // }
+            $condition = Condition::find()->where(['name' => $data['condition_name']])->one();
+            if (!$condition) {
+                $fault = Faults::find()
+                ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
+                ->one();
+                if (!$fault) {
+                    throw new \Exception("Fault not found: $deviceId");
+                }
+                $condition = new Condition();
+                $condition->condition_id = Condition::generateConditionId();
+                $condition->name = $data['condition_name'];
+                $condition->status = Condition::STATUS_ACTIVE;
+                $condition->fault_id = $fault->fault_id;
+                $condition->save();
+            }
 
-            // $fault = Faults::find()
-            //     ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
-            //     ->one();
-            // if (!$fault) {
-            //     throw new \Exception("Fault not found: $deviceId");
-            // }
+            $fault = Faults::find()
+                ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
+                ->one();
+            if (!$fault) {
+                throw new \Exception("Fault not found: $deviceId");
+            }
 
             $measurementData = [
                 'data_series' => $data['data_series'],

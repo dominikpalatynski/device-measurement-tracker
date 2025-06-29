@@ -529,3 +529,9 @@ php test_influx_hierarchical_fetch.php dataseries "8"
 
 command to run redis
  while true; do php yii redis/consume; sleep 0.5; done
+
+ Install mongo driver
+ pecl install mongodb
+
+ enable rabbit consuming
+ php yii rabbit-m-q/consume
