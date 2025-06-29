@@ -204,26 +204,6 @@ class RabbitMQService
     }
     
     /**
-     * Get queue statistics
-     */
-    public function getQueueStats() 
-    {
-        try {
-            $mainQueue = $this->channel->queue_declare($this->config['queues']['mqtt_messages'], true);
-            $deadQueue = $this->channel->queue_declare($this->config['queues']['mqtt_dead_letter'], true);
-            
-            return [
-                'main_queue_messages' => $mainQueue[1],
-                'dead_letter_messages' => $deadQueue[1]
-            ];
-            
-        } catch (Exception $e) {
-            echo "[ERROR] Failed to get queue stats: " . $e->getMessage() . "\n";
-            return [];
-        }
-    }
-    
-    /**
      * Close connection
      */
     public function close() 

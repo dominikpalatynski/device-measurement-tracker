@@ -86,17 +86,6 @@ services:
             - mongodb
         networks:
             - iot-network
-
-    redis:
-        image: redis:7
-        container_name: iot-redis
-        restart: always
-        ports:
-        - "6379:6379"
-        volumes:
-        - ./docker/redis/data:/data
-        networks:
-        - iot-network
     rabbitmq:
         image: rabbitmq:management
         container_name: rabbitmq
