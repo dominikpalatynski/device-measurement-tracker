@@ -8,6 +8,8 @@ use MongoDB\Collection;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\BSON\ObjectId;
 use MongoDB\Exception\Exception as MongoDBException;
+use app\models\LiveFaults;
+use app\models\Faults;
 
 /**
  * MongoDB service using the official MongoDB PHP driver
@@ -105,8 +107,24 @@ class MongoDBService extends Component
             $conditionName = $data['condition_name'] ?? 'unknown_condition';
             $dataSeriesValue = $data['data_series'] ?? 'unknown_series';
             
+            // Handle fault_id: use provided value or find active fault for the device
+            $faultId = null;
+            if (isset($data['fault_name']) && !empty($data['fault_name'])) {
+                $faultId = $data['fault_name'];
+            } else {
+                // Try to find an active fault for this device using Faults model
+                $activeFault = Faults::findActiveByDevice($deviceId);
+                if ($activeFault) {
+                    $faultId = $activeFault->fault_name;
+                    \Yii::info("Using active fault ID {$faultId} for device {$deviceId} (no fault_id in data)");
+                } else {
+                    // No active fault found - use device ID as fallback
+                    $faultId = $deviceId;
+                    \Yii::warning("No active fault found for device {$deviceId}, using device ID as fault_id");
+                }
+            }
+            
             // Use simplified ID generation: actual values as IDs
-            $faultId = $deviceId; // Use deviceId as faultId
             $conditionId = $conditionName; // Use condition name as conditionId
             $dataSeriesId = $dataSeriesValue; // Use data series value as dataSeriesId
             
@@ -200,25 +218,26 @@ class MongoDBService extends Component
             // Condition filters
             if (!empty($filters['conditionId'])) {
                 $mongoFilter['conditionId'] = $filters['conditionId'];
-            } elseif (!empty($filters['conditionName'])) {
-                // Convert condition name to conditionId using the new ID format
-                $conditionId = $filters['conditionName'];
-                if (!empty($filters['deviceId'])) {
-                    $conditionId = $filters['deviceId'] . '_' . $conditionId;
-                }
-                $mongoFilter['conditionId'] = $conditionId;
+            }
+            
+            // Support filtering by condition name
+            if (!empty($filters['conditionName'])) {
+                $mongoFilter['condition_name'] = $filters['conditionName'];
             }
             
             // Data series filters
             if (!empty($filters['dataSeriesId'])) {
                 $mongoFilter['dataSeriesId'] = $filters['dataSeriesId'];
-            } elseif (!empty($filters['dataSeriesValue'])) {
-                // Convert data series value to dataSeriesId using the new ID format
-                $dataSeriesId = $filters['dataSeriesValue'];
-                if (!empty($filters['deviceId'])) {
-                    $dataSeriesId = $filters['deviceId'] . '_' . $dataSeriesId;
-                }
-                $mongoFilter['dataSeriesId'] = $dataSeriesId;
+            }
+            
+            // Support filtering by data series value
+            if (!empty($filters['dataSeriesValue'])) {
+                $mongoFilter['data_series'] = $filters['dataSeriesValue'];
+            }
+            
+            // Support filtering by fault name (if stored in documents)
+            if (!empty($filters['faultName'])) {
+                $mongoFilter['fault_name'] = $filters['faultName'];
             }
             
             // Time range filters
@@ -282,11 +301,11 @@ class MongoDBService extends Component
             'deviceId' => $document['deviceId'],
             'timestamp' => $document['timestamp']->toDateTime()->format('Y-m-d H:i:s'),
             'timestamp_unix' => $document['timestamp']->toDateTime()->getTimestamp(),
-            'data' => $document['data'],
             'faultId' => $document['faultId'] ?? null,
             'conditionId' => $document['conditionId'] ?? null,
             'dataSeriesId' => $document['dataSeriesId'] ?? null,
-            'created_at' => $document['created_at']->toDateTime()->getTimestamp()
+            'created_at' => $document['created_at']->toDateTime()->getTimestamp(),
+            'data' => $document['data']
         ];
     }
 
@@ -1060,43 +1079,7 @@ class MongoDBService extends Component
             return [];
         }
     }
-    
-    /**
-     * Get device statistics using the unified getMeasurements method
-     */
-    public function getDeviceStats($deviceId)
-    {
-        try {
-            if (!$deviceId) {
-                throw new \InvalidArgumentException("Device ID is required");
-            }
-            
-            // Get total count
-            $totalMeasurements = $this->getMeasurements(['deviceId' => $deviceId, 'limit' => 0]);
-            $totalCount = count($totalMeasurements);
-            
-            // Get latest measurement
-            $latest = $this->getMeasurements(['deviceId' => $deviceId, 'limit' => 1, 'sort' => 'desc']);
-            $latestTimestamp = !empty($latest) ? $latest[0]['timestamp'] ?? null : null;
-            
-            // Get oldest measurement
-            $oldest = $this->getMeasurements(['deviceId' => $deviceId, 'limit' => 1, 'sort' => 'asc']);
-            $oldestTimestamp = !empty($oldest) ? $oldest[0]['timestamp'] ?? null : null;
-            
-            return [
-                'deviceId' => $deviceId,
-                'totalMeasurements' => $totalCount,
-                'latestTimestamp' => $latestTimestamp,
-                'oldestTimestamp' => $oldestTimestamp,
-                'timespan' => $latestTimestamp && $oldestTimestamp ? 
-                    ($latestTimestamp - $oldestTimestamp) : 0
-            ];
-            
-        } catch (\Exception $e) {
-            \Yii::error("Failed to get device stats for device $deviceId: " . $e->getMessage());
-            throw $e;
-        }
-    }
+
     
     /**
      * Get latest measurement for a device
@@ -1123,53 +1106,6 @@ class MongoDBService extends Component
     }
     
     /**
-     * Get aggregated data for analytics (simplified implementation)
-     */
-    public function getAggregatedData($deviceId, $timeRange = '1h')
-    {
-        try {
-            if (!$deviceId) {
-                throw new \InvalidArgumentException("Device ID is required");
-            }
-            
-            // Get measurements for the specified time range
-            $measurements = $this->getMeasurements([
-                'deviceId' => $deviceId,
-                'timeRange' => $timeRange,
-                'limit' => 1000 // Reasonable limit for aggregation
-            ]);
-            
-            if (empty($measurements)) {
-                return [];
-            }
-            
-            // Simple aggregation - group by hour
-            $aggregated = [];
-            foreach ($measurements as $measurement) {
-                $timestamp = $measurement['timestamp'];
-                $hour = date('Y-m-d H:00:00', $timestamp);
-                
-                if (!isset($aggregated[$hour])) {
-                    $aggregated[$hour] = [
-                        'timestamp' => strtotime($hour),
-                        'hour' => $hour,
-                        'count' => 0,
-                        'deviceId' => $deviceId
-                    ];
-                }
-                
-                $aggregated[$hour]['count']++;
-            }
-            
-            return array_values($aggregated);
-            
-        } catch (\Exception $e) {
-            \Yii::error("Failed to get aggregated data for device $deviceId: " . $e->getMessage());
-            throw $e;
-        }
-    }
-    
-    /**
      * Get measurements within a time range
      */
     public function getMeasurementsInRange($deviceId, $startTime, $endTime)
@@ -1191,115 +1127,5 @@ class MongoDBService extends Component
             throw $e;
         }
     }
-    
-    /**
-     * Delete old measurements
-     */
-    public function deleteOldMeasurements($days = 30)
-    {
-        try {
-            $cutoffTime = time() - ($days * 24 * 60 * 60);
-            
-            $result = $this->measurementCollection->deleteMany([
-                'timestamp' => ['$lt' => $cutoffTime]
-            ]);
-            
-            $deletedCount = $result->getDeletedCount();
-            \Yii::info("Deleted $deletedCount old measurements (older than $days days)");
-            
-            return $deletedCount;
-            
-        } catch (\Exception $e) {
-            \Yii::error("Failed to delete old measurements: " . $e->getMessage());
-            throw $e;
-        }
-    }
-    
-    /**
-     * Get database information
-     */
-    public function getDatabaseInfo()
-    {
-        try {
-            $collections = $this->getCollections();
-            $stats = [];
-            
-            foreach ($collections as $collectionName) {
-                try {
-                    $collection = $this->database->selectCollection($collectionName);
-                    $count = $collection->countDocuments();
-                    $stats[$collectionName] = [
-                        'name' => $collectionName,
-                        'count' => $count
-                    ];
-                } catch (\Exception $e) {
-                    $stats[$collectionName] = [
-                        'name' => $collectionName,
-                        'count' => 0,
-                        'error' => $e->getMessage()
-                    ];
-                }
-            }
-            
-            return [
-                'database' => $this->databaseName,
-                'collections' => $stats,
-                'totalCollections' => count($collections)
-            ];
-            
-        } catch (\Exception $e) {
-            \Yii::error("Failed to get database info: " . $e->getMessage());
-            throw $e;
-        }
-    }
-    
-    /**
-     * Migrate existing documents (placeholder implementation)
-     */
-    public function migrateExistingDocuments($limit = 1000)
-    {
-        try {
-            // This is a placeholder implementation
-            // In a real scenario, this would migrate old document structures to new ones
-            
-            $measurements = $this->measurementCollection->find([], ['limit' => $limit]);
-            $migratedCount = 0;
-            
-            foreach ($measurements as $measurement) {
-                // Check if migration is needed (example: add missing fields)
-                $updateData = [];
-                
-                if (!isset($measurement['deviceId']) && isset($measurement['device_id'])) {
-                    $updateData['deviceId'] = $measurement['device_id'];
-                }
-                
-                if (!empty($updateData)) {
-                    $this->measurementCollection->updateOne(
-                        ['_id' => $measurement['_id']],
-                        ['$set' => $updateData]
-                    );
-                    $migratedCount++;
-                }
-            }
-            
-            return [
-                'success' => true,
-                'message' => "Migration completed",
-                'migratedCount' => $migratedCount,
-                'limit' => $limit
-            ];
-            
-        } catch (\Exception $e) {
-            \Yii::error("Failed to migrate documents: " . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
-        }
-    }
-
-    // ==============================================
-    // END BACKWARD COMPATIBILITY METHODS
-    // ==============================================
 }
 ?>

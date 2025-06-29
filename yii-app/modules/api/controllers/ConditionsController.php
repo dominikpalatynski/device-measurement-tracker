@@ -8,7 +8,7 @@ use yii\web\Response;
 use yii\web\NotFoundHttpException;
 use yii\web\ServerErrorHttpException;
 use yii\helpers\Json;
-use app\models\Conditions;
+use app\models\Condition;
 use app\models\Faults;
 use app\models\MeasurementData;
 
@@ -62,7 +62,7 @@ class ConditionsController extends Controller
         Yii::info("Conditions list endpoint called", 'api.conditions');
         
         try {
-            $conditions = Conditions::find()->all();
+            $conditions = Condition::find()->all();
             
             return [
                 'success' => true,
@@ -139,13 +139,13 @@ class ConditionsController extends Controller
             
             // For stream faults, check if there are active conditions
             if ($fault->type === 'stream') {
-                $streamConditions = Conditions::find()->where(['fault_id' => $data['fault_id'], 'status' => Conditions::STATUS_ACTIVE])->all();
+                $streamConditions = Condition::find()->where(['fault_id' => $data['fault_id'], 'status' => Condition::STATUS_ACTIVE])->all();
                 if ($streamConditions) {
                     throw new ServerErrorHttpException('Cannot create condition while there are active conditions for stream fault');
                 }
             }
             
-            $condition = Conditions::createCondition(
+            $condition = Condition::createCondition(
                 $data['fault_id'],
                 $data['name'],
                 $data['description'] ?? null
@@ -364,7 +364,7 @@ class ConditionsController extends Controller
      */
     protected function findCondition($id)
     {
-        $condition = Conditions::findOne(['condition_id' => $id]);
+        $condition = Condition::findOne(['condition_id' => $id]);
         if ($condition === null) {
             throw new NotFoundHttpException('Condition not found');
         }

@@ -15,7 +15,7 @@ import {
 	getLiveConditionMeasurements,
 	getLatestConditionMeasurement,
 	getLatestMeasurementData,
-	getConditionMeasurements,
+	getMongoMeasurements,
 	Measurement,
 	MeasurementData,
 } from "@/services/api";
@@ -53,30 +53,79 @@ export default function ConditionDetailPage() {
 		try {
 			if (!conditionId) return;
 
-			// Load measurements for the condition with date filtering
-			const response = await getConditionMeasurements(
-				conditionId,
-				startDate || undefined,
-				endDate || undefined
+			let timeRange: string | undefined;
+
+			// Convert date range to time range if provided
+			if (startDate || endDate) {
+				const start = startDate
+					? new Date(startDate).getTime() / 1000
+					: 0;
+				const end = endDate
+					? new Date(endDate).getTime() / 1000
+					: Date.now() / 1000;
+				timeRange = `${start}-${end}`;
+			}
+
+			// Try to use condition and fault names for better filtering if available
+			const conditionName = condition?.name;
+			const faultName = fault?.fault_name;
+
+			// Load measurements for the condition directly from MongoDB
+			// Use name-based filtering exclusively, relying on condition_name and fault_name from DB
+			const response = await getMongoMeasurements(
+				deviceId, // deviceId
+				undefined, // faultId - not used, relying on fault_name
+				undefined, // conditionId - not used, relying on condition_name
+				undefined, // dataSeriesId
+				timeRange,
+				1000, // limit
+				0, // offset
+				true, // includeData
+				conditionName, // conditionName - primary filter using condition name from DB
+				faultName, // faultName - primary filter using fault name from DB
+				undefined // dataSeriesValue
 			);
+
 			if (response.success && response.data.length > 0) {
-				// Convert the response data to MeasurementData format
+				// Convert the MongoDB response to MeasurementData format
 				const measurementData: MeasurementData[] = response.data.map(
-					(payload: any, index: number) => ({
-						data_id: index, // Since we don't have real IDs from the payload
-						device_id: deviceId,
-						fault_id: faultId,
-						condition_id: conditionId,
-						data_payload: payload,
+					(item: any, index: number) => ({
+						data_id: item._id || index.toString(),
+						device_id: item.deviceId || deviceId,
+						fault_id: item.faultId || faultId,
+						condition_id: item.conditionId || conditionId,
+						data_payload: item.data || item.data_payload || {}, // Handle both 'data' and 'data_payload' fields
 						upload_type: "batch",
-						timestamp: new Date().toISOString(), // You might want to get real timestamps
+						timestamp: item.timestamp_unix
+							? new Date(item.timestamp_unix * 1000).toISOString()
+							: new Date(item.timestamp).toISOString(),
+						created_at: item.created_at
+							? new Date(item.created_at * 1000).toISOString()
+							: new Date().toISOString(),
+						updated_at: item.created_at
+							? new Date(item.created_at * 1000).toISOString()
+							: new Date().toISOString(),
 					})
 				);
 
 				setLiveDataBuffer(measurementData);
+				console.log("Processed measurement data:", measurementData);
+				console.log(
+					"Chart data keys available:",
+					Object.keys(getChartDataFromPayloads())
+				);
+			} else {
+				console.log(
+					"No measurements found for condition:",
+					conditionId,
+					"name:",
+					conditionName
+				);
+				setLiveDataBuffer([]);
 			}
 		} catch (error) {
 			console.error("Error loading measurements:", error);
+			setLiveDataBuffer([]);
 		}
 	};
 
@@ -94,23 +143,61 @@ export default function ConditionDetailPage() {
 
 		const pollLiveData = async () => {
 			try {
-				// Get the latest measurement data since last update
-				const response = await getLiveConditionMeasurements(
-					conditionId,
-					100, // Get last 100 measurements
-					lastUpdateTime || undefined
+				// Get condition and fault names for better filtering
+				const conditionName = condition?.name;
+				const faultName = fault?.fault_name;
+
+				// Get the latest measurement data from MongoDB
+				// Use name-based filtering exclusively, relying on condition_name and fault_name from DB
+				const response = await getMongoMeasurements(
+					deviceId, // deviceId
+					undefined, // faultId - not used, relying on fault_name
+					undefined, // conditionId - not used, relying on condition_name
+					undefined, // dataSeriesId
+					undefined, // timeRange - get latest data
+					100, // limit - get last 100 measurements
+					0, // offset
+					true, // includeData
+					conditionName, // conditionName - primary filter using condition name from DB
+					faultName, // faultName - primary filter using fault name from DB
+					undefined // dataSeriesValue
 				);
 
 				if (response.success && response.data.length > 0) {
+					// Convert MongoDB data to MeasurementData format
+					const convertedData: MeasurementData[] = response.data.map(
+						(item: any) => ({
+							data_id: item._id || "",
+							device_id: item.deviceId || deviceId,
+							fault_id: item.faultId || faultId,
+							condition_id: item.conditionId || conditionId,
+							data_payload: item.data || item.data_payload || {}, // Handle both 'data' and 'data_payload' fields
+							upload_type: "live",
+							timestamp: item.timestamp_unix
+								? new Date(
+										item.timestamp_unix * 1000
+								  ).toISOString()
+								: new Date(item.timestamp).toISOString(),
+							created_at: item.created_at
+								? new Date(item.created_at * 1000).toISOString()
+								: new Date().toISOString(),
+							updated_at: item.created_at
+								? new Date(item.created_at * 1000).toISOString()
+								: new Date().toISOString(),
+						})
+					);
+
 					// Sort by timestamp to ensure chronological order
-					const sortedData = response.data.sort(
+					const sortedData = convertedData.sort(
 						(a, b) =>
 							new Date(a.timestamp).getTime() -
 							new Date(b.timestamp).getTime()
 					);
 
 					// Update latest measurement
-					setLatestMeasurement(sortedData[sortedData.length - 1]);
+					if (sortedData.length > 0) {
+						setLatestMeasurement(sortedData[sortedData.length - 1]);
+					}
 
 					// Add new data to buffer, keeping only recent data (last 1000 points)
 					setLiveDataBuffer((prev) => {
@@ -125,9 +212,11 @@ export default function ConditionDetailPage() {
 					});
 
 					// Update last update time
-					setLastUpdateTime(
-						sortedData[sortedData.length - 1].timestamp
-					);
+					if (sortedData.length > 0) {
+						setLastUpdateTime(
+							sortedData[sortedData.length - 1].timestamp
+						);
+					}
 				}
 			} catch (error) {
 				console.error("Error polling live data:", error);
@@ -1060,6 +1149,42 @@ export default function ConditionDetailPage() {
 								<h4 className='text-lg font-medium text-gray-900 mb-4'>
 									🔍 Data Filters & Chart Controls
 								</h4>
+
+								{/* Filter Information */}
+								<div className='bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4'>
+									<h5 className='text-sm font-medium text-blue-800 mb-2'>
+										Active Filters
+									</h5>
+									<div className='text-sm text-blue-700 space-y-1'>
+										<div>
+											🏷️{" "}
+											<span className='font-medium'>
+												Condition:
+											</span>{" "}
+											{condition?.name || conditionId}
+										</div>
+										<div>
+											📋{" "}
+											<span className='font-medium'>
+												Fault:
+											</span>{" "}
+											{fault?.fault_name || faultId}
+										</div>
+										<div>
+											🖥️{" "}
+											<span className='font-medium'>
+												Device:
+											</span>{" "}
+											{device?.device_name || deviceId}
+										</div>
+										<div className='text-xs text-blue-600 mt-2'>
+											Filtering uses condition_name and
+											fault_name from database for
+											improved accuracy
+										</div>
+									</div>
+								</div>
+
 								<div className='flex items-center justify-between'>
 									<div className='flex items-center space-x-4'>
 										<div className='flex items-center space-x-2'>

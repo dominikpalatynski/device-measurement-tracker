@@ -20,8 +20,8 @@ import {
 	onlineModeApi,
 	conditionsApi,
 	getAllMeasurements,
-	getConditionMeasurements,
 	getLatestMeasurementData,
+	getMongoMeasurements,
 	Device,
 	Fault,
 	LiveFault,
@@ -29,6 +29,7 @@ import {
 	Condition,
 	Measurement,
 	MeasurementData,
+	MongoMeasurementData,
 } from "@/services/api";
 import { formatDate, formatDateShort, formatDuration } from "@/utils/dateUtils";
 
@@ -47,7 +48,9 @@ export default function FaultDetailPage() {
 	const [error, setError] = useState<string | null>(null);
 	// Live data chart functionality
 	const [liveData, setLiveData] = useState<Measurement[]>([]);
-	const [conditionsData, setConditionsData] = useState<MeasurementData[]>([]);
+	const [conditionsData, setConditionsData] = useState<
+		MongoMeasurementData[]
+	>([]);
 	const [autoRefresh, setAutoRefresh] = useState(false);
 	const [chartViewMode, setChartViewMode] = useState<"chart" | "stats">(
 		"chart"
@@ -125,15 +128,24 @@ export default function FaultDetailPage() {
 		};
 	}, []);
 	const loadLiveData = async () => {
-		if (!device) return;
+		if (!device || !fault) return;
 
 		try {
-			// Load latest measurement data for conditions visualization
-			const conditionsRes = await getLatestMeasurementData(
-				50,
-				device.device_id
+			// Load latest measurement data for this fault using name-based filtering
+			const conditionsRes = await getMongoMeasurements(
+				device.device_id,
+				undefined, // faultId - not used, relying on fault_name
+				undefined, // conditionId - not used, relying on conditionName
+				undefined, // dataSeriesId
+				undefined, // timeRange
+				50, // limit
+				0, // offset
+				true, // includeData
+				undefined, // conditionName - don't filter by specific condition
+				fault.fault_name, // faultName - primary filter using fault name from DB
+				undefined // dataSeriesValue
 			);
-			if (conditionsRes.success) {
+			if (conditionsRes.success && conditionsRes.data) {
 				setConditionsData(conditionsRes.data);
 				// Also update liveData for backward compatibility
 				setLiveData(conditionsRes.data as any);
@@ -1242,6 +1254,52 @@ export default function FaultDetailPage() {
 											))}
 										</div>
 									</div>{" "}
+									{/* Active Filters Indicator */}
+									{fault && (
+										<div className='bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4'>
+											<h4 className='text-lg font-medium text-blue-800 mb-2'>
+												Active Data Filters
+											</h4>
+											<div className='flex flex-wrap gap-2'>
+												<div className='bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm'>
+													<span className='font-medium'>
+														Device:
+													</span>{" "}
+													{device?.device_name ||
+														deviceId}
+												</div>
+												<div className='bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm'>
+													<span className='font-medium'>
+														Fault:
+													</span>{" "}
+													{fault.fault_name}
+												</div>
+												<div className='bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm'>
+													<span className='font-medium'>
+														Mode:
+													</span>{" "}
+													Name-based filtering
+												</div>
+												<div className='bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm'>
+													<span className='font-medium'>
+														Data:
+													</span>{" "}
+													Latest{" "}
+													{conditionsData.length}{" "}
+													measurements
+												</div>
+											</div>
+											<p className='text-blue-700 text-sm mt-2'>
+												Measurements are filtered by
+												fault name "
+												<strong>
+													{fault.fault_name}
+												</strong>
+												" using the improved filtering
+												system.
+											</p>
+										</div>
+									)}
 									{/* Chart View */}
 									{chartViewMode === "chart" && (
 										<div className='bg-gray-50 border border-gray-200 rounded-lg p-6'>

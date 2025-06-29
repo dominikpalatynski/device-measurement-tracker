@@ -13,6 +13,7 @@ import {
 	getLatestMeasurement,
 	getMeasurementStats,
 	getUnassignedMeasurements,
+	getMongoMeasurements,
 	Measurement,
 	MeasurementStats,
 	MeasurementData,
@@ -86,7 +87,7 @@ export default function DeviceDetailPage() {
 		setChannels(data);
 		setChannelsLoading(false);
 	};
-	// Fetch unassigned measurement data
+	// Fetch unassigned measurement data from MongoDB
 	const fetchUnassignedData = async (
 		useStartDate?: string,
 		useEndDate?: string
@@ -95,17 +96,64 @@ export default function DeviceDetailPage() {
 
 		setUnassignedDataLoading(true);
 		try {
-			const response = await getUnassignedMeasurements(
-				device.device_id,
-				100,
-				useStartDate || startDate || undefined,
-				useEndDate || endDate || undefined
+			let timeRange: string | undefined;
+
+			// Convert date range to time range if provided
+			const filterStartDate = useStartDate || startDate;
+			const filterEndDate = useEndDate || endDate;
+			if (filterStartDate || filterEndDate) {
+				const start = filterStartDate
+					? new Date(filterStartDate).getTime() / 1000
+					: 0;
+				const end = filterEndDate
+					? new Date(filterEndDate).getTime() / 1000
+					: Date.now() / 1000;
+				timeRange = `${start}-${end}`;
+			}
+
+			const response = await getMongoMeasurements(
+				device.device_id, // deviceId
+				undefined, // faultId - fetch unassigned data
+				undefined, // conditionId - fetch unassigned data
+				undefined, // dataSeriesId
+				timeRange,
+				1000, // limit
+				0, // offset
+				true // includeData
 			);
-			if (response.success) {
-				setUnassignedData(response.data);
+
+			if (response.success && response.data) {
+				// Convert MongoDB data to the format expected by the frontend
+				const convertedData: MeasurementData[] = response.data.map(
+					(item: any) => ({
+						data_id: item._id || "",
+						device_id: item.deviceId || device.device_id,
+						fault_id: item.faultId || null,
+						condition_id: item.conditionId || null,
+						timestamp: new Date(
+							item.timestamp * 1000
+						).toISOString(),
+						data_payload: item.data_payload || {},
+						upload_type: "batch",
+						created_at: new Date(
+							item.timestamp * 1000
+						).toISOString(),
+						updated_at: new Date(
+							item.timestamp * 1000
+						).toISOString(),
+					})
+				);
+				setUnassignedData(convertedData);
+			} else {
+				console.error(
+					"Error fetching data from MongoDB:",
+					response.error
+				);
+				setUnassignedData([]);
 			}
 		} catch (error) {
 			console.error("Error fetching unassigned data:", error);
+			setUnassignedData([]);
 		} finally {
 			setUnassignedDataLoading(false);
 		}

@@ -82,6 +82,7 @@ class MongoDBController extends Controller
      * - conditionId: Filter by condition ID
      * - dataSeriesId: Filter by data series ID
      * - conditionName: Filter by condition name
+     * - faultName: Filter by fault name
      * - dataSeriesValue: Filter by data series value
      * - startTime: Start time (timestamp or date string)
      * - endTime: End time (timestamp or date string)
@@ -118,6 +119,10 @@ class MongoDBController extends Controller
                 $filters['conditionName'] = $conditionName;
             }
             
+            if ($faultName = $request->get('faultName')) {
+                $filters['faultName'] = $faultName;
+            }
+            
             if ($dataSeriesValue = $request->get('dataSeriesValue')) {
                 $filters['dataSeriesValue'] = $dataSeriesValue;
             }
@@ -133,13 +138,6 @@ class MongoDBController extends Controller
             
             if ($timeRange = $request->get('timeRange')) {
                 $filters['timeRange'] = $timeRange;
-            }
-            
-            // Pagination and sorting
-            if ($limit = $request->get('limit')) {
-                $filters['limit'] = (int)$limit;
-            } else {
-                $filters['limit'] = 100; // Default limit
             }
             
             if ($sort = $request->get('sort')) {

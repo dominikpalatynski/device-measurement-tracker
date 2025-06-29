@@ -277,7 +277,9 @@ export async function getMeasurementStats(deviceUuid: string): Promise<Measureme
 export async function getConditionMeasurements(
   conditionId: string, 
   startDate?: string, 
-  endDate?: string
+  endDate?: string,
+  conditionName?: string,
+  faultName?: string
 ): Promise<{
   success: boolean;
   data: any[];
@@ -301,7 +303,10 @@ export async function getConditionMeasurements(
       timeRange,
       1000, // limit - get more data for charts
       0, // offset
-      true // includeData - include payload for charts
+      true, // includeData - include payload for charts
+      conditionName, // conditionName for filtering
+      faultName, // faultName for filtering
+      undefined // dataSeriesValue
     );
     
     if (response.success && response.data) {
@@ -332,7 +337,7 @@ export async function getConditionMeasurements(
 }
 
 /**
- * Get unassigned measurement data for a device (where condition_id is null)
+ * Get unassigned measurement data for a device from MongoDB (where condition_id is null)
  */
 export async function getUnassignedMeasurements(
   deviceUuid: string, 
@@ -340,16 +345,60 @@ export async function getUnassignedMeasurements(
   startDate?: string, 
   endDate?: string
 ): Promise<MeasurementDataResponse> {
-  let url = `device-measurement/unassigned?deviceUuid=${deviceUuid}&limit=${limit}`;
-  
-  if (startDate) {
-    url += `&startDate=${encodeURIComponent(startDate)}`;
+  try {
+    let timeRange: string | undefined;
+    
+    // Convert date range to time range if provided
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate).getTime() / 1000 : 0;
+      const end = endDate ? new Date(endDate).getTime() / 1000 : Date.now() / 1000;
+      timeRange = `${start}-${end}`;
+    }
+
+    const response = await getMongoMeasurements(
+      deviceUuid, // deviceId
+      undefined, // faultId - get unassigned data (null)
+      undefined, // conditionId - get unassigned data (null)
+      undefined, // dataSeriesId
+      timeRange,
+      limit, // limit
+      0, // offset
+      true // includeData
+    );
+
+    if (response.success && response.data) {
+      // Convert MongoDB data to MeasurementData format
+      const convertedData: MeasurementData[] = response.data.map((item: any) => ({
+        data_id: item._id || '',
+        device_id: item.deviceId || deviceUuid,
+        fault_id: item.faultId || null,
+        condition_id: item.conditionId || null,
+        timestamp: new Date(item.timestamp * 1000).toISOString(),
+        data_payload: item.data_payload || {},
+        upload_type: 'batch',
+        created_at: new Date(item.timestamp * 1000).toISOString(),
+        updated_at: new Date(item.timestamp * 1000).toISOString()
+      }));
+
+      return {
+        success: true,
+        data: convertedData,
+        error: response.error
+      };
+    } else {
+      return {
+        success: false,
+        data: [],
+        error: response.error || 'Failed to fetch unassigned data'
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : 'Failed to fetch unassigned data'
+    };
   }
-  if (endDate) {
-    url += `&endDate=${encodeURIComponent(endDate)}`;
-  }
-  
-  return fetchApi<MeasurementDataResponse>(url);
 }
 
 /**
@@ -1217,7 +1266,10 @@ export async function getMongoMeasurements(
   timeRange?: string,
   limit: number = 100,
   offset: number = 0,
-  includeData: boolean = false
+  includeData: boolean = false,
+  conditionName?: string,
+  faultName?: string,
+  dataSeriesValue?: string
 ): Promise<MongoMeasurementResponse> {
   const params = new URLSearchParams();
   
@@ -1225,12 +1277,15 @@ export async function getMongoMeasurements(
   if (faultId) params.append('faultId', faultId);
   if (conditionId) params.append('conditionId', conditionId);
   if (dataSeriesId) params.append('dataSeriesId', dataSeriesId);
+  if (conditionName) params.append('conditionName', conditionName);
+  if (faultName) params.append('faultName', faultName);
+  if (dataSeriesValue) params.append('dataSeriesValue', dataSeriesValue);
   if (timeRange) params.append('timeRange', timeRange);
   if (limit) params.append('limit', limit.toString());
   if (offset) params.append('offset', offset.toString());
   if (includeData) params.append('includeData', 'true');
   
-  const url = `mongo-data/fetch${params.toString() ? '?' + params.toString() : ''}`;
+  const url = `mongodb/measurements${params.toString() ? '?' + params.toString() : ''}`;
   return fetchApi<MongoMeasurementResponse>(url);
 }
 
@@ -1256,14 +1311,14 @@ export async function getMongoHierarchy(): Promise<{
   }>;
   error?: string;
 }> {
-  return fetchApi('mongo-data/hierarchy');
+  return fetchApi('mongodb/hierarchy');
 }
 
 /**
  * Get MongoDB statistics
  */
 export async function getMongoStats(): Promise<MongoStatsResponse> {
-  return fetchApi<MongoStatsResponse>('mongo-data/stats');
+  return fetchApi<MongoStatsResponse>('mongodb/stats');
 }
 
 /**
@@ -1276,7 +1331,150 @@ export async function testMongoConnection(): Promise<{
   database?: string;
   error?: string;
 }> {
-  return fetchApi('mongo-data/ping');
+  return fetchApi('mongodb/ping');
 }
 
-// ...existing code...
+/**
+ * Get measurement data by condition name and fault name (without requiring IDs)
+ */
+export async function getMeasurementsByNames(
+  conditionName?: string,
+  faultName?: string,
+  deviceId?: string,
+  startDate?: string,
+  endDate?: string,
+  dataSeriesValue?: string,
+  limit: number = 1000
+): Promise<{
+  success: boolean;
+  data: any[];
+  error?: string;
+}> {
+  try {
+    let timeRange: string | undefined;
+    
+    // Convert date range to time range if provided
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate).getTime() / 1000 : 0;
+      const end = endDate ? new Date(endDate).getTime() / 1000 : Date.now() / 1000;
+      timeRange = `${start}-${end}`;
+    }
+    
+    const response = await getMongoMeasurements(
+      deviceId, // deviceId
+      undefined, // faultId
+      undefined, // conditionId
+      undefined, // dataSeriesId
+      timeRange,
+      limit,
+      0, // offset
+      true, // includeData - include payload for charts
+      conditionName, // conditionName for filtering
+      faultName, // faultName for filtering
+      dataSeriesValue // dataSeriesValue
+    );
+    
+    if (response.success && response.data) {
+      // Convert MongoDB data to the format expected by the frontend
+      const convertedData = response.data.map((item: any) => {
+        return {
+          _id: item.id || item._id,
+          deviceId: item.deviceId,
+          timestamp: item.timestamp,
+          timestamp_unix: item.timestamp_unix || item.timestamp,
+          faultId: item.faultId,
+          conditionId: item.conditionId,
+          dataSeriesId: item.dataSeriesId,
+          data_payload: item.data_payload || {},
+          condition_name: conditionName,
+          fault_name: faultName
+        };
+      });
+      
+      return {
+        success: true,
+        data: convertedData,
+        error: response.error
+      };
+    } else {
+      return {
+        success: false,
+        data: [],
+        error: response.error || 'Failed to fetch data'
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Filter measurements by condition name and/or fault name
+ * This function provides a flexible way to filter measurement data using names instead of IDs
+ */
+export async function filterMeasurementsByNames(filters: {
+  conditionName?: string;
+  faultName?: string;
+  deviceId?: string;
+  dataSeriesValue?: string;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+}): Promise<{
+  success: boolean;
+  data: any[];
+  error?: string;
+  count: number;
+  filters: any;
+}> {
+  try {
+    let timeRange: string | undefined;
+    
+    // Convert date range to time range if provided
+    if (filters.startDate || filters.endDate) {
+      const start = filters.startDate ? new Date(filters.startDate).getTime() / 1000 : 0;
+      const end = filters.endDate ? new Date(filters.endDate).getTime() / 1000 : Date.now() / 1000;
+      timeRange = `${start}-${end}`;
+    }
+    
+    const response = await getMongoMeasurements(
+      filters.deviceId, // deviceId
+      undefined, // faultId
+      undefined, // conditionId
+      undefined, // dataSeriesId
+      timeRange,
+      filters.limit || 1000,
+      0, // offset
+      true, // includeData - include payload for charts
+      filters.conditionName, // conditionName for filtering
+      filters.faultName, // faultName for filtering
+      filters.dataSeriesValue // dataSeriesValue
+    );
+    
+    return {
+      success: response.success,
+      data: response.data || [],
+      error: response.error,
+      count: response.data?.length || 0,
+      filters: {
+        conditionName: filters.conditionName,
+        faultName: filters.faultName,
+        deviceId: filters.deviceId,
+        dataSeriesValue: filters.dataSeriesValue,
+        timeRange: timeRange
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : 'Unknown error',
+      count: 0,
+      filters: filters
+    };
+  }
+}

@@ -69,49 +69,6 @@ export default function Dashboard() {
 
 	return (
 		<PageLayout title='Dashboard'>
-			{/* API Status Banner */}
-			{apiStatus && (
-				<div
-					className={`mb-6 rounded-lg p-4 ${
-						apiStatus.success
-							? "bg-green-50 border border-green-200 text-green-800"
-							: "bg-red-50 border border-red-200 text-red-800"
-					}`}
-				>
-					<div className='flex items-center'>
-						<span className='text-2xl mr-3'>
-							{apiStatus.success ? "✅" : "❌"}
-						</span>
-						<div>
-							<div className='font-medium'>
-								API Status:{" "}
-								{apiStatus.success
-									? "Connected"
-									: "Disconnected"}
-							</div>
-							{apiStatus.message && (
-								<div className='text-sm opacity-90'>
-									{apiStatus.message}
-								</div>
-							)}
-							{apiStatus.time && (
-								<div className='text-sm opacity-75'>
-									Server time: {apiStatus.time}
-								</div>
-							)}
-						</div>
-						{!apiStatus.success && (
-							<button
-								onClick={loadDashboardData}
-								className='ml-auto px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm'
-							>
-								Retry
-							</button>
-						)}
-					</div>
-				</div>
-			)}
-
 			{error && (
 				<div className='mb-6 bg-red-50 border border-red-200 rounded-lg p-4'>
 					<div className='flex items-center'>
