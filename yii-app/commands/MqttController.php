@@ -7,6 +7,8 @@ use app\components\MqttComponent;
 use app\services\MeasurementService;
 use app\services\DeviceRegisterService;
 use app\models\VerificationToken;
+use app\services\RedisService;
+use app\services\RabbitMQService;
 class MqttController extends Controller
 {
     /**
@@ -18,12 +20,19 @@ class MqttController extends Controller
      * @var DeviceRegisterService
      */
     private $deviceRegisterService;
+
+    /**
+     * @var RabbitMQService
+     */
+    private $rabbitMQService;
     
     public function __construct($id, $module, $config = [])
     {
         // Create the measurement service
         $this->measurementService = new MeasurementService();
         $this->deviceRegisterService = new DeviceRegisterService();
+        $this->redisService = new RedisService();
+        $this->rabbitMQService = new RabbitMQService();
         parent::__construct($id, $module, $config);
     }
     
@@ -210,12 +219,13 @@ class MqttController extends Controller
     {
         try {
             $this->stdout("Processing real time data message...\n");
-            $result = $this->measurementService->processRealTimeDataMqttMessage($topic, $message);
-            if ($result) {
-                 $this->stdout("Successfully processed real time data from device ");
-             } else {
-                 $this->stderr("Failed to process device real time data\n");
-             }
+            // $result = $this->measurementService->processRealTimeDataMqttMessage($topic, $message);
+            $this->rabbitMQService->publishMqttMessage($topic, $message);
+            // if ($result) {
+            //     $this->stdout("Successfully processed real time data from device ");
+            // } else {
+            //     $this->stderr("Failed to process device real time data\n");
+            // }
         } catch (\Exception $e) {
             $this->stderr("Error processing device real time data: " . $e->getMessage() . "\n");
         }

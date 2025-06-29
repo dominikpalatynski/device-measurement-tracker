@@ -375,3 +375,84 @@
 1751123738: Outgoing messages are being dropped for client yii-mqtt-68510a7f16fde.
 1751123749: Client device_YTdzQYiThAuY disconnected.
 1751124057: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751124183: mosquitto version 2.0.21 terminating
+1751124183: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751132123: mosquitto version 2.0.21 starting
+1751132123: Config loaded from /mosquitto/config/mosquitto.conf.
+1751132123: Opening ipv4 listen socket on port 1883.
+1751132123: Opening ipv6 listen socket on port 1883.
+1751132123: Opening websockets listen socket on port 9001.
+1751132123: mosquitto version 2.0.21 running
+1751133924: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751135725: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751137526: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751139327: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751141128: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751142929: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751144730: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751146531: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751148332: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751150133: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751151934: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751153735: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751155536: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751157622: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751159634: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751161681: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751163482: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751165283: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751167153: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751168954: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751170755: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751172884: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751175328: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751177129: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751178930: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751181054: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751183469: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751185237: New connection from 172.18.0.1:63274 on port 1883.
+1751185237: New client connected from 172.18.0.1:63274 as yii-mqtt-6860f7558bbfd (p1, c0, k10).
+1751185252: New connection from 172.18.0.1:63782 on port 1883.
+1751185252: New client connected from 172.18.0.1:63782 as device_YTdzQYiThAuY (p2, c1, k60).
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684d2dbcd8477.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684d2ded78b66.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684d2e1fa24d3.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684d2ecea2ef4.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684e8f347765b.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684e9022499ca.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684e93016329e.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684e935923d64.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684e98f2bc484.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684e99d18d2da.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684e9a400fc7e.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684e9f2db10c1.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684ea0576f80e.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684ea086b7abd.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684ea096e6168.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684fda0ee5a19.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-684fdd8f141b8.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-685034c0b51ce.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-6851099b64748.
+1751185254: Outgoing messages are being dropped for client yii-mqtt-68510a7f16fde.
+1751185256: Outgoing messages are being dropped for client yii-mqtt-68513b21d05cf.
+1751185256: Outgoing messages are being dropped for client yii-mqtt-68590552d4b5f.
+1751185259: Outgoing messages are being dropped for client yii-mqtt-685e4ef58b236.
+1751185259: Outgoing messages are being dropped for client yii-mqtt-685fb49b238c6.
+1751185259: Outgoing messages are being dropped for client yii-mqtt-685fb54e9f117.
+1751185260: Outgoing messages are being dropped for client yii-mqtt-685fb5ad3a8e9.
+1751185261: Client device_YTdzQYiThAuY disconnected.
+1751185270: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751185451: New connection from 172.18.0.1:60568 on port 1883.
+1751185451: New client connected from 172.18.0.1:60568 as device_YTdzQYiThAuY (p2, c1, k60).
+1751185454: Outgoing messages are being dropped for client yii-mqtt-685fb8ca2d1ff.
+1751185454: Outgoing messages are being dropped for client yii-mqtt-685fbe2b7a876.
+1751185455: Outgoing messages are being dropped for client yii-mqtt-685fbe3f2dac7.
+1751185455: Outgoing messages are being dropped for client yii-mqtt-685fc300ab2fd.
+1751185455: Outgoing messages are being dropped for client yii-mqtt-685fc32f9aacb.
+1751185456: Outgoing messages are being dropped for client yii-mqtt-685fc357e3c8b.
+1751185456: Outgoing messages are being dropped for client yii-mqtt-685fc60da52cb.
+1751185456: Outgoing messages are being dropped for client yii-mqtt-685fc71a17d21.
+1751185474: Client device_YTdzQYiThAuY disconnected.
+1751185668: New connection from 172.18.0.1:63680 on port 1883.
+1751185668: New client connected from 172.18.0.1:63680 as device_YTdzQYiThAuY (p2, c1, k60).
+1751185681: Client device_YTdzQYiThAuY disconnected.
