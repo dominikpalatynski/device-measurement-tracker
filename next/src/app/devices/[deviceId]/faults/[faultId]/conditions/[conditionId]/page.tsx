@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
+import DeviceProtectedRoute from "@/components/DeviceProtectedRoute";
 import {
 	deviceApi,
 	faultApi,
@@ -462,280 +463,296 @@ export default function ConditionDetailPage() {
 
 	if (loading) {
 		return (
-			<div className='flex items-center justify-center min-h-screen'>
-				<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-			</div>
+			<DeviceProtectedRoute deviceId={deviceId}>
+				<div className='flex items-center justify-center min-h-screen'>
+					<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+				</div>
+			</DeviceProtectedRoute>
 		);
 	}
 
 	if (error || !device || !fault || !condition) {
 		return (
-			<PageLayout
-				title='Condition Details'
-				breadcrumbs={[
-					{ label: "Home", href: "/" },
-					{ label: "Devices", href: "/devices" },
-					{
-						label: device?.device_name || "Device",
-						href: `/devices/${deviceId}`,
-					},
-					{
-						label: fault?.fault_name || fault?.fault_id || "Fault",
-						href: `/devices/${deviceId}/faults/${faultId}`,
-					},
-					{
-						label: "Condition",
-						href: `/devices/${deviceId}/faults/${faultId}/condition/${conditionId}`,
-					},
-				]}
-			>
-				<div className='bg-red-50 border border-red-200 rounded-lg p-6'>
-					<h2 className='text-lg font-medium text-red-800 mb-2'>
-						Error
-					</h2>
-					<p className='text-red-700'>
-						{error || "Condition not found"}
-					</p>
-					<Link
-						href={`/devices/${deviceId}/faults/${faultId}`}
-						className='mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
-					>
-						← Back to Fault
-					</Link>
-				</div>
-			</PageLayout>
+			<DeviceProtectedRoute deviceId={deviceId}>
+				<PageLayout
+					title='Condition Details'
+					breadcrumbs={[
+						{ label: "Home", href: "/" },
+						{ label: "Devices", href: "/devices" },
+						{
+							label: device?.device_name || "Device",
+							href: `/devices/${deviceId}`,
+						},
+						{
+							label:
+								fault?.fault_name || fault?.fault_id || "Fault",
+							href: `/devices/${deviceId}/faults/${faultId}`,
+						},
+						{
+							label: "Condition",
+							href: `/devices/${deviceId}/faults/${faultId}/condition/${conditionId}`,
+						},
+					]}
+				>
+					<div className='bg-red-50 border border-red-200 rounded-lg p-6'>
+						<h2 className='text-lg font-medium text-red-800 mb-2'>
+							Error
+						</h2>
+						<p className='text-red-700'>
+							{error || "Condition not found"}
+						</p>
+						<Link
+							href={`/devices/${deviceId}/faults/${faultId}`}
+							className='mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700'
+						>
+							← Back to Fault
+						</Link>
+					</div>
+				</PageLayout>
+			</DeviceProtectedRoute>
 		);
 	}
 
 	return (
-		<PageLayout
-			title={condition.name}
-			breadcrumbs={[
-				{ label: "Home", href: "/" },
-				{ label: "Devices", href: "/devices" },
-				{ label: device.device_name, href: `/devices/${deviceId}` },
-				{
-					label: fault.fault_name || fault.fault_id,
-					href: `/devices/${deviceId}/faults/${faultId}`,
-				},
-				{
-					label: condition.name,
-					href: `/devices/${deviceId}/faults/${faultId}/condition/${conditionId}`,
-				},
-			]}
-		>
-			<div className='space-y-6'>
-				{/* Condition Header */}
-				<div className='bg-white p-6 rounded-lg border border-gray-200'>
-					<div className='flex justify-between items-start mb-4'>
-						<div>
-							{" "}
-							<h2 className='text-2xl font-bold text-gray-900 mb-2'>
-								{condition.name}
-							</h2>
-							<p className='text-gray-600 mb-4'>
-								{condition.description ||
-									"No description provided"}
-							</p>
-							<div className='flex space-x-4 text-sm text-gray-500'>
-								<span>Device: {device.device_name}</span>{" "}
-								<span>
-									Fault: {fault.fault_name || fault.fault_id}
-								</span>
-								<span>
-									Started:{" "}
-									{new Date(
-										condition.start_time
-									).toLocaleString()}
-								</span>
-								<span>
-									Duration:{" "}
-									{Math.floor(condition.duration / 60)}m{" "}
-									{condition.duration % 60}s
-								</span>
-							</div>
-						</div>
-
-						<div className='flex space-x-2'>
-							{" "}
-							<label className='flex items-center space-x-2'>
-								<input
-									type='checkbox'
-									checked={autoRefresh}
-									onChange={(e) =>
-										setAutoRefresh(e.target.checked)
-									}
-									className='rounded'
-								/>
-								<span className='text-sm'>Auto-refresh</span>
-							</label>
-						</div>
-					</div>
-				</div>
-
-				{/* Data View Controls */}
-				<div className='bg-white p-6 rounded-lg border border-gray-200'>
-					<div className='flex justify-between items-center mb-4'>
-						{" "}
-						<h3 className='text-lg font-medium text-gray-900'>
-							Measurement Data
-						</h3>{" "}
-						<div className='flex space-x-2'>
-							{["live", "charts"].map((mode) => (
-								<button
-									key={mode}
-									onClick={() =>
-										setViewMode(mode as typeof viewMode)
-									}
-									className={`px-3 py-1 rounded text-sm ${
-										viewMode === mode
-											? "bg-blue-600 text-white"
-											: "bg-gray-200 text-gray-700 hover:bg-gray-300"
-									}`}
-								>
-									{mode === "live"
-										? "Live Data"
-										: "Interactive Charts"}
-								</button>
-							))}{" "}
-						</div>{" "}
-					</div>
-					{/* Data Display */}
-					{viewMode === "live" && (
-						<div className='space-y-6'>
-							{/* Live Data Header */}
-							<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-								<div className='flex items-center justify-between'>
-									<div>
-										{" "}
-										<h4 className='text-lg font-medium text-red-800 mb-2'>
-											Live Data Stream
-										</h4>
-										<p className='text-red-700 text-sm'>
-											Real-time measurement data from the
-											measurement_data table. Updates
-											every 5 seconds.
-										</p>
-									</div>
-									<div className='text-right'>
-										<div className='text-sm text-red-600'>
-											<div>
-												{" "}
-												Status:{" "}
-												{liveMode
-													? "Active"
-													: "Inactive"}
-											</div>
-											<div>
-												Buffer: {liveDataBuffer.length}{" "}
-												measurements
-											</div>
-											{lastUpdateTime && (
-												<div>
-													Last Update:{" "}
-													{new Date(
-														lastUpdateTime
-													).toLocaleTimeString()}
-												</div>
-											)}
-										</div>
-									</div>
+		<DeviceProtectedRoute deviceId={deviceId}>
+			<PageLayout
+				title={condition.name}
+				breadcrumbs={[
+					{ label: "Home", href: "/" },
+					{ label: "Devices", href: "/devices" },
+					{ label: device.device_name, href: `/devices/${deviceId}` },
+					{
+						label: fault.fault_name || fault.fault_id,
+						href: `/devices/${deviceId}/faults/${faultId}`,
+					},
+					{
+						label: condition.name,
+						href: `/devices/${deviceId}/faults/${faultId}/condition/${conditionId}`,
+					},
+				]}
+			>
+				<div className='space-y-6'>
+					{/* Condition Header */}
+					<div className='bg-white p-6 rounded-lg border border-gray-200'>
+						<div className='flex justify-between items-start mb-4'>
+							<div>
+								{" "}
+								<h2 className='text-2xl font-bold text-gray-900 mb-2'>
+									{condition.name}
+								</h2>
+								<p className='text-gray-600 mb-4'>
+									{condition.description ||
+										"No description provided"}
+								</p>
+								<div className='flex space-x-4 text-sm text-gray-500'>
+									<span>Device: {device.device_name}</span>{" "}
+									<span>
+										Fault:{" "}
+										{fault.fault_name || fault.fault_id}
+									</span>
+									<span>
+										Started:{" "}
+										{new Date(
+											condition.start_time
+										).toLocaleString()}
+									</span>
+									<span>
+										Duration:{" "}
+										{Math.floor(condition.duration / 60)}m{" "}
+										{condition.duration % 60}s
+									</span>
 								</div>
 							</div>
 
-							{/* Latest Measurement Display */}
-							{latestMeasurement && (
-								<div className='bg-white border border-gray-200 rounded-lg p-6'>
-									<h5 className='text-lg font-medium text-gray-900 mb-4'>
-										⏱️ Latest Measurement
-									</h5>
-									<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+							<div className='flex space-x-2'>
+								{" "}
+								<label className='flex items-center space-x-2'>
+									<input
+										type='checkbox'
+										checked={autoRefresh}
+										onChange={(e) =>
+											setAutoRefresh(e.target.checked)
+										}
+										className='rounded'
+									/>
+									<span className='text-sm'>
+										Auto-refresh
+									</span>
+								</label>
+							</div>
+						</div>
+					</div>
+
+					{/* Data View Controls */}
+					<div className='bg-white p-6 rounded-lg border border-gray-200'>
+						<div className='flex justify-between items-center mb-4'>
+							{" "}
+							<h3 className='text-lg font-medium text-gray-900'>
+								Measurement Data
+							</h3>{" "}
+							<div className='flex space-x-2'>
+								{["live", "charts"].map((mode) => (
+									<button
+										key={mode}
+										onClick={() =>
+											setViewMode(mode as typeof viewMode)
+										}
+										className={`px-3 py-1 rounded text-sm ${
+											viewMode === mode
+												? "bg-blue-600 text-white"
+												: "bg-gray-200 text-gray-700 hover:bg-gray-300"
+										}`}
+									>
+										{mode === "live"
+											? "Live Data"
+											: "Interactive Charts"}
+									</button>
+								))}{" "}
+							</div>{" "}
+						</div>
+						{/* Data Display */}
+						{viewMode === "live" && (
+							<div className='space-y-6'>
+								{/* Live Data Header */}
+								<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
+									<div className='flex items-center justify-between'>
 										<div>
-											<div className='text-sm text-gray-600 mb-2'>
-												<strong>Data ID:</strong>{" "}
-												{latestMeasurement.data_id}
-											</div>
-											<div className='text-sm text-gray-600 mb-2'>
-												<strong>Device:</strong>{" "}
-												{latestMeasurement.device_id}
-											</div>
-											<div className='text-sm text-gray-600 mb-2'>
-												<strong>Timestamp:</strong>{" "}
-												{new Date(
-													latestMeasurement.timestamp
-												).toLocaleString()}
-											</div>
+											{" "}
+											<h4 className='text-lg font-medium text-red-800 mb-2'>
+												Live Data Stream
+											</h4>
+											<p className='text-red-700 text-sm'>
+												Real-time measurement data from
+												the measurement_data table.
+												Updates every 5 seconds.
+											</p>
 										</div>
-										<div>
-											<div className='text-sm text-gray-600 mb-2'>
-												<strong>
-													Data Payload Keys:
-												</strong>
-											</div>
-											{typeof latestMeasurement.data_payload ===
-												"object" &&
-												latestMeasurement.data_payload && (
-													<div className='flex flex-wrap gap-2'>
-														{Object.keys(
-															latestMeasurement.data_payload
-														).map((key) => (
-															<span
-																key={key}
-																className='px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs'
-															>
-																{key}:{" "}
-																{Array.isArray(
-																	latestMeasurement
-																		.data_payload[
-																		key
-																	]
-																)
-																	? `${latestMeasurement.data_payload[key].length} values`
-																	: typeof latestMeasurement
-																			.data_payload[
-																			key
-																	  ]}
-															</span>
-														))}
+										<div className='text-right'>
+											<div className='text-sm text-red-600'>
+												<div>
+													{" "}
+													Status:{" "}
+													{liveMode
+														? "Active"
+														: "Inactive"}
+												</div>
+												<div>
+													Buffer:{" "}
+													{liveDataBuffer.length}{" "}
+													measurements
+												</div>
+												{lastUpdateTime && (
+													<div>
+														Last Update:{" "}
+														{new Date(
+															lastUpdateTime
+														).toLocaleTimeString()}
 													</div>
 												)}
+											</div>
 										</div>
-									</div>{" "}
+									</div>
 								</div>
-							)}
 
-							{/* Live Data Stream */}
-							<div className='bg-white border border-gray-200 rounded-lg p-6'>
-								<h5 className='text-lg font-medium text-gray-900 mb-4'>
-									📊 Live Data Stream ({liveDataBuffer.length}{" "}
-									measurements)
-								</h5>
-
-								{liveDataBuffer.length > 0 ? (
-									<div className='space-y-4'>
-										{/* Data Parameters Overview */}
-										<div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
-											{(() => {
-												const allKeys =
-													new Set<string>();
-												liveDataBuffer.forEach(
-													(measurement) => {
-														if (
-															typeof measurement.data_payload ===
-																"object" &&
-															measurement.data_payload
-														) {
-															Object.keys(
-																measurement.data_payload
-															).forEach((key) =>
-																allKeys.add(key)
-															);
-														}
+								{/* Latest Measurement Display */}
+								{latestMeasurement && (
+									<div className='bg-white border border-gray-200 rounded-lg p-6'>
+										<h5 className='text-lg font-medium text-gray-900 mb-4'>
+											⏱️ Latest Measurement
+										</h5>
+										<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+											<div>
+												<div className='text-sm text-gray-600 mb-2'>
+													<strong>Data ID:</strong>{" "}
+													{latestMeasurement.data_id}
+												</div>
+												<div className='text-sm text-gray-600 mb-2'>
+													<strong>Device:</strong>{" "}
+													{
+														latestMeasurement.device_id
 													}
-												);
+												</div>
+												<div className='text-sm text-gray-600 mb-2'>
+													<strong>Timestamp:</strong>{" "}
+													{new Date(
+														latestMeasurement.timestamp
+													).toLocaleString()}
+												</div>
+											</div>
+											<div>
+												<div className='text-sm text-gray-600 mb-2'>
+													<strong>
+														Data Payload Keys:
+													</strong>
+												</div>
+												{typeof latestMeasurement.data_payload ===
+													"object" &&
+													latestMeasurement.data_payload && (
+														<div className='flex flex-wrap gap-2'>
+															{Object.keys(
+																latestMeasurement.data_payload
+															).map((key) => (
+																<span
+																	key={key}
+																	className='px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs'
+																>
+																	{key}:{" "}
+																	{Array.isArray(
+																		latestMeasurement
+																			.data_payload[
+																			key
+																		]
+																	)
+																		? `${latestMeasurement.data_payload[key].length} values`
+																		: typeof latestMeasurement
+																				.data_payload[
+																				key
+																		  ]}
+																</span>
+															))}
+														</div>
+													)}
+											</div>
+										</div>{" "}
+									</div>
+								)}
 
-												return Array.from(allKeys).map(
-													(key) => (
+								{/* Live Data Stream */}
+								<div className='bg-white border border-gray-200 rounded-lg p-6'>
+									<h5 className='text-lg font-medium text-gray-900 mb-4'>
+										📊 Live Data Stream (
+										{liveDataBuffer.length} measurements)
+									</h5>
+
+									{liveDataBuffer.length > 0 ? (
+										<div className='space-y-4'>
+											{/* Data Parameters Overview */}
+											<div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'>
+												{(() => {
+													const allKeys =
+														new Set<string>();
+													liveDataBuffer.forEach(
+														(measurement) => {
+															if (
+																typeof measurement.data_payload ===
+																	"object" &&
+																measurement.data_payload
+															) {
+																Object.keys(
+																	measurement.data_payload
+																).forEach(
+																	(key) =>
+																		allKeys.add(
+																			key
+																		)
+																);
+															}
+														}
+													);
+
+													return Array.from(
+														allKeys
+													).map((key) => (
 														<div
 															key={key}
 															className='bg-gray-50 p-3 rounded border'
@@ -767,88 +784,111 @@ export default function ConditionDetailPage() {
 																})()}
 															</div>
 														</div>
-													)
-												);
-											})()}{" "}
-										</div>
+													));
+												})()}{" "}
+											</div>
 
-										{/* Live Data Chart */}
-										<div className='bg-white border border-gray-200 rounded-lg p-6 mb-6'>
-											<h5 className='text-lg font-medium text-gray-900 mb-4'>
-												📈 Live Data Chart
-											</h5>
-											{(() => {
-												// Prepare chart data from liveDataBuffer
-												if (
-													liveDataBuffer.length === 0
-												) {
-													return (
-														<div className='text-center py-8 text-gray-500'>
-															No data available
-															for chart
-														</div>
-													);
-												}
-
-												// Extract all numeric data from payloads
-												const chartData: Record<
-													string,
-													Array<{
-														timestamp: string;
-														value: number;
-														timestampFormatted: string;
-													}>
-												> = {};
-
-												// Collect all possible keys
-												const allKeys =
-													new Set<string>();
-												liveDataBuffer.forEach(
-													(measurement) => {
-														if (
-															typeof measurement.data_payload ===
-																"object" &&
-															measurement.data_payload
-														) {
-															Object.keys(
-																measurement.data_payload
-															).forEach((key) =>
-																allKeys.add(key)
-															);
-														}
+											{/* Live Data Chart */}
+											<div className='bg-white border border-gray-200 rounded-lg p-6 mb-6'>
+												<h5 className='text-lg font-medium text-gray-900 mb-4'>
+													📈 Live Data Chart
+												</h5>
+												{(() => {
+													// Prepare chart data from liveDataBuffer
+													if (
+														liveDataBuffer.length ===
+														0
+													) {
+														return (
+															<div className='text-center py-8 text-gray-500'>
+																No data
+																available for
+																chart
+															</div>
+														);
 													}
-												);
 
-												// Process data for each key
-												allKeys.forEach((key) => {
-													chartData[key] = [];
+													// Extract all numeric data from payloads
+													const chartData: Record<
+														string,
+														Array<{
+															timestamp: string;
+															value: number;
+															timestampFormatted: string;
+														}>
+													> = {};
+
+													// Collect all possible keys
+													const allKeys =
+														new Set<string>();
 													liveDataBuffer.forEach(
 														(measurement) => {
 															if (
-																measurement.data_payload &&
-																measurement
-																	.data_payload[
-																	key
-																] !== undefined
+																typeof measurement.data_payload ===
+																	"object" &&
+																measurement.data_payload
 															) {
-																const value =
+																Object.keys(
+																	measurement.data_payload
+																).forEach(
+																	(key) =>
+																		allKeys.add(
+																			key
+																		)
+																);
+															}
+														}
+													);
+
+													// Process data for each key
+													allKeys.forEach((key) => {
+														chartData[key] = [];
+														liveDataBuffer.forEach(
+															(measurement) => {
+																if (
+																	measurement.data_payload &&
 																	measurement
 																		.data_payload[
 																		key
-																	];
-																if (
-																	Array.isArray(
-																		value
-																	)
+																	] !==
+																		undefined
 																) {
-																	// For arrays, take the first value or average
-																	const numericValue =
-																		value.length >
-																		0
-																			? value[0]
-																			: 0;
+																	const value =
+																		measurement
+																			.data_payload[
+																			key
+																		];
 																	if (
-																		typeof numericValue ===
+																		Array.isArray(
+																			value
+																		)
+																	) {
+																		// For arrays, take the first value or average
+																		const numericValue =
+																			value.length >
+																			0
+																				? value[0]
+																				: 0;
+																		if (
+																			typeof numericValue ===
+																			"number"
+																		) {
+																			chartData[
+																				key
+																			].push(
+																				{
+																					timestamp:
+																						measurement.timestamp,
+																					value: numericValue,
+																					timestampFormatted:
+																						new Date(
+																							measurement.timestamp
+																						).toLocaleTimeString(),
+																				}
+																			);
+																		}
+																	} else if (
+																		typeof value ===
 																		"number"
 																	) {
 																		chartData[
@@ -856,608 +896,634 @@ export default function ConditionDetailPage() {
 																		].push({
 																			timestamp:
 																				measurement.timestamp,
-																			value: numericValue,
+																			value: value,
 																			timestampFormatted:
 																				new Date(
 																					measurement.timestamp
 																				).toLocaleTimeString(),
 																		});
 																	}
-																} else if (
-																	typeof value ===
-																	"number"
-																) {
-																	chartData[
-																		key
-																	].push({
-																		timestamp:
-																			measurement.timestamp,
-																		value: value,
-																		timestampFormatted:
-																			new Date(
-																				measurement.timestamp
-																			).toLocaleTimeString(),
-																	});
 																}
 															}
-														}
-													);
-												});
+														);
+													});
 
-												// Get the first key with data for display
-												const firstKeyWithData =
-													Object.keys(chartData).find(
-														(key) =>
-															chartData[key]
-																.length > 0
-													);
+													// Get the first key with data for display
+													const firstKeyWithData =
+														Object.keys(
+															chartData
+														).find(
+															(key) =>
+																chartData[key]
+																	.length > 0
+														);
 
-												if (!firstKeyWithData) {
+													if (!firstKeyWithData) {
+														return (
+															<div className='text-center py-8 text-gray-500'>
+																No numeric data
+																available for
+																charting
+															</div>
+														);
+													}
+
 													return (
-														<div className='text-center py-8 text-gray-500'>
-															No numeric data
-															available for
-															charting
+														<div className='space-y-4'>
+															{/* Chart for first data parameter */}
+															<AdvancedZoomChart
+																data={chartData[
+																	firstKeyWithData
+																].map(
+																	(
+																		item,
+																		index
+																	) => ({
+																		...item,
+																		timestamp:
+																			Date.parse(
+																				item.timestamp
+																			) ||
+																			index,
+																		index: index,
+																	})
+																)}
+																dataKey='value'
+																xAxisKey='timestamp'
+																title={`${firstKeyWithData} Analysis`}
+																height={300}
+															/>
+
+															{/* Chart info */}
+															<div className='flex justify-between items-center text-sm text-gray-600'>
+																<span>
+																	Showing:{" "}
+																	{
+																		firstKeyWithData
+																	}{" "}
+																	(
+																	{
+																		chartData[
+																			firstKeyWithData
+																		].length
+																	}{" "}
+																	data points)
+																</span>
+																<span>
+																	Total
+																	parameters
+																	available:{" "}
+																	{
+																		Object.keys(
+																			chartData
+																		).length
+																	}
+																</span>
+															</div>
+
+															{/* Additional charts for other parameters */}
+															{Object.keys(
+																chartData
+															)
+																.slice(1, 3)
+																.map((key) => (
+																	<div
+																		key={
+																			key
+																		}
+																		className='mt-6'
+																	>
+																		<h6 className='text-md font-medium text-gray-800 mb-2'>
+																			{
+																				key
+																			}{" "}
+																			Parameter
+																		</h6>
+																		<AdvancedZoomChart
+																			data={chartData[
+																				key
+																			].map(
+																				(
+																					item,
+																					index
+																				) => ({
+																					...item,
+																					timestamp:
+																						Date.parse(
+																							item.timestamp
+																						) ||
+																						index,
+																					index: index,
+																				})
+																			)}
+																			dataKey='value'
+																			xAxisKey='timestamp'
+																			title={`${key} Analysis`}
+																			height={
+																				200
+																			}
+																			color='#10B981'
+																		/>
+																	</div>
+																))}
 														</div>
 													);
-												}
+												})()}
+											</div>
 
-												return (
-													<div className='space-y-4'>
-														{/* Chart for first data parameter */}
-														<AdvancedZoomChart
-															data={chartData[
-																firstKeyWithData
-															].map(
+											{/* Recent Measurements Table */}
+											<div className='overflow-x-auto'>
+												<table className='min-w-full divide-y divide-gray-200'>
+													<thead className='bg-gray-50'>
+														<tr>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Data ID
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Timestamp
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Data Keys
+															</th>
+															<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Data Summary
+															</th>
+														</tr>
+													</thead>
+													<tbody className='bg-white divide-y divide-gray-200'>
+														{liveDataBuffer
+															.slice(-20)
+															.reverse()
+															.map(
 																(
-																	item,
-																	index
-																) => ({
-																	...item,
-																	timestamp:
-																		Date.parse(
-																			item.timestamp
-																		) ||
-																		index,
-																	index: index,
-																})
-															)}
-															dataKey='value'
-															xAxisKey='timestamp'
-															title={`${firstKeyWithData} Analysis`}
-															height={300}
-														/>
-
-														{/* Chart info */}
-														<div className='flex justify-between items-center text-sm text-gray-600'>
-															<span>
-																Showing:{" "}
-																{
-																	firstKeyWithData
-																}{" "}
-																(
-																{
-																	chartData[
-																		firstKeyWithData
-																	].length
-																}{" "}
-																data points)
-															</span>
-															<span>
-																Total parameters
-																available:{" "}
-																{
-																	Object.keys(
-																		chartData
-																	).length
-																}
-															</span>
-														</div>
-
-														{/* Additional charts for other parameters */}
-														{Object.keys(chartData)
-															.slice(1, 3)
-															.map((key) => (
-																<div
-																	key={key}
-																	className='mt-6'
-																>
-																	<h6 className='text-md font-medium text-gray-800 mb-2'>
-																		{key}{" "}
-																		Parameter
-																	</h6>
-																	<AdvancedZoomChart
-																		data={chartData[
-																			key
-																		].map(
-																			(
-																				item,
-																				index
-																			) => ({
-																				...item,
-																				timestamp:
-																					Date.parse(
-																						item.timestamp
-																					) ||
-																					index,
-																				index: index,
-																			})
-																		)}
-																		dataKey='value'
-																		xAxisKey='timestamp'
-																		title={`${key} Analysis`}
-																		height={
-																			200
+																	measurement
+																) => (
+																	<tr
+																		key={
+																			measurement.data_id
 																		}
-																		color='#10B981'
-																	/>
-																</div>
-															))}
-													</div>
-												);
-											})()}
-										</div>
+																		className={
+																			measurement.data_id ===
+																			latestMeasurement?.data_id
+																				? "bg-green-50"
+																				: ""
+																		}
+																	>
+																		<td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+																			{
+																				measurement.data_id
+																			}
+																		</td>
+																		<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+																			{new Date(
+																				measurement.timestamp
+																			).toLocaleTimeString()}
+																		</td>
+																		<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+																			{typeof measurement.data_payload ===
+																				"object" &&
+																			measurement.data_payload
+																				? Object.keys(
+																						measurement.data_payload
+																				  ).join(
+																						", "
+																				  )
+																				: "No data"}
+																		</td>
+																		<td className='px-6 py-4 text-sm text-gray-500'>
+																			{typeof measurement.data_payload ===
+																				"object" &&
+																				measurement.data_payload && (
+																					<div className='max-w-xs truncate'>
+																						{Object.entries(
+																							measurement.data_payload
+																						).map(
+																							([
+																								key,
+																								value,
+																							]) => (
+																								<span
+																									key={
+																										key
+																									}
+																									className='inline-block mr-2'
+																								>
+																									{
+																										key
+																									}
 
-										{/* Recent Measurements Table */}
-										<div className='overflow-x-auto'>
-											<table className='min-w-full divide-y divide-gray-200'>
-												<thead className='bg-gray-50'>
-													<tr>
-														<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-															Data ID
-														</th>
-														<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-															Timestamp
-														</th>
-														<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-															Data Keys
-														</th>
-														<th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-															Data Summary
-														</th>
-													</tr>
-												</thead>
-												<tbody className='bg-white divide-y divide-gray-200'>
-													{liveDataBuffer
-														.slice(-20)
-														.reverse()
-														.map((measurement) => (
-															<tr
-																key={
-																	measurement.data_id
-																}
-																className={
-																	measurement.data_id ===
-																	latestMeasurement?.data_id
-																		? "bg-green-50"
-																		: ""
-																}
-															>
-																<td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-																	{
-																		measurement.data_id
-																	}
-																</td>
-																<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-																	{new Date(
-																		measurement.timestamp
-																	).toLocaleTimeString()}
-																</td>
-																<td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-																	{typeof measurement.data_payload ===
-																		"object" &&
-																	measurement.data_payload
-																		? Object.keys(
-																				measurement.data_payload
-																		  ).join(
-																				", "
-																		  )
-																		: "No data"}
-																</td>
-																<td className='px-6 py-4 text-sm text-gray-500'>
-																	{typeof measurement.data_payload ===
-																		"object" &&
-																		measurement.data_payload && (
-																			<div className='max-w-xs truncate'>
-																				{Object.entries(
-																					measurement.data_payload
-																				).map(
-																					([
-																						key,
-																						value,
-																					]) => (
-																						<span
-																							key={
-																								key
-																							}
-																							className='inline-block mr-2'
-																						>
-																							{
-																								key
-																							}
-
-																							:{" "}
-																							{Array.isArray(
-																								value
-																							)
-																								? `[${value.length}]`
-																								: String(
+																									:{" "}
+																									{Array.isArray(
 																										value
-																								  ).substring(
-																										0,
-																										10
-																								  )}
-																						</span>
-																					)
+																									)
+																										? `[${value.length}]`
+																										: String(
+																												value
+																										  ).substring(
+																												0,
+																												10
+																										  )}
+																								</span>
+																							)
+																						)}
+																					</div>
 																				)}
-																			</div>
-																		)}
-																</td>
-															</tr>
-														))}
-												</tbody>
-											</table>
+																		</td>
+																	</tr>
+																)
+															)}
+													</tbody>
+												</table>
+											</div>
+										</div>
+									) : (
+										<div className='text-center py-8 text-gray-500'>
+											No live data available. Waiting for
+											measurements...
+										</div>
+									)}
+								</div>
+							</div>
+						)}{" "}
+						{viewMode === "charts" && (
+							<div className='space-y-6'>
+								<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
+									<h4 className='text-lg font-medium text-blue-800 mb-2'>
+										📊 Interactive Data Charts
+									</h4>
+									<p className='text-blue-700 text-sm mb-4'>
+										Interactive charts generated from data
+										payload objects. Each key in the payload
+										becomes a separate chart.
+									</p>{" "}
+									<div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm'>
+										<div>
+											<span className='font-medium'>
+												Available Parameters:
+											</span>{" "}
+											{chartKeys.length}
+										</div>
+										<div>
+											<span className='font-medium'>
+												Total Data Points:
+											</span>{" "}
+											{Object.values(chartData).reduce(
+												(sum, data) =>
+													sum + data.length,
+												0
+											)}
+										</div>
+										<div>
+											<span className='font-medium'>
+												Source:
+											</span>{" "}
+											data_payload fields
 										</div>
 									</div>
+								</div>
+
+								{/* Date Range Filter Controls - Always Visible */}
+								<div className='bg-white border border-gray-200 rounded-lg p-4'>
+									<h4 className='text-lg font-medium text-gray-900 mb-4'>
+										🔍 Data Filters & Chart Controls
+									</h4>
+
+									{/* Filter Information */}
+									<div className='bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4'>
+										<h5 className='text-sm font-medium text-blue-800 mb-2'>
+											Active Filters
+										</h5>
+										<div className='text-sm text-blue-700 space-y-1'>
+											<div>
+												🏷️{" "}
+												<span className='font-medium'>
+													Condition:
+												</span>{" "}
+												{condition?.name || conditionId}
+											</div>
+											<div>
+												📋{" "}
+												<span className='font-medium'>
+													Fault:
+												</span>{" "}
+												{fault?.fault_name || faultId}
+											</div>
+											<div>
+												🖥️{" "}
+												<span className='font-medium'>
+													Device:
+												</span>{" "}
+												{device?.device_name ||
+													deviceId}
+											</div>
+											<div className='text-xs text-blue-600 mt-2'>
+												Filtering uses condition_name
+												and fault_name from database for
+												improved accuracy
+											</div>
+										</div>
+									</div>
+
+									<div className='flex items-center justify-between'>
+										<div className='flex items-center space-x-4'>
+											<div className='flex items-center space-x-2'>
+												<label className='text-sm font-medium text-gray-700'>
+													From:
+												</label>
+												<input
+													type='datetime-local'
+													value={startDate}
+													onChange={(e) =>
+														setStartDate(
+															e.target.value
+														)
+													}
+													className='px-2 py-1 border border-gray-300 rounded-md text-sm'
+												/>
+											</div>
+											<div className='flex items-center space-x-2'>
+												<label className='text-sm font-medium text-gray-700'>
+													To:
+												</label>
+												<input
+													type='datetime-local'
+													value={endDate}
+													onChange={(e) =>
+														setEndDate(
+															e.target.value
+														)
+													}
+													className='px-2 py-1 border border-gray-300 rounded-md text-sm'
+												/>
+											</div>
+										</div>
+										<div className='flex items-center space-x-2'>
+											<button
+												onClick={() => {
+													// Reload data with date filtering
+													loadMeasurements();
+												}}
+												className='px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm'
+											>
+												Filter
+											</button>
+											<button
+												onClick={() => {
+													setStartDate("");
+													setEndDate("");
+													loadMeasurements();
+												}}
+												className='px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm'
+											>
+												Clear
+											</button>
+										</div>
+									</div>
+								</div>
+
+								{chartKeys.length > 0 ? (
+									<div>
+										{/* Chart Tabs */}
+										<div className='flex flex-wrap gap-2 mb-6 p-4 bg-gray-50 rounded-lg'>
+											{chartKeys.map((key) => (
+												<button
+													key={key}
+													onClick={() =>
+														setActiveChartTab(key)
+													}
+													className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+														activeChartTab === key
+															? "bg-blue-600 text-white shadow-sm"
+															: "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+													}`}
+												>
+													{key} (
+													{chartData[key].length}{" "}
+													points)
+												</button>
+											))}
+										</div>{" "}
+										{/* Active Chart Display */}
+										{activeChartTab &&
+											chartData[activeChartTab] && (
+												<div className='bg-white border border-gray-200 rounded-lg p-6'>
+													{" "}
+													<div className='flex justify-between items-center mb-4'>
+														<h5 className='text-lg font-medium text-gray-900'>
+															📈 {activeChartTab}{" "}
+															Data Visualization
+														</h5>
+
+														{/* Chart Controls */}
+														<div className='flex items-center space-x-4'>
+															{/* Auto-zoom Toggle */}
+															<div className='flex items-center space-x-2'>
+																<label className='text-sm text-gray-700'>
+																	Advanced
+																	Chart Mode
+																	Enabled -
+																	Professional
+																	zoom &
+																	analysis
+																	tools active
+																</label>
+															</div>
+														</div>
+													</div>
+													{/* Advanced Chart Display */}
+													<div className='bg-gray-50 border border-gray-200 rounded-lg p-4'>
+														<AdvancedZoomChart
+															data={chartData[
+																activeChartTab
+															].map((item) => ({
+																...item,
+																timestamp:
+																	Date.parse(
+																		item.timestamp
+																	) ||
+																	item.index, // Convert to number
+															}))}
+															dataKey='value'
+															xAxisKey='timestampFormatted'
+															title={`${activeChartTab} - Advanced Data Analysis`}
+															color='#3B82F6'
+															height={400}
+															enableBrush={true}
+															enableMagnifier={
+																true
+															}
+															enableCrosshair={
+																true
+															}
+															downsampleThreshold={
+																10000
+															}
+														/>
+													</div>{" "}
+													{/* Chart Statistics */}
+													<div className='mt-6 grid grid-cols-2 md:grid-cols-4 gap-4'>
+														{(() => {
+															const values =
+																chartData[
+																	activeChartTab
+																].map(
+																	(d) =>
+																		d.value
+																);
+															const avg =
+																values.reduce(
+																	(a, b) =>
+																		a + b,
+																	0
+																) /
+																values.length;
+															const min =
+																Math.min(
+																	...values
+																);
+															const max =
+																Math.max(
+																	...values
+																);
+															const latest =
+																values[
+																	values.length -
+																		1
+																];
+
+															return [
+																{
+																	label: "Average",
+																	value: avg.toFixed(
+																		3
+																	),
+																	icon: "Avg",
+																},
+																{
+																	label: "Minimum",
+																	value: min.toFixed(
+																		3
+																	),
+																	icon: "Min",
+																},
+																{
+																	label: "Maximum",
+																	value: max.toFixed(
+																		3
+																	),
+																	icon: "Max",
+																},
+																{
+																	label: "Latest",
+																	value:
+																		latest?.toFixed(
+																			3
+																		) ||
+																		"N/A",
+																	icon: "Latest",
+																},
+															].map(
+																(
+																	stat,
+																	index
+																) => (
+																	<div
+																		key={
+																			index
+																		}
+																		className='bg-gray-50 p-3 rounded border'
+																	>
+																		<div className='flex items-center space-x-2'>
+																			<span className='text-lg'>
+																				{
+																					stat.icon
+																				}
+																			</span>
+																			<div>
+																				<p className='text-sm text-gray-600'>
+																					{
+																						stat.label
+																					}
+																				</p>
+																				<p className='text-lg font-semibold text-gray-900'>
+																					{
+																						stat.value
+																					}
+																				</p>
+																			</div>
+																		</div>
+																	</div>
+																)
+															);
+														})()}
+													</div>
+												</div>
+											)}
+									</div>
 								) : (
-									<div className='text-center py-8 text-gray-500'>
-										No live data available. Waiting for
-										measurements...
+									<div className='text-center py-12 bg-gray-50 rounded-lg'>
+										<div className='text-gray-400 text-4xl mb-4'>
+											📊
+										</div>
+										<h4 className='text-lg font-medium text-gray-600 mb-2'>
+											No Chart Data Available
+										</h4>
+										<p className='text-gray-500 mb-4'>
+											No numeric data found in the
+											data_payload fields to generate
+											charts.
+										</p>
+										<div className='text-sm text-gray-400'>
+											<p>Charts will appear when:</p>
+											<ul className='mt-2 space-y-1'>
+												<li>
+													• The data_payload contains
+													numeric values or arrays
+												</li>
+												<li>
+													• Measurement data is
+													available for this condition
+												</li>
+												<li>
+													• Keys in the payload have
+													chartable data types
+												</li>
+											</ul>
+										</div>
 									</div>
 								)}
 							</div>
+						)}
+					</div>
+
+					{/* Navigation Links */}
+					<div className='bg-white p-6 rounded-lg border border-gray-200'>
+						<h3 className='text-lg font-medium text-gray-900 mb-4'>
+							Navigation
+						</h3>
+						<div className='flex space-x-4'>
+							<Link
+								href={`/devices/${deviceId}/faults/${faultId}`}
+								className='text-blue-600 hover:text-blue-900'
+							>
+								← Back to Fault
+							</Link>
+							<Link
+								href={`/devices/${deviceId}`}
+								className='text-blue-600 hover:text-blue-900'
+							>
+								← Back to Device
+							</Link>
+							<Link
+								href='/devices'
+								className='text-blue-600 hover:text-blue-900'
+							>
+								← All Devices
+							</Link>
 						</div>
-					)}{" "}
-					{viewMode === "charts" && (
-						<div className='space-y-6'>
-							<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
-								<h4 className='text-lg font-medium text-blue-800 mb-2'>
-									📊 Interactive Data Charts
-								</h4>
-								<p className='text-blue-700 text-sm mb-4'>
-									Interactive charts generated from data
-									payload objects. Each key in the payload
-									becomes a separate chart.
-								</p>{" "}
-								<div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm'>
-									<div>
-										<span className='font-medium'>
-											Available Parameters:
-										</span>{" "}
-										{chartKeys.length}
-									</div>
-									<div>
-										<span className='font-medium'>
-											Total Data Points:
-										</span>{" "}
-										{Object.values(chartData).reduce(
-											(sum, data) => sum + data.length,
-											0
-										)}
-									</div>
-									<div>
-										<span className='font-medium'>
-											Source:
-										</span>{" "}
-										data_payload fields
-									</div>
-								</div>
-							</div>
-
-							{/* Date Range Filter Controls - Always Visible */}
-							<div className='bg-white border border-gray-200 rounded-lg p-4'>
-								<h4 className='text-lg font-medium text-gray-900 mb-4'>
-									🔍 Data Filters & Chart Controls
-								</h4>
-
-								{/* Filter Information */}
-								<div className='bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4'>
-									<h5 className='text-sm font-medium text-blue-800 mb-2'>
-										Active Filters
-									</h5>
-									<div className='text-sm text-blue-700 space-y-1'>
-										<div>
-											🏷️{" "}
-											<span className='font-medium'>
-												Condition:
-											</span>{" "}
-											{condition?.name || conditionId}
-										</div>
-										<div>
-											📋{" "}
-											<span className='font-medium'>
-												Fault:
-											</span>{" "}
-											{fault?.fault_name || faultId}
-										</div>
-										<div>
-											🖥️{" "}
-											<span className='font-medium'>
-												Device:
-											</span>{" "}
-											{device?.device_name || deviceId}
-										</div>
-										<div className='text-xs text-blue-600 mt-2'>
-											Filtering uses condition_name and
-											fault_name from database for
-											improved accuracy
-										</div>
-									</div>
-								</div>
-
-								<div className='flex items-center justify-between'>
-									<div className='flex items-center space-x-4'>
-										<div className='flex items-center space-x-2'>
-											<label className='text-sm font-medium text-gray-700'>
-												From:
-											</label>
-											<input
-												type='datetime-local'
-												value={startDate}
-												onChange={(e) =>
-													setStartDate(e.target.value)
-												}
-												className='px-2 py-1 border border-gray-300 rounded-md text-sm'
-											/>
-										</div>
-										<div className='flex items-center space-x-2'>
-											<label className='text-sm font-medium text-gray-700'>
-												To:
-											</label>
-											<input
-												type='datetime-local'
-												value={endDate}
-												onChange={(e) =>
-													setEndDate(e.target.value)
-												}
-												className='px-2 py-1 border border-gray-300 rounded-md text-sm'
-											/>
-										</div>
-									</div>
-									<div className='flex items-center space-x-2'>
-										<button
-											onClick={() => {
-												// Reload data with date filtering
-												loadMeasurements();
-											}}
-											className='px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm'
-										>
-											Filter
-										</button>
-										<button
-											onClick={() => {
-												setStartDate("");
-												setEndDate("");
-												loadMeasurements();
-											}}
-											className='px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm'
-										>
-											Clear
-										</button>
-									</div>
-								</div>
-							</div>
-
-							{chartKeys.length > 0 ? (
-								<div>
-									{/* Chart Tabs */}
-									<div className='flex flex-wrap gap-2 mb-6 p-4 bg-gray-50 rounded-lg'>
-										{chartKeys.map((key) => (
-											<button
-												key={key}
-												onClick={() =>
-													setActiveChartTab(key)
-												}
-												className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-													activeChartTab === key
-														? "bg-blue-600 text-white shadow-sm"
-														: "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-												}`}
-											>
-												{key} ({chartData[key].length}{" "}
-												points)
-											</button>
-										))}
-									</div>{" "}
-									{/* Active Chart Display */}
-									{activeChartTab &&
-										chartData[activeChartTab] && (
-											<div className='bg-white border border-gray-200 rounded-lg p-6'>
-												{" "}
-												<div className='flex justify-between items-center mb-4'>
-													<h5 className='text-lg font-medium text-gray-900'>
-														📈 {activeChartTab} Data
-														Visualization
-													</h5>
-
-													{/* Chart Controls */}
-													<div className='flex items-center space-x-4'>
-														{/* Auto-zoom Toggle */}
-														<div className='flex items-center space-x-2'>
-															<label className='text-sm text-gray-700'>
-																Advanced Chart
-																Mode Enabled -
-																Professional
-																zoom & analysis
-																tools active
-															</label>
-														</div>
-													</div>
-												</div>
-												{/* Advanced Chart Display */}
-												<div className='bg-gray-50 border border-gray-200 rounded-lg p-4'>
-													<AdvancedZoomChart
-														data={chartData[
-															activeChartTab
-														].map((item) => ({
-															...item,
-															timestamp:
-																Date.parse(
-																	item.timestamp
-																) || item.index, // Convert to number
-														}))}
-														dataKey='value'
-														xAxisKey='timestampFormatted'
-														title={`${activeChartTab} - Advanced Data Analysis`}
-														color='#3B82F6'
-														height={400}
-														enableBrush={true}
-														enableMagnifier={true}
-														enableCrosshair={true}
-														downsampleThreshold={
-															10000
-														}
-													/>
-												</div>{" "}
-												{/* Chart Statistics */}
-												<div className='mt-6 grid grid-cols-2 md:grid-cols-4 gap-4'>
-													{(() => {
-														const values =
-															chartData[
-																activeChartTab
-															].map(
-																(d) => d.value
-															);
-														const avg =
-															values.reduce(
-																(a, b) => a + b,
-																0
-															) / values.length;
-														const min = Math.min(
-															...values
-														);
-														const max = Math.max(
-															...values
-														);
-														const latest =
-															values[
-																values.length -
-																	1
-															];
-
-														return [
-															{
-																label: "Average",
-																value: avg.toFixed(
-																	3
-																),
-																icon: "Avg",
-															},
-															{
-																label: "Minimum",
-																value: min.toFixed(
-																	3
-																),
-																icon: "Min",
-															},
-															{
-																label: "Maximum",
-																value: max.toFixed(
-																	3
-																),
-																icon: "Max",
-															},
-															{
-																label: "Latest",
-																value:
-																	latest?.toFixed(
-																		3
-																	) || "N/A",
-																icon: "Latest",
-															},
-														].map((stat, index) => (
-															<div
-																key={index}
-																className='bg-gray-50 p-3 rounded border'
-															>
-																<div className='flex items-center space-x-2'>
-																	<span className='text-lg'>
-																		{
-																			stat.icon
-																		}
-																	</span>
-																	<div>
-																		<p className='text-sm text-gray-600'>
-																			{
-																				stat.label
-																			}
-																		</p>
-																		<p className='text-lg font-semibold text-gray-900'>
-																			{
-																				stat.value
-																			}
-																		</p>
-																	</div>
-																</div>
-															</div>
-														));
-													})()}
-												</div>
-											</div>
-										)}
-								</div>
-							) : (
-								<div className='text-center py-12 bg-gray-50 rounded-lg'>
-									<div className='text-gray-400 text-4xl mb-4'>
-										📊
-									</div>
-									<h4 className='text-lg font-medium text-gray-600 mb-2'>
-										No Chart Data Available
-									</h4>
-									<p className='text-gray-500 mb-4'>
-										No numeric data found in the
-										data_payload fields to generate charts.
-									</p>
-									<div className='text-sm text-gray-400'>
-										<p>Charts will appear when:</p>
-										<ul className='mt-2 space-y-1'>
-											<li>
-												• The data_payload contains
-												numeric values or arrays
-											</li>
-											<li>
-												• Measurement data is available
-												for this condition
-											</li>
-											<li>
-												• Keys in the payload have
-												chartable data types
-											</li>
-										</ul>
-									</div>
-								</div>
-							)}
-						</div>
-					)}
-				</div>
-
-				{/* Navigation Links */}
-				<div className='bg-white p-6 rounded-lg border border-gray-200'>
-					<h3 className='text-lg font-medium text-gray-900 mb-4'>
-						Navigation
-					</h3>
-					<div className='flex space-x-4'>
-						<Link
-							href={`/devices/${deviceId}/faults/${faultId}`}
-							className='text-blue-600 hover:text-blue-900'
-						>
-							← Back to Fault
-						</Link>
-						<Link
-							href={`/devices/${deviceId}`}
-							className='text-blue-600 hover:text-blue-900'
-						>
-							← Back to Device
-						</Link>
-						<Link
-							href='/devices'
-							className='text-blue-600 hover:text-blue-900'
-						>
-							← All Devices
-						</Link>
 					</div>
 				</div>
-			</div>
-		</PageLayout>
+			</PageLayout>
+		</DeviceProtectedRoute>
 	);
 }

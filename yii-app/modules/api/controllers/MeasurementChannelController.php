@@ -9,6 +9,8 @@ use yii\web\NotFoundHttpException;
 use yii\web\ServerErrorHttpException;
 use yii\helpers\Json;
 use app\models\MeasurementChannel;
+use app\models\Devices;
+use app\filters\JwtAuthFilter;
 
 class MeasurementChannelController extends Controller
 {
@@ -16,6 +18,13 @@ class MeasurementChannelController extends Controller
     {
         $behaviors = parent::behaviors();
         $behaviors['contentNegotiator']['formats']['application/json'] = Response::FORMAT_JSON;
+        
+        // Add JWT authentication filter
+        $behaviors['jwtAuth'] = [
+            'class' => JwtAuthFilter::class,
+            'except' => ['test'], // Public endpoints
+        ];
+        
         $behaviors['verbs'] = [
             'class' => \yii\filters\VerbFilter::class,
             'actions' => [
@@ -41,12 +50,28 @@ class MeasurementChannelController extends Controller
     }
 
     /**
-     * List all measurement channels
+     * List all measurement channels (filtered by device ownership)
      */
     public function actionList()
     {
         try {
-            $channels = MeasurementChannel::find()->all();
+            $user = Yii::$app->user->identity;
+            
+            if ($user->isAdmin()) {
+                // Admin can see all channels
+                $channels = MeasurementChannel::find()->all();
+            } else {
+                // Regular users only see channels from their devices
+                $userDeviceIds = Devices::find()
+                    ->select('device_id')
+                    ->where(['owner_id' => $user->id])
+                    ->column();
+                    
+                $channels = MeasurementChannel::find()
+                    ->where(['device_id' => $userDeviceIds])
+                    ->all();
+            }
+            
             return [
                 'success' => true,
                 'data' => array_map(function($ch) { return $ch->attributes; }, $channels),
@@ -82,7 +107,7 @@ class MeasurementChannelController extends Controller
             if (!$id) {
                 throw new ServerErrorHttpException('Missing required parameter: id');
             }
-            $channel = $this->findChannel($id);
+            $channel = $this->checkChannelOwnership($id);
             return [
                 'success' => true,
                 'data' => $channel->attributes,
@@ -106,6 +131,12 @@ class MeasurementChannelController extends Controller
                 throw new ServerErrorHttpException('Request body is empty');
             }
             $data = Json::decode($rawBody);
+            
+            // Check if user can create channels for this device
+            if (isset($data['device_id'])) {
+                $this->checkDeviceOwnership($data['device_id']);
+            }
+            
             $channel = new MeasurementChannel();
             $channel->attributes = $data;
             if (!$channel->save()) {
@@ -134,7 +165,7 @@ class MeasurementChannelController extends Controller
             if (!$id) {
                 throw new ServerErrorHttpException('Missing required parameter: id');
             }
-            $channel = $this->findChannel($id);
+            $channel = $this->checkChannelOwnership($id);
             $rawBody = Yii::$app->request->rawBody;
             if (empty($rawBody)) {
                 throw new ServerErrorHttpException('Request body is empty');
@@ -167,7 +198,7 @@ class MeasurementChannelController extends Controller
             if (!$id) {
                 throw new ServerErrorHttpException('Missing required parameter: id');
             }
-            $channel = $this->findChannel($id);
+            $channel = $this->checkChannelOwnership($id);
             if (!$channel->delete()) {
                 throw new ServerErrorHttpException('Error deleting channel');
             }
@@ -194,4 +225,62 @@ class MeasurementChannelController extends Controller
         }
         return $channel;
     }
-} 
+
+    /**
+     * Check if user owns device associated with measurement channel or is admin
+     */
+    private function checkChannelOwnership($channelId)
+    {
+        $channel = MeasurementChannel::findOne(['channel_id' => $channelId]);
+        
+        if (!$channel) {
+            throw new NotFoundHttpException('Measurement channel not found.');
+        }
+
+        $device = Devices::findOne(['device_id' => $channel->device_id]);
+        
+        if (!$device) {
+            throw new NotFoundHttpException('Associated device not found.');
+        }
+
+        $user = Yii::$app->user->identity;
+        
+        // Admin can access all channels
+        if ($user->isAdmin()) {
+            return $channel;
+        }
+
+        // Check ownership of the device
+        if ($device->owner_id !== $user->id) {
+            throw new \yii\web\ForbiddenHttpException('You do not have permission to access this measurement channel.');
+        }
+
+        return $channel;
+    }
+
+    /**
+     * Check if user owns device or is admin (for channel creation)
+     */
+    private function checkDeviceOwnership($deviceId)
+    {
+        $device = Devices::findOne(['device_id' => $deviceId]);
+        
+        if (!$device) {
+            throw new NotFoundHttpException('Device not found.');
+        }
+
+        $user = Yii::$app->user->identity;
+        
+        // Admin can access all devices
+        if ($user->isAdmin()) {
+            return $device;
+        }
+
+        // Check ownership
+        if ($device->owner_id !== $user->id) {
+            throw new \yii\web\ForbiddenHttpException('You do not have permission to access this device.');
+        }
+
+        return $device;
+    }
+}

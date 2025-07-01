@@ -11,6 +11,7 @@ use yii\helpers\Json;
 use app\models\Faults;
 use app\models\Devices;
 use app\models\Conditions;
+use app\filters\JwtAuthFilter;
 
 class FaultsController extends Controller
 {    /**
@@ -20,6 +21,12 @@ class FaultsController extends Controller
     {
         $behaviors = parent::behaviors();
         $behaviors['contentNegotiator']['formats']['application/json'] = Response::FORMAT_JSON;
+        
+        // Add JWT authentication filter
+        $behaviors['jwtAuth'] = [
+            'class' => JwtAuthFilter::class,
+            'except' => ['test'], // Public endpoints
+        ];
         
         // Add HTTP method filter
         $behaviors['verbs'] = [
@@ -50,7 +57,65 @@ class FaultsController extends Controller
     }
 
     /**
-     * Get all faults
+     * Check if user owns device associated with fault or is admin
+     */
+    private function checkFaultOwnership($faultId)
+    {
+        $fault = Faults::findOne(['fault_id' => $faultId]);
+        
+        if (!$fault) {
+            throw new NotFoundHttpException('Fault not found.');
+        }
+
+        $device = Devices::findOne(['device_id' => $fault->device_id]);
+        
+        if (!$device) {
+            throw new NotFoundHttpException('Associated device not found.');
+        }
+
+        $user = Yii::$app->user->identity;
+        
+        // Admin can access all faults
+        if ($user->isAdmin()) {
+            return $fault;
+        }
+
+        // Check ownership of the device
+        if ($device->owner_id !== $user->id) {
+            throw new \yii\web\ForbiddenHttpException('You do not have permission to access this fault.');
+        }
+
+        return $fault;
+    }
+
+    /**
+     * Check if user owns device or is admin (for fault creation)
+     */
+    private function checkDeviceOwnership($deviceId)
+    {
+        $device = Devices::findOne(['device_id' => $deviceId]);
+        
+        if (!$device) {
+            throw new NotFoundHttpException('Device not found.');
+        }
+
+        $user = Yii::$app->user->identity;
+        
+        // Admin can access all devices
+        if ($user->isAdmin()) {
+            return $device;
+        }
+
+        // Check ownership
+        if ($device->owner_id !== $user->id) {
+            throw new \yii\web\ForbiddenHttpException('You do not have permission to access this device.');
+        }
+
+        return $device;
+    }
+
+    /**
+     * Get all faults (filtered by device ownership)
      * GET /api/faults
      */
     public function actionList()
@@ -58,7 +123,22 @@ class FaultsController extends Controller
         Yii::info("Faults list endpoint called", 'api.faults');
         
         try {
-            $faults = Faults::find()->all();
+            $user = Yii::$app->user->identity;
+            
+            if ($user->isAdmin()) {
+                // Admin can see all faults
+                $faults = Faults::find()->all();
+            } else {
+                // Regular users only see faults from their devices
+                $userDeviceIds = Devices::find()
+                    ->select('device_id')
+                    ->where(['owner_id' => $user->id])
+                    ->column();
+                
+                $faults = Faults::find()
+                    ->where(['device_id' => $userDeviceIds])
+                    ->all();
+            }
             
             return [
                 'success' => true,
@@ -88,7 +168,7 @@ class FaultsController extends Controller
     }
 
     /**
-     * View a specific fault
+     * View a specific fault (with ownership check)
      * GET /api/faults/{id}
      */
     public function actionView($id)
@@ -96,7 +176,7 @@ class FaultsController extends Controller
         Yii::info("Fault view endpoint called", 'api.faults');
         
         try {
-            $fault = $this->findFault($id);
+            $fault = $this->checkFaultOwnership($id);
             return [
                 'success' => true,
                 'data' => $fault->toArray(),
@@ -106,6 +186,12 @@ class FaultsController extends Controller
             return [
                 'success' => false,
                 'error' => 'Fault not found',
+            ];
+        } catch (\yii\web\ForbiddenHttpException $e) {
+            Yii::error("Access denied for fault: $id");
+            return [
+                'success' => false,
+                'error' => 'Access denied',
             ];
         }
     }

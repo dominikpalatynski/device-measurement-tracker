@@ -10,7 +10,9 @@ use yii\web\ServerErrorHttpException;
 use yii\helpers\Json;
 use app\models\Condition;
 use app\models\Faults;
+use app\models\Devices;
 use app\models\MeasurementData;
+use app\filters\JwtAuthFilter;
 
 class ConditionsController extends Controller
 {
@@ -21,6 +23,12 @@ class ConditionsController extends Controller
     {
         $behaviors = parent::behaviors();
         $behaviors['contentNegotiator']['formats']['application/json'] = Response::FORMAT_JSON;
+        
+        // Add JWT authentication filter
+        $behaviors['jwtAuth'] = [
+            'class' => JwtAuthFilter::class,
+            'except' => ['test'], // Public endpoints
+        ];
         
         // Add HTTP method filter
         $behaviors['verbs'] = [
@@ -62,7 +70,17 @@ class ConditionsController extends Controller
         Yii::info("Conditions list endpoint called", 'api.conditions');
         
         try {
-            $conditions = Condition::find()->all();
+            $user = Yii::$app->user->identity;
+            $query = Condition::find();
+            
+            // Admins can see all conditions, others see only theirs
+            if (!$user->isAdmin()) {
+                $query->innerJoinWith('fault')
+                      ->innerJoinWith('device')
+                      ->where(['devices.owner_id' => $user->id]);
+            }
+            
+            $conditions = $query->all();
             
             return [
                 'success' => true,
@@ -100,7 +118,7 @@ class ConditionsController extends Controller
         Yii::info("Condition view endpoint called", 'api.conditions');
         
         try {
-            $condition = $this->findCondition($id);
+            $condition = $this->checkConditionOwnership($id);
             return [
                 'success' => true,
                 'data' => $condition->toArray(),
@@ -110,6 +128,11 @@ class ConditionsController extends Controller
             return [
                 'success' => false,
                 'error' => 'Condition not found',
+            ];
+        } catch (\yii\web\ForbiddenHttpException $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
             ];
         }
     }
@@ -131,11 +154,8 @@ class ConditionsController extends Controller
                 throw new ServerErrorHttpException('fault_id and name are required');
             }
             
-            // Check if fault exists
-            $fault = Faults::findOne($data['fault_id']);
-            if (!$fault) {
-                throw new NotFoundHttpException('Fault not found');
-            }
+            // Check if fault exists and user has permission
+            $fault = $this->checkFaultOwnership($data['fault_id']);
             
             // For stream faults, check if there are active conditions
             if ($fault->type === 'stream') {
@@ -176,7 +196,7 @@ class ConditionsController extends Controller
         Yii::info("Condition update endpoint called for ID: $id", 'api.conditions');
         
         try {
-            $condition = $this->findCondition($id);
+            $condition = $this->checkConditionOwnership($id);
             $data = Yii::$app->request->post();
             
             // Update allowed fields
@@ -220,7 +240,7 @@ class ConditionsController extends Controller
         Yii::info("Condition delete endpoint called for ID: $id", 'api.conditions');
         
         try {
-            $condition = $this->findCondition($id);
+            $condition = $this->checkConditionOwnership($id);
             
             // Allow deletion of any condition - simplified approach
             if ($condition->delete()) {
@@ -252,7 +272,7 @@ class ConditionsController extends Controller
         Yii::info("Condition start endpoint called for ID: $id", 'api.conditions');
         
         try {
-            $condition = $this->findCondition($id);
+            $condition = $this->checkConditionOwnership($id);
             
             if ($condition->activateCondition()) {
                 return [
@@ -284,7 +304,7 @@ class ConditionsController extends Controller
         Yii::info("Condition stop endpoint called for ID: $id", 'api.conditions');
         
         try {
-            $condition = $this->findCondition($id);
+            $condition = $this->checkConditionOwnership($id);
             
             if ($condition->deactivateCondition()) {
                 return [
@@ -316,7 +336,7 @@ class ConditionsController extends Controller
         Yii::info("Condition data endpoint called for condition: $conditionId", 'api.conditions');
         
         try {
-            $condition = $this->findCondition($conditionId);
+            $condition = $this->checkConditionOwnership($conditionId);
             $data = Yii::$app->request->post();
             
             if (!isset($data['measurements']) || !is_array($data['measurements'])) {
@@ -369,5 +389,75 @@ class ConditionsController extends Controller
             throw new NotFoundHttpException('Condition not found');
         }
         return $condition;
+    }
+
+    /**
+     * Check if user owns device associated with condition or is admin
+     */
+    private function checkConditionOwnership($conditionId)
+    {
+        $condition = Condition::findOne(['condition_id' => $conditionId]);
+        
+        if (!$condition) {
+            throw new NotFoundHttpException('Condition not found.');
+        }
+
+        $fault = Faults::findOne(['fault_id' => $condition->fault_id]);
+        
+        if (!$fault) {
+            throw new NotFoundHttpException('Associated fault not found.');
+        }
+
+        $device = Devices::findOne(['device_id' => $fault->device_id]);
+        
+        if (!$device) {
+            throw new NotFoundHttpException('Associated device not found.');
+        }
+
+        $user = Yii::$app->user->identity;
+        
+        // Admin can access all conditions
+        if ($user->isAdmin()) {
+            return $condition;
+        }
+
+        // Check ownership of the device
+        if ($device->owner_id !== $user->id) {
+            throw new \yii\web\ForbiddenHttpException('You do not have permission to access this condition.');
+        }
+
+        return $condition;
+    }
+
+    /**
+     * Check if user owns device associated with fault or is admin (for condition creation)
+     */
+    private function checkFaultOwnership($faultId)
+    {
+        $fault = Faults::findOne(['fault_id' => $faultId]);
+        
+        if (!$fault) {
+            throw new NotFoundHttpException('Fault not found.');
+        }
+
+        $device = Devices::findOne(['device_id' => $fault->device_id]);
+        
+        if (!$device) {
+            throw new NotFoundHttpException('Associated device not found.');
+        }
+
+        $user = Yii::$app->user->identity;
+        
+        // Admin can access all faults
+        if ($user->isAdmin()) {
+            return $fault;
+        }
+
+        // Check ownership of the device
+        if ($device->owner_id !== $user->id) {
+            throw new \yii\web\ForbiddenHttpException('You do not have permission to access this fault.');
+        }
+
+        return $fault;
     }
 }

@@ -289,13 +289,7 @@ class DeviceRegisterController extends Controller
         Yii::$app->response->format = Response::FORMAT_JSON;
         
         try {
-            $device = $this->findDevice($id);
-            $user = Yii::$app->user->identity;
-            
-            // Check if user has access to this device
-            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
-                throw new NotFoundHttpException('Device not found or access denied.');
-            }
+            $device = $this->checkDeviceOwnership($id);
             
             $data = Json::decode(Yii::$app->request->rawBody);
 
@@ -333,13 +327,7 @@ class DeviceRegisterController extends Controller
         Yii::$app->response->format = Response::FORMAT_JSON;
         
         try {
-            $device = $this->findDevice($id);
-            $user = Yii::$app->user->identity;
-            
-            // Check if user has access to this device
-            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
-                throw new NotFoundHttpException('Device not found or access denied.');
-            }
+            $device = $this->checkDeviceOwnership($id);
             
             if (!$device->delete()) {
                 throw new ServerErrorHttpException('Błąd podczas usuwania urządzenia');
@@ -399,13 +387,7 @@ class DeviceRegisterController extends Controller
                 throw new ServerErrorHttpException('Missing required parameter: id');
             }
             
-            $device = $this->findDevice($id);
-            $user = Yii::$app->user->identity;
-            
-            // Check if user has access to this device
-            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
-                throw new NotFoundHttpException('Device not found or access denied.');
-            }
+            $device = $this->checkDeviceOwnership($id);
             
             return [
                 'success' => true,
@@ -429,13 +411,7 @@ class DeviceRegisterController extends Controller
                 throw new ServerErrorHttpException('Missing required parameter: id');
             }
             
-            $device = $this->findDevice($id);
-            $user = Yii::$app->user->identity;
-            
-            // Check if user has access to this device
-            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
-                throw new NotFoundHttpException('Device not found or access denied.');
-            }
+            $device = $this->checkDeviceOwnership($id);
             
             $device->status = Devices::STATUS_ACTIVE;
             
@@ -536,13 +512,7 @@ class DeviceRegisterController extends Controller
                 throw new ServerErrorHttpException('Missing required parameter: id');
             }
             
-            $device = $this->findDevice($id);
-            $user = Yii::$app->user->identity;
-            
-            // Check if user has access to this device
-            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
-                throw new NotFoundHttpException('Device not found or access denied.');
-            }
+            $device = $this->checkDeviceOwnership($id);
             
             $device->status = Devices::STATUS_INACTIVE;
             
@@ -563,6 +533,32 @@ class DeviceRegisterController extends Controller
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Check if user owns device or is admin
+     */
+    private function checkDeviceOwnership($deviceId)
+    {
+        $device = Devices::findOne(['device_id' => $deviceId]);
+        
+        if (!$device) {
+            throw new NotFoundHttpException('Device not found.');
+        }
+
+        $user = Yii::$app->user->identity;
+        
+        // Admin can access all devices
+        if ($user->isAdmin()) {
+            return $device;
+        }
+
+        // Check ownership
+        if ($device->owner_id !== $user->id) {
+            throw new \yii\web\ForbiddenHttpException('You do not have permission to access this device.');
+        }
+
+        return $device;
     }
 
     /**
