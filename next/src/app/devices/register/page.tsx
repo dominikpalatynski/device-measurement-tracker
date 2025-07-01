@@ -10,10 +10,7 @@ export default function DeviceRegisterPage() {
 	const router = useRouter();
 	const [formData, setFormData] = useState({
 		device_name: "",
-		device_type: "pmsm-mechanical-vibration" as
-			| "pmsm-mechanical-vibration"
-			| "bldc-high-speed"
-			| "pmsm-torque-load",
+		device_type: "",
 	});
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -36,6 +33,11 @@ export default function DeviceRegisterPage() {
 
 		if (!formData.device_name.trim()) {
 			setError("Device name is required");
+			return;
+		}
+
+		if (!formData.device_type.trim()) {
+			setError("Device type is required");
 			return;
 		}
 
@@ -391,26 +393,20 @@ export default function DeviceRegisterPage() {
 							>
 								Device Type
 							</label>
-							<select
+							<input
+								type='text'
 								id='device_type'
 								name='device_type'
 								value={formData.device_type}
 								onChange={handleInputChange}
+								placeholder='Enter device type (e.g., PMSM Mechanical Vibration, BLDC High Speed, Custom Sensor)'
 								className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
 								disabled={loading}
-							>
-								<option value='pmsm-mechanical-vibration'>
-									PMSM Mechanical Vibration
-								</option>
-								<option value='bldc-high-speed'>
-									BLDC High Speed
-								</option>
-								<option value='pmsm-torque-load'>
-									PMSM Torque Load
-								</option>
-							</select>
+								required
+							/>
 							<p className='text-sm text-gray-500 mt-1'>
-								Select the type of device you are registering
+								Enter a descriptive type for your device (any
+								string is allowed)
 							</p>
 						</div>{" "}
 						<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>

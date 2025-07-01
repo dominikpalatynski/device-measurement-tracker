@@ -219,8 +219,8 @@ export interface MeasurementDataResponse {
 export interface Device {
   device_id: string;
   device_name: string;
-  device_type: 'pmsm-mechanical-vibration' | 'bldc-high-speed' | 'pmsm-torque-load';
-  status: 'Active' | 'Inactive';
+  device_type: string;
+  status: 'Active' | 'Inactive' | 'Pending-Registration' | 'Not-Active';
   registration_date: string;
   last_updated: string;
   owner_id?: number;
@@ -571,8 +571,8 @@ export async function registerDevice(deviceData: {device_name: string, device_ty
       const device: Device = {
         device_id: response.data.device_id,
         device_name: response.data.device_name,
-        device_type: response.data.device_type as "pmsm-mechanical-vibration" | "bldc-high-speed" | "pmsm-torque-load",
-        status: (response.data.status === "Active" ? "Active" : "Inactive") as "Active" | "Inactive",
+        device_type: response.data.device_type,
+        status: response.data.status as "Active" | "Inactive" | "Pending-Registration" | "Not-Active",
         registration_date: new Date().toISOString(),
         last_updated: new Date().toISOString(),
         verification_token: response.data.verification_token,
