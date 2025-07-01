@@ -23,6 +23,9 @@ services:
         image: eclipse-mosquitto:2.0
         container_name: iot-mosquitto
         restart: always
+        environment:
+            - MQTT_USERNAME=iot_user
+            - MQTT_PASSWORD=iot_password
         ports:
             - "1883:1883" # MQTT port
             - "9001:9001" # WebSockets port
@@ -30,6 +33,8 @@ services:
             - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
             - ./mosquitto/mosquitto-data:/mosquitto/data
             - ./mosquitto/mosquitto-log:/mosquitto/log
+            - ./mosquitto/passwd:/mosquitto/config/passwd
+        command: sh -c "mosquitto_passwd -c -b /mosquitto/config/passwd $$MQTT_USERNAME $$MQTT_PASSWORD && mosquitto -c /mosquitto/config/mosquitto.conf"
         networks:
             - iot-network
 

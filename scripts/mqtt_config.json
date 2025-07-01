@@ -1,7 +1,9 @@
 {
     "host": "localhost", 
     "port": 1883,
-    "send_interval": 0.3,
+    "username": "iot_user",
+    "password": "iot_password",
+    "send_interval": 5,
     "deviceId": "q4Z_ooBVKFJA",
     "condition_name": "pomiar_prądu_29",
     "data_series": "29",

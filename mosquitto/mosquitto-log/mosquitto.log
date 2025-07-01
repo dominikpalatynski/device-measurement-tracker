@@ -456,3 +456,64 @@
 1751185668: New connection from 172.18.0.1:63680 on port 1883.
 1751185668: New client connected from 172.18.0.1:63680 as device_YTdzQYiThAuY (p2, c1, k60).
 1751185681: Client device_YTdzQYiThAuY disconnected.
+1751408306: mosquitto version 2.0.21 starting
+1751408306: Config loaded from /mosquitto/config/mosquitto.conf.
+1751408306: Warning: File /mosquitto/config/passwd has world readable permissions. Future versions will refuse to load this file.
+To fix this, use `chmod 0700 /mosquitto/config/passwd`.
+1751408306: Opening ipv4 listen socket on port 1883.
+1751408306: Opening ipv6 listen socket on port 1883.
+1751408306: Opening websockets listen socket on port 9001.
+1751408306: mosquitto version 2.0.21 running
+1751408340: New connection from 172.18.0.1:61558 on port 1883.
+1751408340: New client connected from 172.18.0.1:61558 as device_q4Z_ooBVKFJA (p2, c1, k60, u'iot_user').
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684d2dbcd8477.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684d2ded78b66.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684d2e1fa24d3.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684d2ecea2ef4.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684e8f347765b.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684e9022499ca.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684e93016329e.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684e935923d64.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684e98f2bc484.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684e99d18d2da.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684e9a400fc7e.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684e9f2db10c1.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684ea0576f80e.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684ea086b7abd.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684ea096e6168.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684fda0ee5a19.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-684fdd8f141b8.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685034c0b51ce.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-6851099b64748.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-68510a7f16fde.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-68513b21d05cf.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-68590552d4b5f.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685e4ef58b236.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fb49b238c6.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fb54e9f117.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fb5ad3a8e9.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fb8ca2d1ff.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fbe2b7a876.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fbe3f2dac7.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fc300ab2fd.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fc32f9aacb.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fc357e3c8b.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fc60da52cb.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fc71a17d21.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fc7c066ab6.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fd2bf550eb.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fd43fcab13.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fd696ec69f.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fd7aac1fb6.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-685fd8f46eab9.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-6860016ebe1c9.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-686003de71909.
+1751408342: Outgoing messages are being dropped for client yii-mqtt-6860f7558bbfd.
+1751408349: Client device_q4Z_ooBVKFJA disconnected.
+1751408415: New connection from 172.18.0.1:60296 on port 1883.
+1751408415: Client yii-mqtt-68645f1fa22db disconnected, not authorised.
+1751408562: New connection from 172.18.0.1:65262 on port 1883.
+1751408562: Client yii-mqtt-68645fb276c70 disconnected, not authorised.
+1751408667: New connection from 172.18.0.1:59560 on port 1883.
+1751408667: New client connected from 172.18.0.1:59560 as yii-mqtt-6864601b8d6db (p1, c0, k60, u'iot_user').
+1751408683: Client yii-mqtt-6864601b8d6db closed its connection.
