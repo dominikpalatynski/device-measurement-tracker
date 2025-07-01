@@ -58,12 +58,6 @@ $config = [
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
-        'errorHandler' => [
-            'errorAction' => 'site/error',
-        ],
-        'mailer' => [
-            'class' => \yii\symfonymailer\Mailer::class,
-        ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,
             'targets' => [
@@ -79,11 +73,7 @@ $config = [
                 ],
             ],
         ],
-        'db' => $db,
-        'user' => [
-            'identityClass' => 'app\models\User',
-            'enableAutoLogin' => true,
-        ],        'urlManager' => [
+        'db' => $db,        'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [                // Device endpoints (using DeviceRegisterController since DevicesController is empty)
@@ -105,9 +95,9 @@ $config = [
                 'api/devices/<id:\d+>/deactivate' => 'api/device-register/deactivate',
 
                 // Live fault endpoints for devices
-                'api/devices/<deviceId:\w+>/live-fault' => 'api/devices/live-fault',
-                'api/devices/<deviceId:\w+>/start-condition' => 'api/devices/start-condition',
-                'api/devices/<deviceId:\w+>/stop-condition' => 'api/devices/stop-condition',                // Fault endpoints
+                'api/devices/<deviceId:\w+>/live-fault' => 'api/device-register/live-fault',
+                'api/devices/<deviceId:\w+>/start-condition' => 'api/device-register/start-condition',
+                'api/devices/<deviceId:\w+>/stop-condition' => 'api/device-register/stop-condition',                // Fault endpoints
                 'api/fault/list' => 'api/faults/list',
                 'api/fault/view' => 'api/faults/view',
                 'api/fault/create' => 'api/faults/create',
@@ -115,7 +105,7 @@ $config = [
                 'api/fault/delete' => 'api/faults/delete',
                 'api/fault/test' => 'api/faults/test',
                 
-                // Additional fault endpoints (keeping backward compatibility)
+                // Faults endpoints
                 'api/faults/list' => 'api/faults/list',
                 'api/faults/view' => 'api/faults/view',
                 'api/faults/create' => 'api/faults/create',
@@ -169,29 +159,19 @@ $config = [
                 'api/measurement/range' => 'api/device-measurement/range',
                 'api/measurement/test' => 'api/device-measurement/test',
                 'api/measurement/echo' => 'api/device-measurement/echo',
-                  // Generic rule for other actions
+                // Generic rule for other actions
                 'api/measurement/<action>' => 'api/device-measurement/<action>',
-                  // Measurement Data endpoints (from measurement_data table)
-                // More specific routes must come first
-                'api/measurement-data/condition/live' => 'api/measurement-data/condition-live',
-                'api/measurement-data/condition/latest' => 'api/measurement-data/condition-latest',
-                'api/measurement-data/condition/<conditionId>' => 'api/measurement-data/condition',
-                'api/measurement-data/device/<deviceId>' => 'api/measurement-data/device',
-                'api/measurement-data/latest-all' => 'api/measurement-data/latest-all',
-                'api/measurement-data/<action>' => 'api/measurement-data/<action>',
                 
+                // Measurement Channel endpoints
+                'api/measurement-channel/list' => 'api/measurement-channel/list',
+                'api/measurement-channel/view' => 'api/measurement-channel/view',
+                'api/measurement-channel/create' => 'api/measurement-channel/create',
+                'api/measurement-channel/update' => 'api/measurement-channel/update',
+                'api/measurement-channel/delete' => 'api/measurement-channel/delete',
+                'api/measurement-channel/test' => 'api/measurement-channel/test',
                 // MongoDB Data endpoints - Unified API
-                // Only the measurements endpoint is exposed for flexible measurement data querying
-                // All other MongoDB hierarchy logic (devices, faults, conditions, data series) has been
-                // removed and is now handled through MySQL. Use the measurements endpoint with 
-                // appropriate filters (deviceId, faultId, conditionId, etc.) for all data access.
                 'api/mongodb/measurements' => 'api/mongo-d-b/measurements',
                 'api/mongodb/test' => 'api/mongo-d-b/test',
-                
-                // Other existing rules
-                'api/measurements/device/<id:\w+>' => 'api/measurement/device',
-                'api/dashboard-data' => 'api/measurement/dashboard-data',
-                'dashboard/device/<id:\w+>' => 'dashboard/device-details',
             ],
         ],
         'mqtt' => [

@@ -87,16 +87,6 @@ class Devices extends ActiveRecord
     }
 
     /**
-     * Gets query for [[DeviceConfigurations]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getDeviceConfigurations()
-    {
-        return $this->hasMany(DeviceConfigurations::class, ['device_id' => 'device_id']);
-    }
-
-    /**
      * Get device by ID
      * 
      * @param string $id
