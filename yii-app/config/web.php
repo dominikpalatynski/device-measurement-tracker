@@ -211,8 +211,8 @@ $config = [
             'class' => 'app\components\MqttComponent',
             'host' => 'localhost',  // Connects to the Docker container
             'port' => 1883,
-            'username' => '',       // No authentication for development
-            'password' => '',
+            'username' => 'iot_user',
+            'password' => 'iot_password',
         ],
     ],
     'modules' => [

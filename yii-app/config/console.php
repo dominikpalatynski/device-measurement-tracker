@@ -45,6 +45,8 @@ $config = [
             'class' => 'app\components\MqttComponent',
             'host' => 'localhost',  // Change to your MQTT broker host if not localhost
             'port' => 1883,         // Change if your broker uses a different port
+            'username' => 'iot_user',
+            'password' => 'iot_password',
         ],
     ],
     'params' => $params,

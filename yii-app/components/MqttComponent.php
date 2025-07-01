@@ -14,6 +14,7 @@ class MqttComponent extends Component
     public $password = null;
     public $clientId;
     private $_client;
+    private $_connectionSettings;
     
     public function init()
     {
@@ -26,7 +27,7 @@ class MqttComponent extends Component
     public function getClient()
     {
         if ($this->_client === null) {
-            $connectionSettings = (new ConnectionSettings())
+            $this->_connectionSettings = (new ConnectionSettings())
                 ->setUsername($this->username)
                 ->setPassword($this->password)
                 ->setKeepAliveInterval(60)
@@ -38,12 +39,20 @@ class MqttComponent extends Component
         return $this->_client;
     }
     
+    public function getConnectionSettings()
+    {
+        if ($this->_connectionSettings === null) {
+            $this->getClient(); // This will initialize the connection settings
+        }
+        return $this->_connectionSettings;
+    }
+    
     public function publish($topic, $message, $qos = 0, $retain = false)
     {
         $client = $this->getClient();
         
         if (!$client->isConnected()) {
-            $client->connect();
+            $client->connect($this->getConnectionSettings());
         }
         
         $client->publish($topic, $message, $qos, $retain);
@@ -56,7 +65,7 @@ class MqttComponent extends Component
         $client = $this->getClient();
         
         if (!$client->isConnected()) {
-            $client->connect();
+            $client->connect($this->getConnectionSettings());
         }
         
         $client->subscribe($topic, function ($topic, $message) use ($callback) {
