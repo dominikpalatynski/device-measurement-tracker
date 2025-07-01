@@ -3,7 +3,7 @@
  */
 
 // Get the API URL from environment variables
-const API_URL = "http://localhost:8080/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 /**
  * Base API request function with error handling
@@ -99,6 +99,103 @@ export interface MeasurementStatsResponse {
 }
 
 /**
+ * Authentication interfaces
+ */
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: 'admin' | 'normal';
+  display_name: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: User;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  data?: LoginResponse;
+  error?: string;
+}
+
+/**
+ * Authentication interfaces
+ */
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: 'admin' | 'normal';
+  display_name: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: User;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  data?: LoginResponse;
+  error?: string;
+}
+
+export interface UserResponse {
+  success: boolean;
+  data?: User;
+  error?: string;
+}
+
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+}
+
+export interface CreateUserRequest {
+  username: string;
+  email: string;
+  password: string;
+  first_name?: string;
+  last_name?: string;
+  role: 'admin' | 'normal';
+}
+
+export interface UpdateUserRequest {
+  username?: string;
+  email?: string;
+  password?: string;
+  first_name?: string;
+  last_name?: string;
+  role?: 'admin' | 'normal';
+}
+
+export interface UsersListResponse {
+  success: boolean;
+  data?: User[];
+  error?: string;
+}
+
+/**
  * Measurement Data from measurement_data table (for conditions)
  */
 export interface MeasurementData {
@@ -126,6 +223,7 @@ export interface Device {
   status: 'Active' | 'Inactive';
   registration_date: string;
   last_updated: string;
+  owner_id?: number;
   // Optional fields that might be added by frontend
   faults_count?: number;
   active_faults_count?: number;
@@ -423,11 +521,11 @@ export async function testApiConnection(message: string = "hello"): Promise<{suc
 
 // Device API functions
 /**
- * Get all devices
+ * Get all devices (filtered by user ownership)
  */
 export async function getDevices(): Promise<Device[]> {
   try {
-    const response = await fetchApi<DeviceResponse>('device-register/list');
+    const response = await fetchApiWithAuth<DeviceResponse>('device-register/list');
     if (response.success && response.data) {
       return response.data;
     }
@@ -439,11 +537,11 @@ export async function getDevices(): Promise<Device[]> {
 }
 
 /**
- * Get a single device by UUID
+ * Get a single device by UUID (with ownership check)
  */
 export async function getDevice(deviceUuid: string): Promise<Device | null> {
   try {
-    const response = await fetchApi<SingleDeviceResponse>(`device/view?id=${deviceUuid}`);
+    const response = await fetchApiWithAuth<SingleDeviceResponse>(`device-register/view?id=${deviceUuid}`);
     if (response.success && response.data) {
       return response.data;
     }
@@ -455,16 +553,13 @@ export async function getDevice(deviceUuid: string): Promise<Device | null> {
 }
 
 /**
- * Register a new device
+ * Register a new device (with authentication)
  */
 export async function registerDevice(deviceData: {device_name: string, device_type: string}): Promise<Device | null> {
   try {
     console.log('Registering device:', deviceData);
-    const response = await fetchApi<{success: boolean, data?: {device_id: string, verification_token: string, device_name: string, device_type: string, status: string}, error?: string}>('device-register/create', {
+    const response = await fetchApiWithAuth<{success: boolean, data?: {device_id: string, verification_token: string, device_name: string, device_type: string, status: string, owner_id: number}, error?: string}>('device-register/create', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(deviceData),
     });
       if (response.success && response.data && response.data.device_id) {
@@ -481,6 +576,7 @@ export async function registerDevice(deviceData: {device_name: string, device_ty
         registration_date: new Date().toISOString(),
         last_updated: new Date().toISOString(),
         verification_token: response.data.verification_token,
+        owner_id: response.data.owner_id,
       };
       return device;
     }
@@ -1477,4 +1573,74 @@ export async function filterMeasurementsByNames(filters: {
       filters: filters
     };
   }
+}
+
+/**
+ * Token management
+ */
+class TokenManager {
+  private static readonly TOKEN_KEY = 'auth_token';
+  private static readonly USER_KEY = 'auth_user';
+
+  static getToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  static setToken(token: string): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(this.TOKEN_KEY, token);
+  }
+
+  static removeToken(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(this.TOKEN_KEY);
+  }
+
+  static getUser(): User | null {
+    if (typeof window === 'undefined') return null;
+    const userJson = localStorage.getItem(this.USER_KEY);
+    return userJson ? JSON.parse(userJson) : null;
+  }
+
+  static setUser(user: User): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+  }
+
+  static removeUser(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(this.USER_KEY);
+  }
+
+  static clearAll(): void {
+    this.removeToken();
+    this.removeUser();
+  }
+
+  static isLoggedIn(): boolean {
+    return this.getToken() !== null;
+  }
+}
+
+/**
+ * Enhanced fetchApi with authentication support
+ */
+async function fetchApiWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const token = TokenManager.getToken();
+  
+  const authHeaders: Record<string, string> = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+
+  if (token) {
+    authHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
+  return fetchApi<T>(endpoint, {
+    ...options,
+    headers: authHeaders,
+  });
 }

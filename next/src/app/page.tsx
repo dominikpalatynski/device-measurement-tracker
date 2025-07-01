@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import { deviceApi, testApiConnection, Device } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Dashboard() {
+	const { isAdmin, isAuthenticated } = useAuth();
 	const [devices, setDevices] = useState<Device[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -100,6 +102,66 @@ export default function Dashboard() {
 					</div>
 				</div>
 			)}
+
+			{/* Admin Section */}
+			{isAuthenticated && isAdmin && (
+				<div className='bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200 p-6 mb-6'>
+					<div className='flex items-center justify-between mb-4'>
+						<div className='flex items-center'>
+							<div className='w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center text-lg font-bold mr-3'>
+								👨‍💼
+							</div>
+							<div>
+								<h2 className='text-xl font-bold text-gray-900'>
+									Admin Panel
+								</h2>
+								<p className='text-sm text-gray-600'>
+									Administrative functions and user management
+								</p>
+							</div>
+						</div>
+					</div>
+					<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+						<Link
+							href='/users'
+							className='bg-white rounded-lg border border-purple-200 p-4 hover:shadow-md transition-shadow group'
+						>
+							<div className='flex items-center'>
+								<div className='w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center text-sm font-bold mr-3 group-hover:bg-purple-600 group-hover:text-white transition-colors'>
+									👥
+								</div>
+								<div>
+									<h3 className='font-medium text-gray-900'>
+										User Management
+									</h3>
+									<p className='text-sm text-gray-500'>
+										Create, edit, and manage users
+									</p>
+								</div>
+							</div>
+						</Link>
+						<Link
+							href='/profile'
+							className='bg-white rounded-lg border border-purple-200 p-4 hover:shadow-md transition-shadow group'
+						>
+							<div className='flex items-center'>
+								<div className='w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center text-sm font-bold mr-3 group-hover:bg-purple-600 group-hover:text-white transition-colors'>
+									👤
+								</div>
+								<div>
+									<h3 className='font-medium text-gray-900'>
+										My Profile
+									</h3>
+									<p className='text-sm text-gray-500'>
+										Update personal info and password
+									</p>
+								</div>
+							</div>
+						</Link>
+					</div>
+				</div>
+			)}
+
 			{/* Devices List */}
 			<div className='bg-white rounded-lg border border-gray-200 p-6'>
 				<div className='flex items-center justify-between mb-6'>

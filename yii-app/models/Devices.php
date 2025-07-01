@@ -13,10 +13,12 @@ use yii\db\Expression;
  * @property string $device_id
  * @property string $device_name
  * @property string $device_type
+ * @property int $owner_id
  * @property string $registration_date
  * @property string $status
  * @property string $last_updated
  *
+ * @property User $owner
  * @property Faults[] $faults
  */
 class Devices extends ActiveRecord
@@ -50,8 +52,9 @@ class Devices extends ActiveRecord
     public function rules()
     {
         return [
-            [['device_id', 'device_name', 'device_type'], 'required'],
+            [['device_id', 'device_name', 'device_type', 'owner_id'], 'required'],
             [['registration_date', 'last_updated'], 'safe'],
+            [['owner_id'], 'integer'],
             [['device_id', 'device_name'], 'string', 'max' => 255],
             [['device_type'], 'string'],
             [['device_type'], 'in', 'range' => [self::TYPE_PMSM_MECHANICAL_VIBRATION, self::TYPE_BLDC_HIGH_SPEED, self::TYPE_PMSM_TORQUE_LOAD]],
@@ -59,6 +62,7 @@ class Devices extends ActiveRecord
             [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_INACTIVE]],
             [['device_id'], 'unique'],
             [['config'], 'safe'],
+            [['owner_id'], 'exist', 'targetClass' => User::class, 'targetAttribute' => 'id'],
         ];
     }
 
@@ -71,12 +75,23 @@ class Devices extends ActiveRecord
             'device_id' => 'Device ID',
             'device_name' => 'Device Name',
             'device_type' => 'Device Type',
+            'owner_id' => 'Owner',
             'registration_date' => 'Registration Date',
             'status' => 'Status',
             'last_updated' => 'Last Updated',
             'config' => 'Config',
         ];
     }    /**
+     * Gets query for [[Owner]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getOwner()
+    {
+        return $this->hasOne(User::class, ['id' => 'owner_id']);
+    }
+
+    /**
      * Gets query for [[Faults]].
      *
      * @return \yii\db\ActiveQuery
@@ -95,6 +110,40 @@ class Devices extends ActiveRecord
     public static function findByDeviceId($id)
     {
         return self::findOne(['device_id' => $id]);
+    }
+
+    /**
+     * Get device by ID for specific owner
+     * 
+     * @param string $id
+     * @param int $ownerId
+     * @return self|null
+     */
+    public static function findByDeviceIdAndOwner($id, $ownerId)
+    {
+        return self::findOne(['device_id' => $id, 'owner_id' => $ownerId]);
+    }
+
+    /**
+     * Get all devices for specific owner
+     * 
+     * @param int $ownerId
+     * @return \yii\db\ActiveQuery
+     */
+    public static function findByOwner($ownerId)
+    {
+        return self::find()->where(['owner_id' => $ownerId]);
+    }
+
+    /**
+     * Check if user owns this device
+     * 
+     * @param int $userId
+     * @return bool
+     */
+    public function isOwnedBy($userId)
+    {
+        return $this->owner_id == $userId;
     }
     
     /**

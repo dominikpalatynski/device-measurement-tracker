@@ -73,7 +73,20 @@ $config = [
                 ],
             ],
         ],
-        'db' => $db,        'urlManager' => [
+        'db' => $db,
+        'user' => [
+            'identityClass' => 'app\models\User',
+            'enableAutoLogin' => true,
+        ],
+        'errorHandler' => [
+            'errorAction' => 'site/error',
+        ],
+        'mailer' => [
+            'class' => \yii\symfonymailer\Mailer::class,
+            'viewPath' => '@app/mail',
+            // send all mails to a file by default.
+            'useFileTransport' => true,
+        ],        'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [                // Device endpoints (using DeviceRegisterController since DevicesController is empty)
@@ -97,7 +110,27 @@ $config = [
                 // Live fault endpoints for devices
                 'api/devices/<deviceId:\w+>/live-fault' => 'api/device-register/live-fault',
                 'api/devices/<deviceId:\w+>/start-condition' => 'api/device-register/start-condition',
-                'api/devices/<deviceId:\w+>/stop-condition' => 'api/device-register/stop-condition',                // Fault endpoints
+                'api/devices/<deviceId:\w+>/stop-condition' => 'api/device-register/stop-condition',
+                
+                // Authentication endpoints
+                'api/auth/login' => 'api/auth/login',
+                'api/auth/logout' => 'api/auth/logout',
+                'api/auth/me' => 'api/auth/me',
+                'api/auth/change-password' => 'api/auth/change-password',
+                'api/auth/refresh' => 'api/auth/refresh',
+                'api/auth/test' => 'api/auth/test',
+                
+                // User management endpoints (admin only)
+                'api/users' => 'api/users/index',
+                'api/users/options' => 'api/users/options',
+                'api/users/<id:\d+>' => 'api/users/view',
+                'api/users/create' => 'api/users/create',
+                'api/users/<id:\d+>/update' => 'api/users/update',
+                'api/users/<id:\d+>/delete' => 'api/users/delete',
+                'api/users/<id:\d+>/activate' => 'api/users/activate',
+                'api/users/<id:\d+>/deactivate' => 'api/users/deactivate',
+                
+                // Fault endpoints
                 'api/fault/list' => 'api/faults/list',
                 'api/fault/view' => 'api/faults/view',
                 'api/fault/create' => 'api/faults/create',

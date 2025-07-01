@@ -12,6 +12,7 @@ use yii\helpers\Json;
 use app\models\VerificationToken;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
+use app\filters\JwtAuthFilter;
 
 class DeviceRegisterController extends Controller
 {    /**
@@ -20,7 +21,14 @@ class DeviceRegisterController extends Controller
     {
         $behaviors = parent::behaviors();
         $behaviors['contentNegotiator']['formats']['application/json'] = Response::FORMAT_JSON;
-          // Add HTTP method filter
+        
+        // Add JWT authentication filter
+        $behaviors['jwtAuth'] = [
+            'class' => JwtAuthFilter::class,
+            'except' => ['test'], // Public endpoints
+        ];
+        
+        // Add HTTP method filter
         $behaviors['verbs'] = [
             'class' => \yii\filters\VerbFilter::class,
             'actions' => [
@@ -282,6 +290,13 @@ class DeviceRegisterController extends Controller
         
         try {
             $device = $this->findDevice($id);
+            $user = Yii::$app->user->identity;
+            
+            // Check if user has access to this device
+            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
+                throw new NotFoundHttpException('Device not found or access denied.');
+            }
+            
             $data = Json::decode(Yii::$app->request->rawBody);
 
             if (isset($data['name'])) {
@@ -319,6 +334,12 @@ class DeviceRegisterController extends Controller
         
         try {
             $device = $this->findDevice($id);
+            $user = Yii::$app->user->identity;
+            
+            // Check if user has access to this device
+            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
+                throw new NotFoundHttpException('Device not found or access denied.');
+            }
             
             if (!$device->delete()) {
                 throw new ServerErrorHttpException('Błąd podczas usuwania urządzenia');
@@ -343,7 +364,15 @@ class DeviceRegisterController extends Controller
         Yii::info("Device list endpoint called", 'api.device-register');
         
         try {
-            $devices = Devices::find()->all();
+            $user = Yii::$app->user->identity;
+            
+            // Admins can see all devices, regular users only see their own
+            if ($user->isAdmin()) {
+                $devices = Devices::find()->all();
+            } else {
+                $devices = Devices::findByOwner($user->id)->all();
+            }
+            
             return [
                 'success' => true,
                 'data' => array_map(function($device) {
@@ -371,6 +400,13 @@ class DeviceRegisterController extends Controller
             }
             
             $device = $this->findDevice($id);
+            $user = Yii::$app->user->identity;
+            
+            // Check if user has access to this device
+            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
+                throw new NotFoundHttpException('Device not found or access denied.');
+            }
+            
             return [
                 'success' => true,
                 'data' => $device->attributes,
@@ -394,6 +430,12 @@ class DeviceRegisterController extends Controller
             }
             
             $device = $this->findDevice($id);
+            $user = Yii::$app->user->identity;
+            
+            // Check if user has access to this device
+            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
+                throw new NotFoundHttpException('Device not found or access denied.');
+            }
             
             $device->status = Devices::STATUS_ACTIVE;
             
@@ -431,10 +473,13 @@ class DeviceRegisterController extends Controller
                 ];
             }
 
+            $user = Yii::$app->user->identity;
+            
             $device = new Devices();
             $device->device_id = Yii::$app->security->generateRandomString(12);
             $device->device_name = $data['device_name'];
             $device->device_type = $data['device_type'];
+            $device->owner_id = $user->id; // Set the current user as owner
             $device->status = Devices::STATUS_INACTIVE;
             $device->registration_date = new \yii\db\Expression('NOW()');
             $device->last_updated = new \yii\db\Expression('NOW()');
@@ -468,6 +513,7 @@ class DeviceRegisterController extends Controller
                     'device_name' => $device->device_name,
                     'device_type' => $device->device_type,
                     'status' => $device->status,
+                    'owner_id' => $device->owner_id,
                 ],
             ];
         } catch (\Exception $e) {
@@ -480,7 +526,7 @@ class DeviceRegisterController extends Controller
     }
 
     /**
-     * Znajduje urządzenie po ID
+     * Deactivate a device
      */
     public function actionDeactivate()
     {
@@ -491,6 +537,12 @@ class DeviceRegisterController extends Controller
             }
             
             $device = $this->findDevice($id);
+            $user = Yii::$app->user->identity;
+            
+            // Check if user has access to this device
+            if (!$user->isAdmin() && !$device->isOwnedBy($user->id)) {
+                throw new NotFoundHttpException('Device not found or access denied.');
+            }
             
             $device->status = Devices::STATUS_INACTIVE;
             

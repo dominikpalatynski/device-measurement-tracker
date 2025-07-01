@@ -37,6 +37,10 @@ $config = [
             ],
         ],
         'db' => $db,
+        'user' => [
+            'class' => 'yii\web\User',
+            'identityClass' => 'app\models\User',
+        ],
         'mqtt' => [
             'class' => 'app\components\MqttComponent',
             'host' => 'localhost',  // Change to your MQTT broker host if not localhost

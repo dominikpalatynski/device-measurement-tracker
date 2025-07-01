@@ -22,7 +22,8 @@
         "mongodb/mongodb": "^2.1",
         "php-http/guzzle7-adapter": "^1.1",
         "predis/predis": "^3.0",
-        "php-amqplib/php-amqplib": "^3.7"
+        "php-amqplib/php-amqplib": "^3.7",
+        "firebase/php-jwt": "^6.11"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
