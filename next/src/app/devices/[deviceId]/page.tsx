@@ -81,6 +81,11 @@ export default function DeviceDetailPage() {
 	);
 	const [tokenLoading, setTokenLoading] = useState(false);
 
+	// Batch token state
+	const [showBatchTokenModal, setShowBatchTokenModal] = useState(false);
+	const [batchToken, setBatchToken] = useState<string | null>(null);
+	const [batchTokenLoading, setBatchTokenLoading] = useState(false);
+
 	// Fetch channels from backend
 	const fetchChannels = async () => {
 		setChannelsLoading(true);
@@ -405,6 +410,31 @@ export default function DeviceDetailPage() {
 			setTokenLoading(false);
 		}
 	};
+
+	const handleGenerateBatchToken = async () => {
+		if (!device) return;
+
+		setBatchTokenLoading(true);
+		try {
+			// Call backend API to generate a proper JWT batch token
+			const response = await deviceApi.generateBatchToken(device.device_id);
+			
+			if (response.success && response.data) {
+				setBatchToken(response.data.batch_token);
+				setShowBatchTokenModal(true);
+			} else {
+				throw new Error(response.error || "Failed to generate batch token");
+			}
+		} catch (err) {
+			setError(
+				err instanceof Error
+					? err.message
+					: "Failed to generate batch token"
+			);
+		} finally {
+			setBatchTokenLoading(false);
+		}
+	};
 	const getStatusColor = (status: Device["status"]) => {
 		switch (status) {
 			case "Active":
@@ -536,6 +566,14 @@ export default function DeviceDetailPage() {
 									</Link>
 								</>
 							)}
+							{/* BatchToken button */}
+							<button
+								onClick={handleGenerateBatchToken}
+								disabled={batchTokenLoading}
+								className='inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50'
+							>
+								{batchTokenLoading ? "..." : "🔑 BatchToken"}
+							</button>
 							{/* Delete button */}
 							<button
 								onClick={handleDeleteDevice}
@@ -2188,6 +2226,130 @@ export default function DeviceDetailPage() {
 											setRegeneratedToken(null);
 										}}
 										className='px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md'
+									>
+										Close
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* Batch Token Modal */}
+					{showBatchTokenModal && batchToken && (
+						<div className='fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50'>
+							<div className='bg-white rounded-lg max-w-lg w-full p-6'>
+								<div className='flex justify-between items-center mb-4'>
+									<h4 className='text-lg font-bold text-gray-900'>
+										🔑 Batch Token Generated
+									</h4>
+									<button
+										onClick={() => {
+											setShowBatchTokenModal(false);
+											setBatchToken(null);
+										}}
+										className='text-gray-500 hover:text-gray-700'
+									>
+										✕
+									</button>
+								</div>
+								<div className='space-y-4'>
+									<div className='bg-purple-50 border border-purple-200 rounded-lg p-4'>
+										<div className='flex items-center'>
+											<div className='text-purple-400 mr-3'>
+												🔐
+											</div>
+											<div>
+												<h4 className='font-medium text-purple-800'>
+													Batch Token Generated Successfully
+												</h4>
+												<p className='text-sm text-purple-700 mt-1'>
+													Use this JWT token for batch operations with this device. 
+													Token expires in 1 hour.
+												</p>
+											</div>
+										</div>
+									</div>
+									<div className='space-y-2'>
+										<label className='block text-sm font-medium text-gray-700'>
+											Device ID
+										</label>
+										<div className='flex'>
+											<input
+												type='text'
+												value={device?.device_id || ""}
+												readOnly
+												className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-sm font-mono text-gray-500'
+											/>
+											<button
+												onClick={() =>
+													navigator.clipboard.writeText(
+														device?.device_id || ""
+													)
+												}
+												className='px-3 py-2 bg-purple-600 text-white rounded-r-md hover:bg-purple-700 text-sm'
+											>
+												Copy
+											</button>
+										</div>
+									</div>
+									<div className='space-y-2'>
+										<label className='block text-sm font-medium text-gray-700'>
+											JWT Batch Token
+										</label>
+										<div className='flex'>
+											<textarea
+												value={batchToken}
+												readOnly
+												rows={4}
+												className='flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-gray-50 text-xs font-mono text-gray-500 resize-none'
+											/>
+											<button
+												onClick={() =>
+													navigator.clipboard.writeText(
+														batchToken
+													)
+												}
+												className='px-3 py-2 bg-purple-600 text-white rounded-r-md hover:bg-purple-700 text-sm self-start'
+											>
+												Copy
+											</button>
+										</div>
+									</div>
+									<div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
+										<h5 className='font-medium text-blue-800 mb-2'>
+											Usage Information
+										</h5>
+										<p className='text-sm text-blue-700 mb-2'>
+											Use this token in your batch operations:
+										</p>
+										<div className='space-y-2'>
+											<div className='bg-gray-800 text-green-400 p-2 rounded text-xs font-mono overflow-x-auto'>
+												{`Authorization: Bearer ${batchToken.substring(0, 50)}...`}
+											</div>
+											<div className='bg-gray-800 text-green-400 p-2 rounded text-xs font-mono overflow-x-auto'>
+												{`curl -H "Authorization: Bearer ${batchToken.substring(0, 30)}..." \\`}<br />
+												{`  -X POST http://your-api/batch-endpoint`}
+											</div>
+										</div>
+										<button
+											onClick={() =>
+												navigator.clipboard.writeText(
+													`Authorization: Bearer ${batchToken}`
+												)
+											}
+											className='mt-2 text-xs text-blue-600 hover:text-blue-800'
+										>
+											📋 Copy authorization header
+										</button>
+									</div>
+								</div>
+								<div className='flex justify-end mt-6'>
+									<button
+										onClick={() => {
+											setShowBatchTokenModal(false);
+											setBatchToken(null);
+										}}
+										className='px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-md'
 									>
 										Close
 									</button>

@@ -805,6 +805,19 @@ export async function regenerateDeviceToken(deviceId: string): Promise<{ success
   }
 }
 
+export async function generateBatchToken(deviceId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const response = await fetchApiWithAuth<{ success: boolean; data?: any; error?: string }>(`device-measurement/generate-batch-token?deviceId=${deviceId}`, {
+      method: 'GET',
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Failed to generate batch token:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
 // Device API object for easy access
 export const deviceApi = {
   getDevices,
@@ -815,6 +828,7 @@ export const deviceApi = {
   deactivateDevice,
   deleteDevice,
   regenerateToken: regenerateDeviceToken,
+  generateBatchToken,
 };
 
 // Online Mode API for real-time fault control

@@ -4,11 +4,16 @@ namespace app\modules\api\controllers;
 use Yii;
 use yii\rest\Controller;
 use yii\web\Response;
+use yii\web\UnauthorizedHttpException;
+use yii\web\BadRequestHttpException;
 use app\services\DeviceMeasurementService;
 use app\models\Condition;
 use app\models\Faults;
 use app\models\Devices;
 use app\services\MongoDBService;
+use app\filters\JwtAuthFilter;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
 class DeviceMeasurementController extends Controller
 {
@@ -54,9 +59,89 @@ class DeviceMeasurementController extends Controller
             ],
         ];
         
+        // Add JWT authentication filter
+        $behaviors['jwtAuth'] = [
+            'class' => JwtAuthFilter::class,
+            'except' => ['phenomen-batch'], // Allow batch operations without user auth (uses batch token)
+        ];
+        
         return $behaviors;
     }   
 
+    /**
+     * Generate batch token for device
+     */
+    public function actionGenerateBatchToken()
+    {
+        try {
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            $request = Yii::$app->request;
+            
+            // Get device ID from request
+            $deviceId = $request->get('deviceId');
+            if (!$deviceId) {
+                Yii::$app->response->statusCode = 400;
+                return [
+                    'success' => false,
+                    'error' => 'Missing deviceId parameter'
+                ];
+            }
+            
+            // Validate device exists and is active
+            $device = Devices::findByDeviceId($deviceId);
+            if (!$device) {
+                Yii::$app->response->statusCode = 404;
+                return [
+                    'success' => false,
+                    'error' => "Device not found: $deviceId"
+                ];
+            }
+            
+            if ($device->status !== Devices::STATUS_ACTIVE) {
+                Yii::$app->response->statusCode = 400;
+                return [
+                    'success' => false,
+                    'error' => "Device $deviceId is not active"
+                ];
+            }
+            
+            // Generate JWT batch token
+            $secretKey = Yii::$app->params['jwtSecretKey'] ?? 'your-secret-key';
+            $issuedAt = time();
+            $expiresAt = $issuedAt + 3600; // 1 hour
+            
+            $payload = [
+                'device_id' => $deviceId,
+                'purpose' => 'batch_operations',
+                'issued_at' => $issuedAt,
+                'expires_at' => $expiresAt,
+                'iat' => $issuedAt,
+                'exp' => $expiresAt
+            ];
+            
+            $batchToken = JWT::encode($payload, $secretKey, 'HS256');
+            
+            Yii::info("Generated batch token for device: $deviceId", 'api.device-measurement');
+            
+            return [
+                'success' => true,
+                'data' => [
+                    'batch_token' => $batchToken,
+                    'device_id' => $deviceId,
+                    'expires_at' => $expiresAt,
+                    'expires_in' => 3600
+                ]
+            ];
+            
+        } catch (\Throwable $e) {
+            Yii::error("Error generating batch token: " . $e->getMessage(), 'api.device-measurement');
+            Yii::$app->response->statusCode = 500;
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
 
     public function actionPhenomenBatch()
     {
@@ -74,6 +159,9 @@ class DeviceMeasurementController extends Controller
             ];
         }
 
+        // Validate batch token
+        $this->validateBatchToken($data);
+
         $mongoResult = $this->processBatchData($data);
 
             return [
@@ -87,6 +175,83 @@ class DeviceMeasurementController extends Controller
                 'success' => false,
                 'error' => $e->getMessage()
             ];
+        }
+    }
+
+    /**
+     * Validate JWT batch token for authentication
+     * @param array $data Request payload data
+     * @throws UnauthorizedHttpException
+     * @throws BadRequestHttpException
+     */
+    protected function validateBatchToken($data)
+    {
+        // Get Bearer token from Authorization header
+        $authHeader = Yii::$app->request->getHeaders()->get('Authorization');
+        if (!$authHeader || !preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+            throw new UnauthorizedHttpException('Missing or invalid Authorization header. Batch token required.');
+        }
+        
+        $token = $matches[1];
+        
+        try {
+            // Decode JWT token
+            $secretKey = Yii::$app->params['jwtSecretKey'] ?? 'your-secret-key';
+            $decoded = JWT::decode($token, new Key($secretKey, 'HS256'));
+            
+            // Convert to array for easier handling
+            $payload = (array) $decoded;
+            
+            // Validate token purpose
+            if (!isset($payload['purpose']) || $payload['purpose'] !== 'batch_operations') {
+                throw new UnauthorizedHttpException('Invalid token purpose. Batch token required.');
+            }
+            
+            // Validate device ID matches
+            if (!isset($payload['device_id'])) {
+                throw new UnauthorizedHttpException('Token missing device_id.');
+            }
+            
+            $tokenDeviceId = $payload['device_id'];
+            $requestDeviceId = $data['deviceId'] ?? null;
+            
+            if (!$requestDeviceId) {
+                throw new BadRequestHttpException('Missing deviceId in request payload.');
+            }
+            
+            if ($tokenDeviceId !== $requestDeviceId) {
+                throw new UnauthorizedHttpException('Token device_id does not match request deviceId.');
+            }
+            
+            // Validate token expiration
+            if (isset($payload['expires_at']) && $payload['expires_at'] < time()) {
+                throw new UnauthorizedHttpException('Batch token has expired.');
+            }
+            
+            // Validate device exists and is active
+            $device = Devices::findByDeviceId($requestDeviceId);
+            if (!$device) {
+                throw new BadRequestHttpException("Device not found: $requestDeviceId");
+            }
+            
+            if ($device->status !== Devices::STATUS_ACTIVE) {
+                throw new UnauthorizedHttpException("Device $requestDeviceId is not active.");
+            }
+            
+            Yii::info("Batch token validated successfully for device: $requestDeviceId", 'api.device-measurement');
+            
+        } catch (\Firebase\JWT\ExpiredException $e) {
+            throw new UnauthorizedHttpException('Batch token has expired.');
+        } catch (\Firebase\JWT\SignatureInvalidException $e) {
+            throw new UnauthorizedHttpException('Invalid batch token signature.');
+        } catch (\Firebase\JWT\BeforeValidException $e) {
+            throw new UnauthorizedHttpException('Batch token not yet valid.');
+        } catch (\Exception $e) {
+            if ($e instanceof UnauthorizedHttpException || $e instanceof BadRequestHttpException) {
+                throw $e;
+            }
+            Yii::error("Batch token validation error: " . $e->getMessage(), 'api.device-measurement');
+            throw new UnauthorizedHttpException('Invalid batch token.');
         }
     }
 

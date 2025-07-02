@@ -2,7 +2,8 @@
 """
 Simple File Data Mapper and Sender
 Reads measurement files from directory and sends mapped data to server.
-Usage: python file_mapper.py --config mapping_config.json --device-id DEVICE001 --data-dir ./data
+Supports JWT batch token authentication from config file.
+Usage: python batch_processor.py --config mapping_config.json --data-dir ./data
 """
 
 import argparse
@@ -34,6 +35,13 @@ class FileDataMapper:
         self.sampling_frequency = config.get('sampling_frequency')
         self.condition_name = config.get('condition_name')
         self.data_series = config.get('data_series')
+        
+        # Load token from config file
+        self.token = config.get('batch_token')
+        if self.token:
+            print(f"🔐 Batch token loaded from config file")
+        else:
+            print(f"⚠️  No batch token found in config file")
     def read_file_data(self, file_path: Path) -> List[float]:
         """Read numerical data from file, one value per line"""
         try:
@@ -112,6 +120,13 @@ class FileDataMapper:
                 'Content-Type': 'application/json'
             }
             
+            # Add Authorization header if token is provided
+            if self.token:
+                headers['Authorization'] = f'Bearer {self.token}'
+                print(f"🔐 Using batch token authentication")
+            else:
+                print(f"⚠️  No batch token provided - sending without authentication")
+            
             print(f"🌐 Sending data to: {url}")
             # print(f"📄 Payload: {json.dumps(payload, indent=2)}")
             
@@ -185,8 +200,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Process data using token from config file:
   %(prog)s --config mapping_config.json --data-dir ./data
   %(prog)s --config mapping_config.json --data-dir /path/to/measurements
+  
+  # Create sample config:
   %(prog)s --create-sample-config
         """
     )
