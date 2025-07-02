@@ -270,7 +270,7 @@ export default function ConditionDetailPage() {
 			// In a real implementation, this would come from the API
 			const mockCondition: ActiveCondition = {
 				condition_id: conditionId,
-				name: `Condition ${conditionId}`,
+				name: `Condition ${condition?.name}`,
 				description: "Measurement condition",
 				status: "Active",
 				start_time: new Date().toISOString(),

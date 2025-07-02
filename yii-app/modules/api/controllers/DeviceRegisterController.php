@@ -25,7 +25,7 @@ class DeviceRegisterController extends Controller
         // Add JWT authentication filter
         $behaviors['jwtAuth'] = [
             'class' => JwtAuthFilter::class,
-            'except' => ['test'], // Public endpoints
+            'except' => ['test', 'register'], // Public endpoints
         ];
         
         // Add HTTP method filter

@@ -667,7 +667,7 @@ export const faultApi = {
    */
   getFaults: async (): Promise<Fault[]> => {
     try {
-      const response = await fetchApi<FaultResponse>('faults/list');
+      const response = await fetchApiWithAuth<FaultResponse>('faults/list');
       if (response.success && response.data) {
         return response.data;
       }
@@ -683,7 +683,7 @@ export const faultApi = {
    */
   getFault: async (faultId: string): Promise<Fault | null> => {
     try {
-      const response = await fetchApi<SingleFaultResponse>(`faults/view?id=${faultId}`);
+      const response = await fetchApiWithAuth<SingleFaultResponse>(`faults/view?id=${faultId}`);
       if (response.success && response.data) {
         return response.data;
       }
@@ -699,7 +699,7 @@ export const faultApi = {
    */
   createFault: async (faultData: Partial<Fault>): Promise<Fault | null> => {
     try {
-      const response = await fetchApi<SingleFaultResponse>('faults/create', {
+      const response = await fetchApiWithAuth<SingleFaultResponse>('faults/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -724,7 +724,7 @@ export const faultApi = {
    */
   updateFault: async (faultId: string, faultData: Partial<Fault>): Promise<Fault | null> => {
     try {
-      const response = await fetchApi<SingleFaultResponse>(`faults/update?id=${faultId}`, {
+      const response = await fetchApiWithAuth<SingleFaultResponse>(`faults/update?id=${faultId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -746,7 +746,7 @@ export const faultApi = {
    */
   deleteFault: async (faultId: string): Promise<boolean> => {
     try {
-      const response = await fetchApi<{success: boolean}>(`faults/delete?id=${faultId}`, {
+      const response = await fetchApiWithAuth<{success: boolean}>(`faults/delete?id=${faultId}`, {
         method: 'DELETE',
       });
       return response.success;
@@ -824,7 +824,7 @@ export const onlineModeApi = {
    */
   startLiveFault: async (deviceId: string, name?: string): Promise<LiveFault> => {
     try {
-      const response = await fetchApi<LiveFaultResponse>(`devices/${deviceId}/live-fault`, {
+      const response = await fetchApiWithAuth<LiveFaultResponse>(`devices/${deviceId}/live-fault`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -850,7 +850,7 @@ export const onlineModeApi = {
    */
   getLiveFault: async (deviceId: string): Promise<LiveFault | null> => {
     try {
-      const response = await fetchApi<LiveFaultResponse>(`devices/${deviceId}/live-fault`);
+      const response = await fetchApiWithAuth<LiveFaultResponse>(`devices/${deviceId}/live-fault`);
       if (response.success && response.data) {
         return response.data;
       }
@@ -868,7 +868,7 @@ export const onlineModeApi = {
    */
   stopLiveFault: async (deviceId: string): Promise<boolean> => {
     try {
-      const response = await fetchApi<{ success: boolean; error?: string }>(`devices/${deviceId}/live-fault`, {
+      const response = await fetchApiWithAuth<{ success: boolean; error?: string }>(`devices/${deviceId}/live-fault`, {
         method: 'DELETE',
       });
       return response.success;
@@ -882,7 +882,7 @@ export const onlineModeApi = {
    */
   startCondition: async (deviceId: string, conditionData: { name: string; description?: string }): Promise<ActiveCondition> => {
     try {
-      const response = await fetchApi<ConditionControlResponse>(`devices/${deviceId}/start-condition`, {
+      const response = await fetchApiWithAuth<ConditionControlResponse>(`devices/${deviceId}/start-condition`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -942,7 +942,7 @@ export const conditionsApi = {
    */
   getConditions: async (): Promise<Condition[]> => {
     try {
-      const response = await fetchApi<ConditionResponse>('conditions/list');
+      const response = await fetchApiWithAuth<ConditionResponse>('conditions/list');
       if (response.success && response.data) {
         return response.data;
       }
@@ -971,7 +971,7 @@ export const conditionsApi = {
    */
   getCondition: async (conditionId: string): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/view?id=${conditionId}`);
+      const response = await fetchApiWithAuth<{success: boolean, data: Condition}>(`conditions/view?id=${conditionId}`);
       if (response.success && response.data) {
         return response.data;
       }
@@ -987,7 +987,7 @@ export const conditionsApi = {
    */
   createCondition: async (conditionData: Partial<Condition>): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Condition}>('conditions/create', {
+      const response = await fetchApiWithAuth<{success: boolean, data: Condition}>('conditions/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1009,7 +1009,7 @@ export const conditionsApi = {
    */
   updateCondition: async (conditionId: string, conditionData: Partial<Condition>): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/update?id=${conditionId}`, {
+      const response = await fetchApiWithAuth<{success: boolean, data: Condition}>(`conditions/update?id=${conditionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1031,7 +1031,7 @@ export const conditionsApi = {
    */
   deleteCondition: async (conditionId: string): Promise<boolean> => {
     try {
-      const response = await fetchApi<{success: boolean}>(`conditions/delete?id=${conditionId}`, {
+      const response = await fetchApiWithAuth<{success: boolean}>(`conditions/delete?id=${conditionId}`, {
         method: 'DELETE',
       });
       return response.success;
@@ -1046,7 +1046,7 @@ export const conditionsApi = {
    */
   startCondition: async (conditionId: string): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/start?id=${conditionId}`, {
+      const response = await fetchApiWithAuth<{success: boolean, data: Condition}>(`conditions/start?id=${conditionId}`, {
         method: 'POST',
       });
       if (response.success && response.data) {
@@ -1064,14 +1064,16 @@ export const conditionsApi = {
    */
   stopCondition: async (conditionId: string): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/stop?id=${conditionId}`, {
+      const response = await fetchApiWithAuth<{success: boolean, data: Condition}>(`conditions/stop?id=${conditionId}`, {
         method: 'POST',
       });
       if (response.success && response.data) {
         return response.data;
       }
+      console.log(response);
       return null;
     } catch (error) {
+      console.log(error);
       console.error('Error stopping condition:', error);
       return null;
     }
@@ -1082,7 +1084,7 @@ export const conditionsApi = {
    */
   finishCondition: async (conditionId: string): Promise<Condition | null> => {
     try {
-      const response = await fetchApi<{success: boolean, data: Condition}>(`conditions/finish?id=${conditionId}`, {
+      const response = await fetchApiWithAuth<{success: boolean, data: Condition}>(`conditions/finish?id=${conditionId}`, {
         method: 'POST',
       });
       if (response.success && response.data) {

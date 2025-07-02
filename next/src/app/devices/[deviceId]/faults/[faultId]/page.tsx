@@ -737,17 +737,6 @@ export default function FaultDetailPage() {
 											Add Live Condition
 										</button>
 									)}
-									<button
-										onClick={() =>
-											copyToClipboard(
-												fault.fault_id,
-												"Fault ID"
-											)
-										}
-										className='px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700'
-									>
-										Copy Fault ID
-									</button>
 								</div>
 							</div>
 
@@ -774,19 +763,6 @@ export default function FaultDetailPage() {
 											`Fault ${fault.fault_id}`}
 									</h2>{" "}
 									<div className='flex space-x-2'>
-										{" "}
-										<button
-											onClick={() =>
-												copyToClipboard(
-													fault.fault_id,
-													"Fault ID"
-												)
-											}
-											className='px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200'
-											title='Copy fault ID'
-										>
-											Copy ID
-										</button>
 										<span
 											className={`px-2 py-1 rounded-full text-xs ${
 												fault.status === "Active"
@@ -1210,22 +1186,6 @@ export default function FaultDetailPage() {
 											</label>
 
 											<div className='flex space-x-1'>
-												{" "}
-												<button
-													onClick={() => {
-														navigator.clipboard.writeText(
-															liveFault.current_condition!
-																.condition_id
-														);
-														alert(
-															"Active condition ID copied to clipboard!"
-														);
-													}}
-													className='px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 text-sm'
-													title='Copy active condition ID'
-												>
-													Copy ID
-												</button>{" "}
 												<Link
 													href={`/devices/${deviceId}/faults/${faultId}/conditions/${
 														liveFault.current_condition!
@@ -2490,20 +2450,6 @@ export default function FaultDetailPage() {
 																</p>
 															</div>
 															<div className='flex space-x-2'>
-																<button
-																	onClick={() => {
-																		navigator.clipboard.writeText(
-																			condition.condition_id
-																		);
-																		alert(
-																			"Condition ID copied to clipboard!"
-																		);
-																	}}
-																	className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200'
-																	title='Copy condition ID'
-																>
-																	Copy ID
-																</button>
 																<Link
 																	href={`/devices/${deviceId}/faults/${faultId}/conditions/${condition.condition_id}`}
 																	className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200'
@@ -2735,20 +2681,6 @@ export default function FaultDetailPage() {
 													>
 														✏️ Edit
 													</button>{" "}
-													<button
-														onClick={() => {
-															navigator.clipboard.writeText(
-																condition.condition_id
-															);
-															alert(
-																"Condition ID copied to clipboard!"
-															);
-														}}
-														className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200'
-														title='Copy condition ID for scripts'
-													>
-														Copy ID
-													</button>
 													{/* Navigation to Detail Page */}{" "}
 													<Link
 														href={`/devices/${deviceId}/faults/${faultId}/conditions/${condition.condition_id}`}
@@ -2789,17 +2721,17 @@ export default function FaultDetailPage() {
 													</div>
 													<div className='text-blue-800 space-y-1'>
 														<div>
-															1. Use condition ID:{" "}
+															1. Use condition name:{" "}
 															<code className='bg-blue-100 px-1 rounded'>
 																{
-																	condition.condition_id
+																	condition.name
 																}
 															</code>
 														</div>
 														<div>
 															2. Update your
 															script config with
-															this ID
+															this name
 														</div>
 														<div>
 															3. Run:{" "}
@@ -2928,114 +2860,6 @@ export default function FaultDetailPage() {
 									</Link>
 								</div>
 							</div>
-						</div>
-					)}
-					{/* Basic Static Fault Info (for non-completed faults) */}
-					{!liveFault && fault.status !== "Inactive" && (
-						<div className='bg-white p-6 rounded-lg border border-gray-200'>
-							{" "}
-							<h3 className='text-lg font-medium text-gray-900 mb-4'>
-								Fault Status
-							</h3>
-							<div className='bg-gray-50 border border-gray-200 rounded-lg p-4'>
-								{" "}
-								<div className='text-center py-4'>
-									<p className='text-gray-700 font-medium mb-2'>
-										Fault Status: {fault.status}
-									</p>
-									<p className='text-gray-600 text-sm'>
-										{fault.status === "Active"
-											? "Fault is currently active. You can manage conditions and monitor progress."
-											: "Fault is inactive. You can view historical data and manage conditions."}
-									</p>
-								</div>
-								<div className='text-center mt-4'>
-									<Link
-										href={`/devices/${deviceId}`}
-										className='text-blue-600 hover:text-blue-900'
-									>
-										← Back to Device Overview
-									</Link>
-								</div>
-							</div>
-						</div>
-					)}
-					{error && (
-						<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-							<div className='text-red-800'>{error}</div>
-						</div>
-					)}{" "}
-					{/* Stopped conditions section removed - simplified status model */}
-					{/* Completed Conditions List */}
-					{offlineConditions.filter((p) => p.status === "Inactive")
-						.length > 0 ? (
-						<div className='mt-8'>
-							<h4 className='font-medium text-green-900 mb-3'>
-								Completed Conditions
-							</h4>
-							<div className='space-y-2'>
-								{offlineConditions
-									.filter((p) => p.status === "Inactive")
-									.map((condition) => (
-										<div
-											key={condition.condition_id}
-											className='bg-green-50 border border-green-200 rounded-lg p-3'
-										>
-											<div className='flex justify-between items-center'>
-												<div>
-													<h5 className='font-medium text-green-900'>
-														{condition.name}
-													</h5>
-													{condition.description && (
-														<p className='text-sm text-green-700'>
-															{
-																condition.description
-															}
-														</p>
-													)}
-													<p className='text-xs text-gray-500'>
-														Started:{" "}
-														{formatDateShort(
-															condition.start_time
-														)}
-														<br />
-														Ended:{" "}
-														{formatDateShort(
-															condition.end_time
-														)}
-													</p>
-												</div>
-												<div className='flex space-x-2'>
-													<button
-														onClick={() => {
-															navigator.clipboard.writeText(
-																condition.condition_id
-															);
-															alert(
-																"Condition ID copied to clipboard!"
-															);
-														}}
-														className='px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200'
-														title='Copy condition ID'
-													>
-														📋 Copy ID
-													</button>
-													<Link
-														href={`/devices/${deviceId}/faults/${faultId}/conditions/${condition.condition_id}`}
-														className='px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200'
-														title='View detailed data and analytics'
-													>
-														👁️ View Data
-													</Link>
-												</div>
-											</div>
-										</div>
-									))}
-							</div>
-						</div>
-					) : (
-						<div className='mt-8 text-center text-gray-500'>
-							No completed conditions yet.
 						</div>
 					)}
 				</div>

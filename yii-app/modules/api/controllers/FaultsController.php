@@ -10,7 +10,7 @@ use yii\web\ServerErrorHttpException;
 use yii\helpers\Json;
 use app\models\Faults;
 use app\models\Devices;
-use app\models\Conditions;
+use app\models\Condition;
 use app\filters\JwtAuthFilter;
 
 class FaultsController extends Controller
@@ -310,9 +310,9 @@ class FaultsController extends Controller
             $fault = $this->findFault($id);
             
             // Check if fault can be deleted (only if no active conditions)
-            $activeConditions = Conditions::find()
+            $activeConditions = Condition::find()
                 ->where(['fault_id' => $fault->fault_id])
-                ->andWhere(['!=', 'status', Conditions::STATUS_FINISHED])
+                ->andWhere(['!=', 'status', Condition::STATUS_INACTIVE])
                 ->count();
                 
             if ($activeConditions > 0) {

@@ -24,7 +24,8 @@ use yii\db\Expression;
 class Devices extends ActiveRecord
 {
     const STATUS_ACTIVE = 'Active';
-    const STATUS_INACTIVE = 'Inactive';
+    const STATUS_INACTIVE = 'Not-Active';
+    const STATUS_PENDING = 'Pending-Registration';
 
     const TYPE_PMSM_MECHANICAL_VIBRATION = 'pmsm-mechanical-vibration';
     const TYPE_BLDC_HIGH_SPEED = 'bldc-high-speed';
@@ -58,7 +59,7 @@ class Devices extends ActiveRecord
             [['device_id', 'device_name'], 'string', 'max' => 255],
             [['device_type'], 'string', 'max' => 255],
             [['status'], 'string'],
-            [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_INACTIVE]],
+            [['status'], 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_INACTIVE, self::STATUS_PENDING]],
             [['device_id'], 'unique'],
             [['config'], 'safe'],
             [['owner_id'], 'exist', 'targetClass' => User::class, 'targetAttribute' => 'id'],
@@ -161,7 +162,7 @@ class Devices extends ActiveRecord
     public function hasActiveFaults()
     {
         return $this->getFaults()
-            ->where(['status' => [Faults::STATUS_RUNNING, Faults::STATUS_SCHEDULED]])
+            ->where(['status' => Faults::STATUS_ACTIVE])
             ->exists();
     }
 
@@ -173,7 +174,7 @@ class Devices extends ActiveRecord
     public function getActiveFault()
     {
         return $this->getFaults()
-            ->where(['status' => [Faults::STATUS_RUNNING, Faults::STATUS_SCHEDULED]])
+            ->where(['status' => Faults::STATUS_ACTIVE])
             ->one();
     }
 }
