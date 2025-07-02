@@ -1530,49 +1530,112 @@ export async function filterMeasurementsByNames(filters: {
   filters: any;
 }> {
   try {
-    let timeRange: string | undefined;
+    const params = new URLSearchParams();
     
-    // Convert date range to time range if provided
-    if (filters.startDate || filters.endDate) {
-      const start = filters.startDate ? new Date(filters.startDate).getTime() / 1000 : 0;
-      const end = filters.endDate ? new Date(filters.endDate).getTime() / 1000 : Date.now() / 1000;
-      timeRange = `${start}-${end}`;
+    // Add filters as parameters
+    if (filters.conditionName) params.append('condition_name', filters.conditionName);
+    if (filters.faultName) params.append('fault_name', filters.faultName);
+    if (filters.deviceId) params.append('deviceId', filters.deviceId);
+    if (filters.dataSeriesValue) params.append('data_series', filters.dataSeriesValue);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    
+    const queryString = params.toString();
+    const endpoint = `mongodb/measurements${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await fetchApi<{
+      success: boolean;
+      data: any[];
+      error?: string;
+      count: number;
+      filters: any;
+    }>(endpoint);
+    
+    if (!response.success) {
+      console.error('Filter measurements API error:', response.error);
+      return {
+        success: false,
+        data: [],
+        error: response.error || 'Failed to filter measurements',
+        count: 0,
+        filters: {}
+      };
     }
     
-    const response = await getMongoMeasurements(
-      filters.deviceId, // deviceId
-      undefined, // faultId
-      undefined, // conditionId
-      undefined, // dataSeriesId
-      timeRange,
-      filters.limit || 1000,
-      0, // offset
-      true, // includeData - include payload for charts
-      filters.conditionName, // conditionName for filtering
-      filters.faultName, // faultName for filtering
-      filters.dataSeriesValue // dataSeriesValue
-    );
-    
-    return {
-      success: response.success,
-      data: response.data || [],
-      error: response.error,
-      count: response.data?.length || 0,
-      filters: {
-        conditionName: filters.conditionName,
-        faultName: filters.faultName,
-        deviceId: filters.deviceId,
-        dataSeriesValue: filters.dataSeriesValue,
-        timeRange: timeRange
-      }
-    };
+    return response;
   } catch (error) {
+    console.error('Failed to filter measurements:', error);
     return {
       success: false,
       data: [],
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
       count: 0,
-      filters: filters
+      filters: {}
+    };
+  }
+}
+
+/**
+ * Get list of unique DataSeriesIds based on conditionId and deviceId
+ */
+export async function getDataSeriesList(
+  deviceId: string,
+  conditionId: string,
+  faultId?: string
+): Promise<{
+  success: boolean;
+  data: string[];
+  error?: string;
+  count: number;
+  filters: any;
+  condition_info?: any;
+  total_measurements: number;
+}> {
+  try {
+    const params = new URLSearchParams();
+    params.append('deviceId', deviceId);
+    params.append('conditionId', conditionId);
+    
+    if (faultId) {
+      params.append('faultId', faultId);
+    }
+    
+    const queryString = params.toString();
+    const endpoint = `mongodb/data-series-list?${queryString}`;
+    
+    const response = await fetchApi<{
+      success: boolean;
+      data: string[];
+      error?: string;
+      count: number;
+      filters: any;
+      condition_info?: any;
+      total_measurements: number;
+    }>(endpoint);
+    
+    if (!response.success) {
+      console.error('Get data series list API error:', response.error);
+      return {
+        success: false,
+        data: [],
+        error: response.error || 'Failed to get data series list',
+        count: 0,
+        filters: {},
+        total_measurements: 0
+      };
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Failed to get data series list:', error);
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      count: 0,
+      filters: {},
+      total_measurements: 0
     };
   }
 }

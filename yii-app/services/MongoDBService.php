@@ -235,9 +235,9 @@ class MongoDBService extends Component
                 $mongoFilter['data_series'] = $filters['dataSeriesValue'];
             }
             
-            // Support filtering by fault name (if stored in documents)
+            // Support filtering by fault name (stored in faultId field)
             if (!empty($filters['faultName'])) {
-                $mongoFilter['fault_name'] = $filters['faultName'];
+                $mongoFilter['faultId'] = $filters['faultName'];
             }
             
             // Time range filters

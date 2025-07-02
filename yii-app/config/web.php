@@ -204,6 +204,8 @@ $config = [
                 'api/measurement-channel/test' => 'api/measurement-channel/test',
                 // MongoDB Data endpoints - Unified API
                 'api/mongodb/measurements' => 'api/mongo-d-b/measurements',
+                'api/mongodb/data-series-list' => 'api/mongo-d-b/data-series-list',
+                'api/mongodb/debug-conditions' => 'api/mongo-d-b/debug-conditions',
                 'api/mongodb/test' => 'api/mongo-d-b/test',
             ],
         ],

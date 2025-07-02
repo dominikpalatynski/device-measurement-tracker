@@ -9,6 +9,8 @@ use yii\filters\Cors;
 use yii\filters\ContentNegotiator;
 use yii\helpers\Json;
 use app\services\MongoDBService;
+use app\models\Condition;
+use app\models\Faults;
 
 /**
  * MongoDB API Controller for testing measurement data operations
@@ -175,6 +177,160 @@ class MongoDBController extends Controller
             
         } catch (\Exception $e) {
             Yii::error("MongoDB measurements API error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+        }
+    }
+    
+    /**
+     * GET /api/mongodb/data-series-list
+     * Get list of unique DataSeriesIds based on conditionId and deviceId
+     * 
+     * Supported parameters:
+     * - deviceId: Filter by device ID (required)
+     * - conditionId: Filter by condition ID (required) - will look up condition name from MySQL
+     * - faultId: Filter by fault ID (optional)
+     */
+    public function actionDataSeriesList()
+    {
+        $request = Yii::$app->request;
+        
+        try {
+            // Get required parameters
+            $deviceId = $request->get('deviceId');
+            $conditionId = $request->get('conditionId');
+            
+            if (!$deviceId) {
+                return [
+                    'success' => false,
+                    'error' => 'deviceId parameter is required',
+                    'timestamp' => date('Y-m-d H:i:s')
+                ];
+            }
+            
+            if (!$conditionId) {
+                return [
+                    'success' => false,
+                    'error' => 'conditionId parameter is required',
+                    'timestamp' => date('Y-m-d H:i:s')
+                ];
+            }
+            
+            // Look up condition name from MySQL using conditionId (with fault relationship)
+            $condition = Condition::find()->with('fault')->where(['condition_id' => $conditionId])->one();
+            if (!$condition) {
+                return [
+                    'success' => false,
+                    'error' => "Condition not found with ID: {$conditionId}",
+                    'debug_info' => [
+                        'searched_condition_id' => $conditionId,
+                        'available_conditions' => Condition::find()->select(['condition_id', 'name'])->limit(10)->asArray()->all()
+                    ],
+                    'timestamp' => date('Y-m-d H:i:s')
+                ];
+            }
+            
+            // Build filters for getting measurements using the condition name from MySQL
+            $filters = [
+                'deviceId' => $deviceId,
+                'conditionName' => $condition->name // Use the condition name from MySQL
+            ];
+            
+            // Optional fault ID filter - look up fault name if provided
+            $faultId = $request->get('faultId');
+            if ($faultId && $condition->fault) {
+                $filters['faultName'] = $condition->fault->fault_name;
+            }
+            
+            // Get all measurements matching the criteria
+            $measurements = $this->mongoService->getMeasurements($filters);
+            
+            // Extract unique dataSeriesIds
+            $dataSeriesIds = [];
+            foreach ($measurements as $measurement) {
+                if (!empty($measurement['dataSeriesId'])) {
+                    $dataSeriesIds[$measurement['dataSeriesId']] = true;
+                }
+            }
+            
+            // Convert to sorted array
+            $uniqueDataSeriesIds = array_keys($dataSeriesIds);
+            sort($uniqueDataSeriesIds, SORT_NATURAL);
+            
+            return [
+                'success' => true,
+                'data' => $uniqueDataSeriesIds,
+                'count' => count($uniqueDataSeriesIds),
+                'filters' => $filters,
+                'condition_info' => [
+                    'condition_id' => $condition->condition_id,
+                    'condition_name' => $condition->name,
+                    'fault_id' => $condition->fault_id,
+                    'fault_name' => $condition->fault ? $condition->fault->fault_name : null
+                ],
+                'total_measurements' => count($measurements),
+                'debug_info' => [
+                    'mysql_condition_found' => true,
+                    'mongodb_query_filters' => $filters,
+                    'sample_measurements' => count($measurements) > 0 ? array_slice($measurements, 0, 2) : 'No measurements found'
+                ],
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+            
+        } catch (\Exception $e) {
+            Yii::error("MongoDB data series list API error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+        }
+    }
+    
+    /**
+     * GET /api/mongodb/debug-conditions
+     * Debug endpoint to see what condition names are actually stored in MongoDB
+     */
+    public function actionDebugConditions()
+    {
+        $request = Yii::$app->request;
+        $deviceId = $request->get('deviceId');
+        
+        try {
+            $filters = [];
+            if ($deviceId) {
+                $filters['deviceId'] = $deviceId;
+            }
+            
+            // Get some sample measurements to see what condition data is stored
+            $measurements = $this->mongoService->getMeasurements($filters);
+            
+            // Extract unique condition information
+            $conditionData = [];
+            foreach ($measurements as $measurement) {
+                $key = $measurement['conditionId'] ?? 'unknown';
+                if (!isset($conditionData[$key])) {
+                    $conditionData[$key] = [
+                        'conditionId' => $measurement['conditionId'] ?? null,
+                        'count' => 0,
+                        'sample_measurement' => $measurement
+                    ];
+                }
+                $conditionData[$key]['count']++;
+            }
+            
+            return [
+                'success' => true,
+                'total_measurements' => count($measurements),
+                'unique_conditions' => $conditionData,
+                'device_filter' => $deviceId,
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+            
+        } catch (\Exception $e) {
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
