@@ -291,6 +291,19 @@ class MongoDBController extends Controller
     }
     
     /**
+     * GET /api/mongodb/test-new
+     * Simple test endpoint to verify new methods work
+     */
+    public function actionTestNew()
+    {
+        return [
+            'success' => true,
+            'message' => 'New method works!',
+            'timestamp' => date('Y-m-d H:i:s')
+        ];
+    }
+
+    /**
      * GET /api/mongodb/debug-conditions
      * Debug endpoint to see what condition names are actually stored in MongoDB
      */
@@ -298,8 +311,62 @@ class MongoDBController extends Controller
     {
         $request = Yii::$app->request;
         $deviceId = $request->get('deviceId');
+        $getUnknownSeries = $request->get('unknown_series');
         
         try {
+            // If unknown_series parameter is provided, return unknown data series
+            if ($getUnknownSeries === 'true') {
+                if (!$deviceId) {
+                    return [
+                        'success' => false,
+                        'error' => 'deviceId parameter is required for unknown series',
+                        'timestamp' => date('Y-m-d H:i:s')
+                    ];
+                }
+                
+                // Build filters for getting measurements with unknown conditions and faults
+                $filters = [
+                    'deviceId' => $deviceId,
+                    'conditionId' => 'unknown_condition',
+                    'conditionName' => 'unknown_condition',
+                    'faultName' => 'unknown_fault',
+                    'faultId' => null
+                ];
+                
+                // Get all measurements matching the criteria
+                $measurements = $this->mongoService->getMeasurements($filters);
+                
+                // Extract unique dataSeriesIds
+                $dataSeriesIds = [];
+                foreach ($measurements as $measurement) {
+                    if (!empty($measurement['dataSeriesId'])) {
+                        $dataSeriesIds[$measurement['dataSeriesId']] = true;
+                    }
+                }
+                
+                // Convert to sorted array
+                $uniqueDataSeriesIds = array_keys($dataSeriesIds);
+                sort($uniqueDataSeriesIds, SORT_NATURAL);
+                
+                return [
+                    'success' => true,
+                    'data' => $uniqueDataSeriesIds,
+                    'count' => count($uniqueDataSeriesIds),
+                    'filters' => $filters,
+                    'total_measurements' => count($measurements),
+                    'debug_info' => [
+                        'filter_conditions' => [
+                            'conditionId' => 'unknown_condition',
+                            'conditionName' => 'unknown_condition',
+                            'faultName' => 'unknown_fault'
+                        ],
+                        'sample_measurements' => count($measurements) > 0 ? array_slice($measurements, 0, 2) : 'No measurements found'
+                    ],
+                    'timestamp' => date('Y-m-d H:i:s')
+                ];
+            }
+            
+            // Original debug conditions functionality
             $filters = [];
             if ($deviceId) {
                 $filters['deviceId'] = $deviceId;
@@ -331,6 +398,86 @@ class MongoDBController extends Controller
             ];
             
         } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+        }
+    }
+
+    /**
+     * GET /api/mongodb/unknown-data-series-list
+     * Get list of unique DataSeriesIds for unknown conditions and faults
+     * 
+     * Supported parameters:
+     * - deviceId: Filter by device ID (required)
+     * 
+     * This method specifically looks for measurements with:
+     * - conditionId/conditionName = "unknown_condition"
+     * - faultName = "unknown_fault"
+     * - faultId = null
+     */
+    public function actionUnknownDataSeriesList()
+    {
+        $request = Yii::$app->request;
+        
+        try {
+            // Get required parameters
+            $deviceId = $request->get('deviceId');
+            
+            if (!$deviceId) {
+                return [
+                    'success' => false,
+                    'error' => 'deviceId parameter is required',
+                    'timestamp' => date('Y-m-d H:i:s')
+                ];
+            }
+            
+            // Build filters for getting measurements with unknown conditions and faults
+            // Specifically looking for null faultId
+            $filters = [
+                'deviceId' => $deviceId,
+                'conditionId' => 'unknown_condition',
+                'conditionName' => 'unknown_condition',
+                'faultName' => 'unknown_fault',
+                'faultId' => null
+            ];
+            
+            // Get all measurements matching the criteria
+            $measurements = $this->mongoService->getMeasurements($filters);
+            
+            // Extract unique dataSeriesIds
+            $dataSeriesIds = [];
+            foreach ($measurements as $measurement) {
+                if (!empty($measurement['dataSeriesId'])) {
+                    $dataSeriesIds[$measurement['dataSeriesId']] = true;
+                }
+            }
+            
+            // Convert to sorted array
+            $uniqueDataSeriesIds = array_keys($dataSeriesIds);
+            sort($uniqueDataSeriesIds, SORT_NATURAL);
+            
+            return [
+                'success' => true,
+                'data' => $uniqueDataSeriesIds,
+                'count' => count($uniqueDataSeriesIds),
+                'filters' => $filters,
+                'total_measurements' => count($measurements),
+                'debug_info' => [
+                    'filter_conditions' => [
+                        'conditionId' => 'unknown_condition',
+                        'conditionName' => 'unknown_condition',
+                        'faultName' => 'unknown_fault'
+                    ],
+                    'sample_measurements' => count($measurements) > 0 ? array_slice($measurements, 0, 2) : 'No measurements found'
+                ],
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+            
+        } catch (\Exception $e) {
+            Yii::error("MongoDB unknown data series list API error: " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage(),

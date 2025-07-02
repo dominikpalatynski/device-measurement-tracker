@@ -1655,6 +1655,62 @@ export async function getDataSeriesList(
 }
 
 /**
+ * Get list of unique DataSeriesIds for unknown conditions and faults
+ */
+export async function getUnknownDataSeriesList(
+  deviceId: string
+): Promise<{
+  success: boolean;
+  data: string[];
+  error?: string;
+  count: number;
+  filters: any;
+  total_measurements: number;
+}> {
+  try {
+    const params = new URLSearchParams();
+    params.append('deviceId', deviceId);
+    
+    const queryString = params.toString();
+    const endpoint = `mongodb/debug-conditions?${queryString}&unknown_series=true`;
+    
+    const response = await fetchApi<{
+      success: boolean;
+      data: string[];
+      error?: string;
+      count: number;
+      filters: any;
+      total_measurements: number;
+      debug_info?: any;
+    }>(endpoint);
+    
+    if (!response.success) {
+      console.error('Get unknown data series list API error:', response.error);
+      return {
+        success: false,
+        data: [],
+        error: response.error || 'Failed to get unknown data series list',
+        count: 0,
+        filters: {},
+        total_measurements: 0
+      };
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Failed to get unknown data series list:', error);
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      count: 0,
+      filters: {},
+      total_measurements: 0
+    };
+  }
+}
+
+/**
  * Token management
  */
 class TokenManager {

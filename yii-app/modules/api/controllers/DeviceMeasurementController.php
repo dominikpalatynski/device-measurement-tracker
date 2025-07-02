@@ -263,36 +263,53 @@ class DeviceMeasurementController extends Controller
             throw new \Exception("Device not found: $deviceId");
         }
 
-        $condition = Condition::find()->where(['name' => $data['condition_name']])->one();
-        if (!$condition) {
+        if($data['data_series'] == null) {
+            throw new \Exception("Data series is required");
+        }
+
+        $measurementData = null;
+
+        if(!$data['condition_name'] == null) {
+            $condition = Condition::find()->where(['name' => $data['condition_name']])->one();
+            if (!$condition) {
+                $fault = Faults::find()
+                ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
+                ->one();
+                if (!$fault) {
+                    throw new \Exception("Fault not found: $deviceId");
+                }
+                $condition = new Condition();
+                $condition->condition_id = Condition::generateConditionId();
+                $condition->name = $data['condition_name'];
+                $condition->status = Condition::STATUS_ACTIVE;
+                $condition->fault_id = $fault->fault_id;
+                $condition->save();
+            }
+
             $fault = Faults::find()
-            ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
-            ->one();
+                ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
+                ->one();
             if (!$fault) {
                 throw new \Exception("Fault not found: $deviceId");
             }
-            $condition = new Condition();
-            $condition->condition_id = Condition::generateConditionId();
-            $condition->name = $data['condition_name'];
-            $condition->status = Condition::STATUS_ACTIVE;
-            $condition->fault_id = $fault->fault_id;
-            $condition->save();
-        }
 
-        $fault = Faults::find()
-            ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
-            ->one();
-        if (!$fault) {
-            throw new \Exception("Fault not found: $deviceId");
+            $measurementData = [
+                'data_series' => $data['data_series'],
+                'conditionId' => $condition->condition_id,
+                'faultId' => $fault->fault_id,
+                'data_payload' => $data['data'],
+                'condition_name' => $data['condition_name'],
+            ];
         }
-
-        $measurementData = [
-            'data_series' => $data['data_series'],
-            'conditionId' => $condition->condition_id,
-            'faultId' => $fault->fault_id,
-            'data_payload' => $data['data'],
-            'condition_name' => $data['condition_name'],
-        ];
+        else {
+            $measurementData = [
+                'data_series' => $data['data_series'],
+                'conditionId' => null,
+                'faultId' => null,
+                'data_payload' => $data['data'],
+                'condition_name' => null,
+            ];
+        }
 
         // Write to MongoDB if service is available
         if ($this->mongoService !== null) {

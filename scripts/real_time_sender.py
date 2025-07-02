@@ -42,7 +42,7 @@ def read_file_data(file_path: Path) -> List[float]:
 
 # --- MQTT Sender ---
 class MQTTDataSender:
-    def __init__(self, device_id: str, mqtt_config: Dict[str, Any], included_channels: List[str], condition_name: str, data_series: str):
+    def __init__(self, device_id: str, mqtt_config: Dict[str, Any], included_channels: List[str], condition_name: str | None = None, data_series: str | None = None):
         self.device_id = device_id
         self.mqtt_config = mqtt_config
         self.client = None
@@ -114,8 +114,8 @@ class MQTTDataSender:
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'sequenceNumber': self.message_count,
             'data': data,
-            "condition_name": self.mqtt_config.get('condition_name', 'normal'),
-            "data_series": self.mqtt_config.get('data_series', '1'),
+            "condition_name": self.mqtt_config.get('condition_name'),
+            "data_series": self.mqtt_config.get('data_series'),
         }
     
     def publish_data(self, data: Dict[str, Any]) -> bool:
@@ -256,9 +256,7 @@ Examples:
         included_channels = [Path(f).stem for f in included_files]
         interval = args.interval if args.interval is not None else mqtt_config.get('send_interval', 1)
         condition_name = mqtt_config.get('condition_name')
-        if not condition_name:
-            print("✗ Condition name not specified in config")
-            return 1
+        
         data_series = mqtt_config.get('data_series')
         if not data_series:
             print("✗ Data series not specified in config")

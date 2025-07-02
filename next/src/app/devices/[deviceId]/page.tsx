@@ -15,6 +15,7 @@ import {
 	getMeasurementStats,
 	getUnassignedMeasurements,
 	getMongoMeasurements,
+	getUnknownDataSeriesList,
 	Measurement,
 	MeasurementStats,
 	MeasurementData,
@@ -86,6 +87,14 @@ export default function DeviceDetailPage() {
 	const [batchToken, setBatchToken] = useState<string | null>(null);
 	const [batchTokenLoading, setBatchTokenLoading] = useState(false);
 
+	// Unknown data series list state
+	const [unknownDataSeriesList, setUnknownDataSeriesList] = useState<string[]>([]);
+	const [unknownDataSeriesLoading, setUnknownDataSeriesLoading] = useState(false);
+	const [unknownDataSeriesError, setUnknownDataSeriesError] = useState<string | null>(null);
+	const [unknownDebugInfo, setUnknownDebugInfo] = useState<any>(null);
+
+
+
 	// Fetch channels from backend
 	const fetchChannels = async () => {
 		setChannelsLoading(true);
@@ -93,6 +102,37 @@ export default function DeviceDetailPage() {
 		setChannels(data);
 		setChannelsLoading(false);
 	};
+
+	// Load unknown data series list
+	const loadUnknownDataSeriesList = async () => {
+		if (!device) return;
+		
+		try {
+			setUnknownDataSeriesLoading(true);
+			setUnknownDataSeriesError(null);
+			
+			const response = await getUnknownDataSeriesList(device.device_id);
+			
+			if (response.success) {
+				setUnknownDataSeriesList(response.data);
+				setUnknownDebugInfo((response as any).debug_info);
+				console.log("Unknown data series list loaded:", response.data);
+				console.log("Debug info:", (response as any).debug_info);
+			} else {
+				setUnknownDataSeriesError(response.error || "Failed to load unknown data series list");
+				setUnknownDebugInfo((response as any).debug_info);
+				console.error("API Error:", response.error);
+				console.error("Debug info:", (response as any).debug_info);
+			}
+		} catch (error) {
+			setUnknownDataSeriesError(error instanceof Error ? error.message : "Unknown error");
+			console.error("Error loading unknown data series list:", error);
+		} finally {
+			setUnknownDataSeriesLoading(false);
+		}
+	};
+
+
 	// Fetch unassigned measurement data from MongoDB
 	const fetchUnassignedData = async (
 		useStartDate?: string,
@@ -131,23 +171,35 @@ export default function DeviceDetailPage() {
 			if (response.success && response.data) {
 				// Convert MongoDB data to the format expected by the frontend
 				const convertedData: MeasurementData[] = response.data.map(
-					(item: any) => ({
-						data_id: item._id || "",
-						device_id: item.deviceId || device.device_id,
-						fault_id: item.faultId || null,
-						condition_id: item.conditionId || null,
-						timestamp: new Date(
-							item.timestamp * 1000
-						).toISOString(),
-						data_payload: item.data_payload || {},
-						upload_type: "batch",
-						created_at: new Date(
-							item.timestamp * 1000
-						).toISOString(),
-						updated_at: new Date(
-							item.timestamp * 1000
-						).toISOString(),
-					})
+					(item: any) => {
+						// Safely handle timestamp conversion
+						let timestamp: string;
+						try {
+							// Check if timestamp exists and is valid
+							if (item.timestamp && !isNaN(item.timestamp)) {
+								timestamp = new Date(item.timestamp * 1000).toISOString();
+							} else {
+								// Fallback to current timestamp if invalid
+								timestamp = new Date().toISOString();
+								console.warn('Invalid timestamp for item:', item._id, 'using current time');
+							}
+						} catch (error) {
+							console.error('Error converting timestamp for item:', item._id, error);
+							timestamp = new Date().toISOString();
+						}
+
+						return {
+							data_id: item._id || "",
+							device_id: item.deviceId || device.device_id,
+							fault_id: item.faultId || null,
+							condition_id: item.conditionId || null,
+							timestamp: timestamp,
+							data_payload: item.data_payload || {},
+							upload_type: "batch",
+							created_at: timestamp,
+							updated_at: timestamp,
+						};
+					}
 				);
 				setUnassignedData(convertedData);
 			} else {
@@ -178,6 +230,7 @@ export default function DeviceDetailPage() {
 	useEffect(() => {
 		if (device && activeTab === "data-explorer") {
 			fetchUnassignedData();
+			loadUnknownDataSeriesList();
 		}
 	}, [device, activeTab]);
 
@@ -1180,6 +1233,17 @@ export default function DeviceDetailPage() {
 												? "Loading..."
 												: "Refresh Data"}
 										</button>
+										<button
+											onClick={() =>
+												loadUnknownDataSeriesList()
+											}
+											disabled={unknownDataSeriesLoading}
+											className='px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50'
+										>
+											{unknownDataSeriesLoading
+												? "Loading..."
+												: "Refresh Unknown Series"}
+										</button>
 										<div className='text-sm text-gray-600'>
 											{unassignedData.length} data points
 										</div>
@@ -1241,6 +1305,102 @@ export default function DeviceDetailPage() {
 									</div>
 								</div>
 							</div>{" "}
+
+							{/* Unknown Data Series List */}
+							<div className='bg-white p-6 rounded-lg border border-gray-200'>
+								<h3 className='text-lg font-medium text-gray-900 mb-4'>
+									📊 Unknown Data Series
+								</h3>
+								
+								{unknownDataSeriesLoading ? (
+									<div className='flex items-center justify-center py-8'>
+										<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+										<span className='ml-2 text-gray-600'>Loading unknown data series...</span>
+									</div>
+								) : unknownDataSeriesError ? (
+									<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
+										<div className='text-red-800 font-medium'>Error loading unknown data series</div>
+										<div className='text-red-600 text-sm mt-1'>{unknownDataSeriesError}</div>
+									</div>
+								) : unknownDataSeriesList.length > 0 ? (
+									<div className='space-y-4'>
+										<div className='text-sm text-gray-600 mb-3'>
+											Found {unknownDataSeriesList.length} unique data series for unknown conditions/faults:
+										</div>
+										<div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3'>
+											{unknownDataSeriesList.map((seriesId, index) => (
+												<div
+													key={seriesId}
+													onClick={() => {
+														router.push(`/devices/${device?.device_id}/unassigned-data/${seriesId}`);
+													}}
+													className='bg-orange-50 border border-orange-200 rounded-lg p-3 transition-all hover:bg-orange-100 hover:border-orange-300 hover:shadow-md cursor-pointer'
+												>
+													<div className='text-center'>
+														<div className='text-2xl mb-2'>🔍</div>
+														<div className='font-medium text-orange-900 text-sm'>
+															Series {seriesId}
+														</div>
+														<div className='text-xs text-orange-600 mt-1'>
+															Click to view detailed analysis
+														</div>
+													</div>
+												</div>
+											))}
+										</div>
+
+
+										<div className='text-xs text-gray-500 mt-4'>
+											💡 These data series are from measurements with unknown_condition and unknown_fault labels.
+										</div>
+									</div>
+								) : (
+									<div className='space-y-4'>
+										<div className='text-center py-8 bg-gray-50 rounded-lg'>
+											<div className='text-gray-400 text-4xl mb-4'>🔍</div>
+											<h4 className='text-lg font-medium text-gray-600 mb-2'>
+												No Unknown Data Series Found
+											</h4>
+											<p className='text-gray-500 mb-4'>
+												No data series were found for unknown conditions/faults. This means:
+											</p>
+											<ul className='text-sm text-gray-400 space-y-1'>
+												<li>• No measurements with unknown conditions have been recorded</li>
+												<li>• All measurements are properly assigned to faults</li>
+												<li>• Data might be stored under different identifiers</li>
+											</ul>
+										</div>
+										
+										{/* Debug Information */}
+										{unknownDebugInfo && (
+											<div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4'>
+												<h5 className='text-sm font-medium text-yellow-800 mb-3'>🔍 Debug Information</h5>
+												<div className='text-xs space-y-2'>
+													{unknownDebugInfo.filter_conditions && (
+														<div>
+															<span className='font-medium text-yellow-800'>Search Filters:</span>
+															<pre className='bg-yellow-100 p-2 rounded mt-1 text-xs overflow-auto'>
+																{JSON.stringify(unknownDebugInfo.filter_conditions, null, 2)}
+															</pre>
+														</div>
+													)}
+													{unknownDebugInfo.sample_measurements && (
+														<div>
+															<span className='font-medium text-yellow-800'>Sample Measurements:</span>
+															<pre className='bg-yellow-100 p-2 rounded mt-1 text-xs overflow-auto'>
+																{typeof unknownDebugInfo.sample_measurements === 'string' 
+																	? unknownDebugInfo.sample_measurements 
+																	: JSON.stringify(unknownDebugInfo.sample_measurements, null, 2)}
+															</pre>
+														</div>
+													)}
+												</div>
+											</div>
+										)}
+									</div>
+								)}
+							</div>
+
 							{/* Charts Section */}
 							{unassignedData.length > 0 ? (
 								<div className='bg-white p-6 rounded-lg border border-gray-200'>

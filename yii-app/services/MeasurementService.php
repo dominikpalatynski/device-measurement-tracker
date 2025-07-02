@@ -63,6 +63,8 @@ class MeasurementService extends Component
                 throw new \Exception("Device not found: $deviceId");
             }
 
+            $measurementData = null;
+            if($data['condition_name'] != null) {
             $condition = Condition::find()->where(['name' => $data['condition_name']])->one();
             if (!$condition) {
                 $fault = Faults::find()
@@ -93,7 +95,15 @@ class MeasurementService extends Component
                 'data_payload' => $data['data'],
                 'condition_name' => $data['condition_name'],
             ];
-
+        } else {
+            $measurementData = [
+                'data_series' => $data['data_series'],
+                'conditionId' => null,
+                'faultId' => null,
+                'data_payload' => $data['data'],
+                'condition_name' => null,
+            ];
+        }
             // Write to MongoDB
             if ($this->mongoService) {
                 // Handle both deviceId (camelCase from real-time sender) and device_id (snake_case)

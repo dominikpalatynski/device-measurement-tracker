@@ -1,8 +1,8 @@
 {
     "deviceId": "P4gkBhfDWLv3",
     "sampling_frequency": 20000,
-    "condition_name": "pomiar_prądu_21444",
-    "data_series": "21444",
+    "condition_name": "",
+    "data_series": "data2",
     "included_files": [
       "w.dat",
       "udc.dat", 
@@ -16,5 +16,5 @@
     "server": {
       "url": "http://localhost:8080/api/device-measurement/phenomen-batch"
     },
-    "batch_token": "ff.eyJkZXZpY2VfaWQiOiJQNGdrQmhmRFdMdjMiLCJwdXJwb3NlIjoiYmF0Y2hfb3BlcmF0aW9ucyIsImlzc3VlZF9hdCI6MTc1MTQ3MzM5NSwiZXhwaXJlc19hdCI6MTc1MTQ3Njk5NSwiaWF0IjoxNzUxNDczMzk1LCJleHAiOjE3NTE0NzY5OTV9.bALvsoC76u6qKFhacnzHIckTfzYWtTGjG9RRXj_nWtM"
+    "batch_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkZXZpY2VfaWQiOiJQNGdrQmhmRFdMdjMiLCJwdXJwb3NlIjoiYmF0Y2hfb3BlcmF0aW9ucyIsImlzc3VlZF9hdCI6MTc1MTQ3MzM5NSwiZXhwaXJlc19hdCI6MTc1MTQ3Njk5NSwiaWF0IjoxNzUxNDczMzk1LCJleHAiOjE3NTE0NzY5OTV9.bALvsoC76u6qKFhacnzHIckTfzYWtTGjG9RRXj_nWtM"
   }

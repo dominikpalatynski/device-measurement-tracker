@@ -20,9 +20,6 @@ class FileDataMapper:
         if not config.get('deviceId'):
             print("✗ Device ID is required")
             sys.exit(1)
-        if not config.get('condition_name'):
-            print("✗ Condition name is required")
-            sys.exit(1)
         if not config.get('data_series'):
             print("✗ Data series is required")
             sys.exit(1)

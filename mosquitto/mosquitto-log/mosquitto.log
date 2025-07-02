@@ -555,3 +555,22 @@ To fix this, use `chmod 0700 /mosquitto/config/passwd`.
 1751468968: Saving in-memory database to /mosquitto/data//mosquitto.db.
 1751470769: Saving in-memory database to /mosquitto/data//mosquitto.db.
 1751472570: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751474371: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751476054: New connection from 172.18.0.1:60010 on port 1883.
+1751476054: New client connected from 172.18.0.1:60010 as device_P4gkBhfDWLv3 (p2, c1, k60, u'iot_user').
+1751476058: Client device_P4gkBhfDWLv3 disconnected.
+1751476067: New connection from 172.18.0.1:63046 on port 1883.
+1751476067: New client connected from 172.18.0.1:63046 as yii-mqtt-686567634f436 (p1, c0, k60, u'iot_user').
+1751476082: New connection from 172.18.0.1:57130 on port 1883.
+1751476082: New client connected from 172.18.0.1:57130 as device_P4gkBhfDWLv3 (p2, c1, k60, u'iot_user').
+1751476098: Client device_P4gkBhfDWLv3 disconnected.
+1751476115: New connection from 172.18.0.1:61548 on port 1883.
+1751476115: New client connected from 172.18.0.1:61548 as device_P4gkBhfDWLv3 (p2, c1, k60, u'iot_user').
+1751476139: Client device_P4gkBhfDWLv3 disconnected.
+1751476172: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751477130: Client yii-mqtt-686567634f436 has exceeded timeout, disconnecting.
+1751482199: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751486391: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751488470: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751490271: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751492072: Saving in-memory database to /mosquitto/data//mosquitto.db.

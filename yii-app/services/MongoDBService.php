@@ -106,23 +106,8 @@ class MongoDBService extends Component
             // Extract condition and data series info from the current data structure
             $conditionName = $data['condition_name'] ?? 'unknown_condition';
             $dataSeriesValue = $data['data_series'] ?? 'unknown_series';
-            
-            // Handle fault_id: use provided value or find active fault for the device
-            $faultId = null;
-            if (isset($data['fault_name']) && !empty($data['fault_name'])) {
-                $faultId = $data['fault_name'];
-            } else {
-                // Try to find an active fault for this device using Faults model
-                $activeFault = Faults::findActiveByDevice($deviceId);
-                if ($activeFault) {
-                    $faultId = $activeFault->fault_name;
-                    \Yii::info("Using active fault ID {$faultId} for device {$deviceId} (no fault_id in data)");
-                } else {
-                    // No active fault found - use device ID as fallback
-                    $faultId = $deviceId;
-                    \Yii::warning("No active fault found for device {$deviceId}, using device ID as fault_id");
-                }
-            }
+            $faultId = $data['faultId'] ?? 'unknown_fault';
+
             
             // Use simplified ID generation: actual values as IDs
             $conditionId = $conditionName; // Use condition name as conditionId
