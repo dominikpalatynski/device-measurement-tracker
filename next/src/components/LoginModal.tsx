@@ -45,6 +45,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 					<button
 						onClick={onClose}
 						className='text-gray-400 hover:text-gray-600'
+						aria-label='Close modal'
 					>
 						<svg
 							className='w-6 h-6'

@@ -33,7 +33,6 @@ services:
             - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
             - ./mosquitto/mosquitto-data:/mosquitto/data
             - ./mosquitto/mosquitto-log:/mosquitto/log
-            - ./mosquitto/passwd:/mosquitto/config/passwd
         command: sh -c "mosquitto_passwd -c -b /mosquitto/config/passwd $$MQTT_USERNAME $$MQTT_PASSWORD && mosquitto -c /mosquitto/config/mosquitto.conf"
         networks:
             - iot-network
@@ -95,11 +94,11 @@ services:
         image: rabbitmq:management
         container_name: rabbitmq
         environment:
-        - RABBITMQ_DEFAULT_USER=user
-        - RABBITMQ_DEFAULT_PASS=password
+            - RABBITMQ_DEFAULT_USER=user
+            - RABBITMQ_DEFAULT_PASS=password
         ports:
-        - "5672:5672"
-        - "15672:15672"
+            - "5672:5672"
+            - "15672:15672"
 networks:
     iot-network:
         driver: bridge

@@ -110,8 +110,8 @@ class TokenManager {
   }
 
   static clearAll(): void {
-    this.removeToken();
-    this.removeUser();
+    TokenManager.removeToken();
+    TokenManager.removeUser();
   }
 
   static isLoggedIn(): boolean {

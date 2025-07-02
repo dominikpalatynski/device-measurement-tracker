@@ -3,7 +3,11 @@
 export default function Loading() {
 	return (
 		<div className='loading-container'>
-			<div className='loading-spinner'></div>
+			<div
+				className='loading-spinner'
+				role='status'
+				aria-label='Loading'
+			></div>
 			<p>Loading...</p>
 			<style jsx>{`
 				.loading-container {

@@ -27,6 +27,10 @@ export default function DeviceRegisterPage() {
 			...prev,
 			[name]: value,
 		}));
+		// Clear error when user starts typing
+		if (error) {
+			setError(null);
+		}
 	};
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();

@@ -22,7 +22,10 @@ export default function AuthHeader() {
 	if (loading) {
 		return (
 			<div className='flex items-center space-x-4'>
-				<div className='w-8 h-8 bg-gray-200 rounded-full animate-pulse'></div>
+				<div
+					className='w-8 h-8 bg-gray-200 rounded-full animate-pulse'
+					data-testid='loading-spinner'
+				></div>
 			</div>
 		);
 	}
