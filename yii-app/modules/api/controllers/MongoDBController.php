@@ -83,9 +83,10 @@ class MongoDBController extends Controller
      * - faultId: Filter by fault ID
      * - conditionId: Filter by condition ID
      * - dataSeriesId: Filter by data series ID
-     * - conditionName: Filter by condition name
-     * - faultName: Filter by fault name
+     * - conditionName / condition_name: Filter by condition name
+     * - faultName / fault_name: Filter by fault name
      * - dataSeriesValue: Filter by data series value
+     * - data_series: Filter by data series ID (maps to dataSeriesId)
      * - startTime: Start time (timestamp or date string)
      * - endTime: End time (timestamp or date string)
      * - timeRange: Relative time range (e.g., '1h', '1d', '1w')
@@ -121,12 +122,27 @@ class MongoDBController extends Controller
                 $filters['conditionName'] = $conditionName;
             }
             
+            // Handle snake_case parameter name for condition_name
+            if ($conditionName = $request->get('condition_name')) {
+                $filters['conditionName'] = $conditionName;
+            }
+            
             if ($faultName = $request->get('faultName')) {
+                $filters['faultName'] = $faultName;
+            }
+            
+            // Handle snake_case parameter name for fault_name
+            if ($faultName = $request->get('fault_name')) {
                 $filters['faultName'] = $faultName;
             }
             
             if ($dataSeriesValue = $request->get('dataSeriesValue')) {
                 $filters['dataSeriesValue'] = $dataSeriesValue;
+            }
+            
+            // Handle data_series parameter (mapping to dataSeriesId for filtering by series ID)
+            if ($dataSeries = $request->get('data_series')) {
+                $filters['dataSeriesId'] = $dataSeries;
             }
             
             // Time range filters

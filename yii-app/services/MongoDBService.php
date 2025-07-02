@@ -220,9 +220,9 @@ class MongoDBService extends Component
                 $mongoFilter['conditionId'] = $filters['conditionId'];
             }
             
-            // Support filtering by condition name
+            // Support filtering by condition name (stored in conditionId field)
             if (!empty($filters['conditionName'])) {
-                $mongoFilter['condition_name'] = $filters['conditionName'];
+                $mongoFilter['conditionId'] = $filters['conditionName'];
             }
             
             // Data series filters

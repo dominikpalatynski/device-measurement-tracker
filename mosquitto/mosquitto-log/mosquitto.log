@@ -527,3 +527,26 @@ To fix this, use `chmod 0700 /mosquitto/config/passwd`.
 1751438208: Saving in-memory database to /mosquitto/data//mosquitto.db.
 1751440009: Saving in-memory database to /mosquitto/data//mosquitto.db.
 1751441810: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751444110: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751445911: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751445918: New connection from 172.18.0.1:61788 on port 1883.
+1751445918: New client connected from 172.18.0.1:61788 as yii-mqtt-6864f19eccd33 (p1, c0, k60, u'iot_user').
+1751446017: New connection from 172.18.0.1:55142 on port 1883.
+1751446017: New client connected from 172.18.0.1:55142 as device_P4gkBhfDWLv3 (p2, c1, k60, u'iot_user').
+1751446032: Client yii-mqtt-6864f19eccd33 closed its connection.
+1751446035: New connection from 172.18.0.1:60192 on port 1883.
+1751446035: New client connected from 172.18.0.1:60192 as yii-mqtt-6864f21361dd0 (p1, c0, k60, u'iot_user').
+1751446038: Client device_P4gkBhfDWLv3 disconnected.
+1751446428: New connection from 172.18.0.1:58462 on port 1883.
+1751446428: New client connected from 172.18.0.1:58462 as device_P4gkBhfDWLv3 (p2, c1, k60, u'iot_user').
+1751446436: Client device_P4gkBhfDWLv3 disconnected.
+1751447150: Client yii-mqtt-6864f21361dd0 closed its connection.
+1751447712: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751449513: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751451314: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751453115: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751455540: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751458125: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751459963: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751461764: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1751463565: Saving in-memory database to /mosquitto/data//mosquitto.db.
