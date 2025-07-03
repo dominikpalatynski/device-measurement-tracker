@@ -75,8 +75,7 @@ class ConditionsController extends Controller
             
             // Admins can see all conditions, others see only theirs
             if (!$user->isAdmin()) {
-                $query->innerJoinWith('fault')
-                      ->innerJoinWith('device')
+                $query->joinWith(['fault.device'])
                       ->where(['devices.owner_id' => $user->id]);
             }
             

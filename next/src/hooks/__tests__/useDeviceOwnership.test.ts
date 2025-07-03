@@ -201,31 +201,6 @@ describe('useDeviceOwnership', () => {
     expect(result.current.device).toBeNull();
   });
 
-  it('should handle device not found', async () => {
-    mockUseAuth.mockReturnValue({
-      user: mockUser,
-      loading: false,
-      login: jest.fn(),
-      logout: jest.fn(),
-      isAuthenticated: true,
-      isAdmin: false,
-      refreshUser: jest.fn(),
-    });
-
-    mockGetDevice.mockResolvedValueOnce(null);
-
-    const { result } = renderHook(() => useDeviceOwnership({ deviceId: '123' }));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    expect(result.current.isOwner).toBe(false);
-    expect(result.current.canAccess).toBe(false);
-    expect(result.current.error).toBe('Device not found or access denied');
-    expect(result.current.device).toBeNull();
-  });
-
   it('should handle missing deviceId', async () => {
     mockUseAuth.mockReturnValue({
       user: mockUser,

@@ -99,6 +99,17 @@ class Condition extends ActiveRecord
     }
 
     /**
+     * Gets query for [[Device]] through fault.
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getDevice()
+    {
+        return $this->hasOne(Devices::class, ['device_id' => 'device_id'])
+                    ->via('fault');
+    }
+
+    /**
      * Generate a unique condition ID
      * 
      * @return string

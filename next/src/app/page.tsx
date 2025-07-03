@@ -50,13 +50,6 @@ export default function Dashboard() {
 			setLoading(false);
 		}
 	};
-	const getDeviceStatusCounts = () => {
-		return {
-			total: devices.length,
-			active: devices.filter((d) => d.status === "Active").length,
-			inactive: devices.filter((d) => d.status === "Inactive").length,
-		};
-	};
 
 	if (loading) {
 		return (

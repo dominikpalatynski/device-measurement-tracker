@@ -88,12 +88,15 @@ export default function DeviceDetailPage() {
 	const [batchTokenLoading, setBatchTokenLoading] = useState(false);
 
 	// Unknown data series list state
-	const [unknownDataSeriesList, setUnknownDataSeriesList] = useState<string[]>([]);
-	const [unknownDataSeriesLoading, setUnknownDataSeriesLoading] = useState(false);
-	const [unknownDataSeriesError, setUnknownDataSeriesError] = useState<string | null>(null);
+	const [unknownDataSeriesList, setUnknownDataSeriesList] = useState<
+		string[]
+	>([]);
+	const [unknownDataSeriesLoading, setUnknownDataSeriesLoading] =
+		useState(false);
+	const [unknownDataSeriesError, setUnknownDataSeriesError] = useState<
+		string | null
+	>(null);
 	const [unknownDebugInfo, setUnknownDebugInfo] = useState<any>(null);
-
-
 
 	// Fetch channels from backend
 	const fetchChannels = async () => {
@@ -106,32 +109,35 @@ export default function DeviceDetailPage() {
 	// Load unknown data series list
 	const loadUnknownDataSeriesList = async () => {
 		if (!device) return;
-		
+
 		try {
 			setUnknownDataSeriesLoading(true);
 			setUnknownDataSeriesError(null);
-			
+
 			const response = await getUnknownDataSeriesList(device.device_id);
-			
+
 			if (response.success) {
 				setUnknownDataSeriesList(response.data);
 				setUnknownDebugInfo((response as any).debug_info);
 				console.log("Unknown data series list loaded:", response.data);
 				console.log("Debug info:", (response as any).debug_info);
 			} else {
-				setUnknownDataSeriesError(response.error || "Failed to load unknown data series list");
+				setUnknownDataSeriesError(
+					response.error || "Failed to load unknown data series list"
+				);
 				setUnknownDebugInfo((response as any).debug_info);
 				console.error("API Error:", response.error);
 				console.error("Debug info:", (response as any).debug_info);
 			}
 		} catch (error) {
-			setUnknownDataSeriesError(error instanceof Error ? error.message : "Unknown error");
+			setUnknownDataSeriesError(
+				error instanceof Error ? error.message : "Unknown error"
+			);
 			console.error("Error loading unknown data series list:", error);
 		} finally {
 			setUnknownDataSeriesLoading(false);
 		}
 	};
-
 
 	// Fetch unassigned measurement data from MongoDB
 	const fetchUnassignedData = async (
@@ -177,14 +183,24 @@ export default function DeviceDetailPage() {
 						try {
 							// Check if timestamp exists and is valid
 							if (item.timestamp && !isNaN(item.timestamp)) {
-								timestamp = new Date(item.timestamp * 1000).toISOString();
+								timestamp = new Date(
+									item.timestamp * 1000
+								).toISOString();
 							} else {
 								// Fallback to current timestamp if invalid
 								timestamp = new Date().toISOString();
-								console.warn('Invalid timestamp for item:', item._id, 'using current time');
+								console.warn(
+									"Invalid timestamp for item:",
+									item._id,
+									"using current time"
+								);
 							}
 						} catch (error) {
-							console.error('Error converting timestamp for item:', item._id, error);
+							console.error(
+								"Error converting timestamp for item:",
+								item._id,
+								error
+							);
 							timestamp = new Date().toISOString();
 						}
 
@@ -470,13 +486,17 @@ export default function DeviceDetailPage() {
 		setBatchTokenLoading(true);
 		try {
 			// Call backend API to generate a proper JWT batch token
-			const response = await deviceApi.generateBatchToken(device.device_id);
-			
+			const response = await deviceApi.generateBatchToken(
+				device.device_id
+			);
+
 			if (response.success && response.data) {
 				setBatchToken(response.data.batch_token);
 				setShowBatchTokenModal(true);
 			} else {
-				throw new Error(response.error || "Failed to generate batch token");
+				throw new Error(
+					response.error || "Failed to generate batch token"
+				);
 			}
 		} catch (err) {
 			setError(
@@ -1305,92 +1325,139 @@ export default function DeviceDetailPage() {
 									</div>
 								</div>
 							</div>{" "}
-
 							{/* Unknown Data Series List */}
 							<div className='bg-white p-6 rounded-lg border border-gray-200'>
 								<h3 className='text-lg font-medium text-gray-900 mb-4'>
 									📊 Unknown Data Series
 								</h3>
-								
+
 								{unknownDataSeriesLoading ? (
 									<div className='flex items-center justify-center py-8'>
-										<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-										<span className='ml-2 text-gray-600'>Loading unknown data series...</span>
+										<div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+										<span className='ml-2 text-gray-600'>
+											Loading unknown data series...
+										</span>
 									</div>
 								) : unknownDataSeriesError ? (
 									<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-										<div className='text-red-800 font-medium'>Error loading unknown data series</div>
-										<div className='text-red-600 text-sm mt-1'>{unknownDataSeriesError}</div>
+										<div className='text-red-800 font-medium'>
+											Error loading unknown data series
+										</div>
+										<div className='text-red-600 text-sm mt-1'>
+											{unknownDataSeriesError}
+										</div>
 									</div>
 								) : unknownDataSeriesList.length > 0 ? (
 									<div className='space-y-4'>
 										<div className='text-sm text-gray-600 mb-3'>
-											Found {unknownDataSeriesList.length} unique data series for unknown conditions/faults:
+											Found {unknownDataSeriesList.length}{" "}
+											unique data series for unknown
+											conditions/faults:
 										</div>
 										<div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3'>
-											{unknownDataSeriesList.map((seriesId, index) => (
-												<div
-													key={seriesId}
-													onClick={() => {
-														router.push(`/devices/${device?.device_id}/unassigned-data/${seriesId}`);
-													}}
-													className='bg-orange-50 border border-orange-200 rounded-lg p-3 transition-all hover:bg-orange-100 hover:border-orange-300 hover:shadow-md cursor-pointer'
-												>
-													<div className='text-center'>
-														<div className='text-2xl mb-2'>🔍</div>
-														<div className='font-medium text-orange-900 text-sm'>
-															Series {seriesId}
-														</div>
-														<div className='text-xs text-orange-600 mt-1'>
-															Click to view detailed analysis
+											{unknownDataSeriesList.map(
+												(seriesId, index) => (
+													<div
+														key={seriesId}
+														onClick={() => {
+															router.push(
+																`/devices/${device?.device_id}/unassigned-data/${seriesId}`
+															);
+														}}
+														className='bg-orange-50 border border-orange-200 rounded-lg p-3 transition-all hover:bg-orange-100 hover:border-orange-300 hover:shadow-md cursor-pointer'
+													>
+														<div className='text-center'>
+															<div className='text-2xl mb-2'>
+																🔍
+															</div>
+															<div className='font-medium text-orange-900 text-sm'>
+																Series{" "}
+																{seriesId}
+															</div>
+															<div className='text-xs text-orange-600 mt-1'>
+																Click to view
+																detailed
+																analysis
+															</div>
 														</div>
 													</div>
-												</div>
-											))}
+												)
+											)}
 										</div>
 
-
 										<div className='text-xs text-gray-500 mt-4'>
-											💡 These data series are from measurements with unknown_condition and unknown_fault labels.
+											💡 These data series are from
+											measurements with unknown_condition
+											and unknown_fault labels.
 										</div>
 									</div>
 								) : (
 									<div className='space-y-4'>
 										<div className='text-center py-8 bg-gray-50 rounded-lg'>
-											<div className='text-gray-400 text-4xl mb-4'>🔍</div>
+											<div className='text-gray-400 text-4xl mb-4'>
+												🔍
+											</div>
 											<h4 className='text-lg font-medium text-gray-600 mb-2'>
 												No Unknown Data Series Found
 											</h4>
 											<p className='text-gray-500 mb-4'>
-												No data series were found for unknown conditions/faults. This means:
+												No data series were found for
+												unknown conditions/faults. This
+												means:
 											</p>
 											<ul className='text-sm text-gray-400 space-y-1'>
-												<li>• No measurements with unknown conditions have been recorded</li>
-												<li>• All measurements are properly assigned to faults</li>
-												<li>• Data might be stored under different identifiers</li>
+												<li>
+													• No measurements with
+													unknown conditions have been
+													recorded
+												</li>
+												<li>
+													• All measurements are
+													properly assigned to faults
+												</li>
+												<li>
+													• Data might be stored under
+													different identifiers
+												</li>
 											</ul>
 										</div>
-										
+
 										{/* Debug Information */}
 										{unknownDebugInfo && (
 											<div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4'>
-												<h5 className='text-sm font-medium text-yellow-800 mb-3'>🔍 Debug Information</h5>
+												<h5 className='text-sm font-medium text-yellow-800 mb-3'>
+													🔍 Debug Information
+												</h5>
 												<div className='text-xs space-y-2'>
 													{unknownDebugInfo.filter_conditions && (
 														<div>
-															<span className='font-medium text-yellow-800'>Search Filters:</span>
+															<span className='font-medium text-yellow-800'>
+																Search Filters:
+															</span>
 															<pre className='bg-yellow-100 p-2 rounded mt-1 text-xs overflow-auto'>
-																{JSON.stringify(unknownDebugInfo.filter_conditions, null, 2)}
+																{JSON.stringify(
+																	unknownDebugInfo.filter_conditions,
+																	null,
+																	2
+																)}
 															</pre>
 														</div>
 													)}
 													{unknownDebugInfo.sample_measurements && (
 														<div>
-															<span className='font-medium text-yellow-800'>Sample Measurements:</span>
+															<span className='font-medium text-yellow-800'>
+																Sample
+																Measurements:
+															</span>
 															<pre className='bg-yellow-100 p-2 rounded mt-1 text-xs overflow-auto'>
-																{typeof unknownDebugInfo.sample_measurements === 'string' 
-																	? unknownDebugInfo.sample_measurements 
-																	: JSON.stringify(unknownDebugInfo.sample_measurements, null, 2)}
+																{typeof unknownDebugInfo.sample_measurements ===
+																"string"
+																	? unknownDebugInfo.sample_measurements
+																	: JSON.stringify(
+																			unknownDebugInfo.sample_measurements,
+																			null,
+																			2
+																	  )}
 															</pre>
 														</div>
 													)}
@@ -1400,7 +1467,6 @@ export default function DeviceDetailPage() {
 									</div>
 								)}
 							</div>
-
 							{/* Charts Section */}
 							{unassignedData.length > 0 ? (
 								<div className='bg-white p-6 rounded-lg border border-gray-200'>
@@ -2393,7 +2459,6 @@ export default function DeviceDetailPage() {
 							</div>
 						</div>
 					)}
-
 					{/* Batch Token Modal */}
 					{showBatchTokenModal && batchToken && (
 						<div className='fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50'>
@@ -2420,10 +2485,12 @@ export default function DeviceDetailPage() {
 											</div>
 											<div>
 												<h4 className='font-medium text-purple-800'>
-													Batch Token Generated Successfully
+													Batch Token Generated
+													Successfully
 												</h4>
 												<p className='text-sm text-purple-700 mt-1'>
-													Use this JWT token for batch operations with this device. 
+													Use this JWT token for batch
+													operations with this device.
 													Token expires in 1 hour.
 												</p>
 											</div>
@@ -2480,14 +2547,22 @@ export default function DeviceDetailPage() {
 											Usage Information
 										</h5>
 										<p className='text-sm text-blue-700 mb-2'>
-											Use this token in your batch operations:
+											Use this token in your batch
+											operations:
 										</p>
 										<div className='space-y-2'>
 											<div className='bg-gray-800 text-green-400 p-2 rounded text-xs font-mono overflow-x-auto'>
-												{`Authorization: Bearer ${batchToken.substring(0, 50)}...`}
+												{`Authorization: Bearer ${batchToken.substring(
+													0,
+													50
+												)}...`}
 											</div>
 											<div className='bg-gray-800 text-green-400 p-2 rounded text-xs font-mono overflow-x-auto'>
-												{`curl -H "Authorization: Bearer ${batchToken.substring(0, 30)}..." \\`}<br />
+												{`curl -H "Authorization: Bearer ${batchToken.substring(
+													0,
+													30
+												)}..." \\`}
+												<br />
 												{`  -X POST http://your-api/batch-endpoint`}
 											</div>
 										</div>

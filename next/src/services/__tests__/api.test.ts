@@ -16,10 +16,14 @@ import {
   getMeasurementsInRange,
   getConditions,
   regenerateDeviceToken,
+  deleteFault,
   faultApi,
   deviceApi,
   onlineModeApi,
   conditionsApi,
+  measurementChannelApi,
+  getMongoMeasurements,
+  getLatestMeasurementData,
 } from '../api';
 
 // Mock fetch globally
@@ -1038,6 +1042,559 @@ describe('API Service', () => {
 
         const result = await conditionsApi.getConditionsForFault('fault-1');
         expect(result).toEqual(mockConditions);
+      });
+    });
+  });
+
+  describe('measurementChannelApi', () => {
+    it('should have all required methods', () => {
+      expect(measurementChannelApi).toBeDefined();
+      expect(typeof measurementChannelApi.getChannels).toBe('function');
+      expect(typeof measurementChannelApi.getChannel).toBe('function');
+      expect(typeof measurementChannelApi.createChannel).toBe('function');
+      expect(typeof measurementChannelApi.updateChannel).toBe('function');
+      expect(typeof measurementChannelApi.deleteChannel).toBe('function');
+    });
+
+    it('should get channels successfully', async () => {
+      const mockChannels = [
+        { id: 1, channel_name: 'Temperature', sensor_type: 'temp' },
+        { id: 2, channel_name: 'Pressure', sensor_type: 'pressure' }
+      ];
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockChannels }),
+      } as Response);
+
+      const result = await measurementChannelApi.getChannels();
+      expect(result).toEqual(mockChannels);
+    });
+
+    it('should create channel successfully', async () => {
+      const mockChannel = { id: 1, channel_name: 'New Channel', sensor_type: 'vibration' };
+      const channelData = { channel_name: 'New Channel', sensor_type: 'vibration' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockChannel }),
+      } as Response);
+
+      const result = await measurementChannelApi.createChannel(channelData);
+      expect(result).toEqual(mockChannel);
+    });
+
+    it('should update channel successfully', async () => {
+      const mockUpdatedChannel = { id: 1, channel_name: 'Updated Channel', sensor_type: 'vibration' };
+      const updateData = { channel_name: 'Updated Channel' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockUpdatedChannel }),
+      } as Response);
+
+      const result = await measurementChannelApi.updateChannel(1, updateData);
+      expect(result).toEqual(mockUpdatedChannel);
+    });
+
+    it('should delete channel successfully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true }),
+      } as Response);
+
+      const result = await measurementChannelApi.deleteChannel(1);
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('conditionsApi extended functionality', () => {
+    it('should get condition by ID successfully', async () => {
+      const mockCondition = { id: 'cond-1', name: 'Test Condition', fault_id: 'fault-1' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockCondition }),
+      } as Response);
+
+      const result = await conditionsApi.getCondition('cond-1');
+      expect(result).toEqual(mockCondition);
+    });
+
+    it('should create condition successfully', async () => {
+      const mockCondition = { id: 'cond-1', name: 'New Condition', fault_id: 'fault-1' };
+      const conditionData = { name: 'New Condition', fault_id: 'fault-1' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockCondition }),
+      } as Response);
+
+      const result = await conditionsApi.createCondition(conditionData);
+      expect(result).toEqual(mockCondition);
+    });
+
+    it('should update condition successfully', async () => {
+      const mockUpdatedCondition = { id: 'cond-1', name: 'Updated Condition', fault_id: 'fault-1' };
+      const updateData = { name: 'Updated Condition' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockUpdatedCondition }),
+      } as Response);
+
+      const result = await conditionsApi.updateCondition('cond-1', updateData);
+      expect(result).toEqual(mockUpdatedCondition);
+    });
+
+    it('should delete condition successfully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true }),
+      } as Response);
+
+      const result = await conditionsApi.deleteCondition('cond-1');
+      expect(result).toBe(true);
+    });
+
+    it('should start condition successfully', async () => {
+      const mockStartedCondition = { id: 'cond-1', name: 'Test Condition', status: 'Active' as const };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockStartedCondition }),
+      } as Response);
+
+      const result = await conditionsApi.startCondition('cond-1');
+      expect(result).toEqual(mockStartedCondition);
+    });
+
+    it('should stop condition successfully', async () => {
+      const mockStoppedCondition = { id: 'cond-1', name: 'Test Condition', status: 'Inactive' as const };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockStoppedCondition }),
+      } as Response);
+
+      const result = await conditionsApi.stopCondition('cond-1');
+      expect(result).toEqual(mockStoppedCondition);
+    });
+
+    it('should finish condition successfully', async () => {
+      const mockFinishedCondition = { id: 'cond-1', name: 'Test Condition', status: 'Inactive' as const };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockFinishedCondition }),
+      } as Response);
+
+      const result = await conditionsApi.finishCondition('cond-1');
+      expect(result).toEqual(mockFinishedCondition);
+    });
+
+    it('should upload condition data successfully', async () => {
+      const testData = { temperature: 25.5, humidity: 60 };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, message: 'Data uploaded' }),
+      } as Response);
+
+      const result = await conditionsApi.uploadData('cond-1', testData);
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('onlineModeApi extended functionality', () => {
+    it('should get live fault successfully', async () => {
+      const mockLiveFault = {
+        fault_id: 'live-fault-1',
+        device_id: 'device-1',
+        start_time: '2023-01-01T00:00:00Z',
+        status: 'active'
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockLiveFault }),
+      } as Response);
+
+      const result = await onlineModeApi.getLiveFault('device-1');
+      expect(result).toEqual(mockLiveFault);
+    });
+
+    it('should stop live fault successfully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true }),
+      } as Response);
+
+      const result = await onlineModeApi.stopLiveFault('device-1');
+      expect(result).toBe(true);
+    });
+
+    it('should start condition in live fault successfully', async () => {
+      const mockActiveCondition = {
+        condition_id: 'cond-1',
+        name: 'Live Condition',
+        status: 'Active' as const,
+        start_time: '2023-01-01T00:00:00Z',
+        duration: 0
+      };
+
+      const conditionData = { name: 'Live Condition', description: 'Real-time condition' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockActiveCondition }),
+      } as Response);
+
+      const result = await onlineModeApi.startCondition('device-1', conditionData);
+      expect(result).toEqual(mockActiveCondition);
+    });
+
+    it('should stop condition in live fault successfully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true }),
+      } as Response);
+
+      const result = await onlineModeApi.stopCondition('device-1', 'cond-1');
+      expect(result).toBe(true);
+    });
+
+    it('should get live data successfully', async () => {
+      const mockLiveData = [
+        { timestamp: '2023-01-01T00:00:00Z', value: 10.5 },
+        { timestamp: '2023-01-01T00:01:00Z', value: 11.2 }
+      ];
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockLiveData }),
+      } as Response);
+
+      const result = await onlineModeApi.getLiveData('device-1');
+      expect(result).toEqual(mockLiveData);
+    });
+  });
+
+  describe('faultApi extended functionality', () => {
+    it('should get single fault successfully', async () => {
+      const mockFault = { id: 'fault-1', name: 'Test Fault', device_id: 'device-1' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockFault }),
+      } as Response);
+
+      const result = await faultApi.getFault('fault-1');
+      expect(result).toEqual(mockFault);
+    });
+
+    it('should update fault successfully', async () => {
+      const mockUpdatedFault = { id: 'fault-1', fault_name: 'Updated Fault', device_id: 'device-1' };
+      const updateData = { fault_name: 'Updated Fault', description: 'Updated description' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true, data: mockUpdatedFault }),
+      } as Response);
+
+      const result = await faultApi.updateFault('fault-1', updateData);
+      expect(result).toEqual(mockUpdatedFault);
+    });
+
+    it('should delete fault successfully', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true }),
+      } as Response);
+
+      const result = await faultApi.deleteFault('fault-1');
+      expect(result).toBe(true);
+    });
+  });
+
+  // Add missing imports
+  describe('Additional API imports test', () => {
+    it('should have deleteFault function available', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => JSON.stringify({ success: true }),
+      } as Response);
+
+      const result = await deleteFault('fault-1');
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('MongoDB Measurements and Statistics', () => {
+    describe('getMongoMeasurements', () => {
+      it('should fetch measurements from MongoDB', async () => {
+        const mockMeasurements = [
+          {
+            _id: 'mongo-id-1',
+            deviceId: 'device-1',
+            timestamp: 1640995200,
+            data: { voltage: 12.5, current: 2.1 }
+          }
+        ];
+
+        const mockResponse = {
+          success: true,
+          data: mockMeasurements
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: async () => JSON.stringify(mockResponse),
+        } as Response);
+
+        const result = await getMongoMeasurements('device-1', 'fault-1', 'condition-1', 'series-1', '1640995000-1640996000', 50, 0, true);
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/mongodb/measurements'),
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'Accept': 'application/json',
+            }),
+          })
+        );
+
+        expect(result).toEqual(mockResponse);
+      });
+
+      it('should handle errors when fetching from MongoDB', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('MongoDB connection error'));
+
+        await expect(getMongoMeasurements('device-1')).rejects.toThrow('API request failed: MongoDB connection error');
+      });
+
+      it('should properly format query parameters', async () => {
+        const mockResponse = {
+          success: true,
+          data: []
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: async () => JSON.stringify(mockResponse),
+        } as Response);
+
+        await getMongoMeasurements(
+          'device-1',         // deviceId
+          'fault-1',          // faultId
+          'condition-1',      // conditionId
+          'dataseries-1',     // dataSeriesId
+          '1640995000-1640996000', // timeRange
+          100,                // limit
+          10,                 // offset
+          true,               // includeData
+          'Test Condition',   // conditionName
+          'Test Fault',       // faultName
+          'temperature'       // dataSeriesValue
+        );
+
+        // Check that all parameters were included in the URL
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/deviceId=device-1/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/faultId=fault-1/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/conditionId=condition-1/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/dataSeriesId=dataseries-1/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/timeRange=1640995000-1640996000/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/limit=100/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/offset=10/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/includeData=true/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/conditionName=Test\+Condition/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/faultName=Test\+Fault/),
+          expect.any(Object)
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringMatching(/dataSeriesValue=temperature/),
+          expect.any(Object)
+        );
+      });
+    });
+
+    describe('getLatestMeasurementData', () => {
+      it('should fetch latest measurement data', async () => {
+        const mockMeasurement = {
+          _id: 'mongo-id-latest',
+          deviceId: 'device-1',
+          timestamp: 1640995200,
+          data: { voltage: 12.5, current: 2.1 }
+        };
+
+        const mockResponse = {
+          success: true,
+          data: [mockMeasurement]
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: async () => JSON.stringify(mockResponse),
+        } as Response);
+
+        const result = await getLatestMeasurementData('device-1');
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/mongodb/measurements'),
+          expect.any(Object)
+        );
+
+        expect(result).toEqual({
+          success: true,
+          data: mockMeasurement,
+          error: undefined
+        });
+      });
+
+      it('should return object with null data when no measurement data is found', async () => {
+        const mockResponse = {
+          success: true,
+          data: []
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: async () => JSON.stringify(mockResponse),
+        } as Response);
+
+        const result = await getLatestMeasurementData('device-1');
+
+        expect(result).toEqual({
+          success: true,
+          data: null,
+          error: undefined
+        });
+      });
+
+      it('should handle errors when fetching latest data', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Failed to connect'));
+
+        const result = await getLatestMeasurementData('device-1');
+        expect(result).toEqual({
+          success: false,
+          data: null,
+          error: 'API request failed: Failed to connect'
+        });
+      });
+    });
+
+    describe('getMeasurementStats', () => {
+      it('should fetch measurement statistics', async () => {
+        const mockStats = {
+          total_measurements: 100,
+          avg_temperature: 25.5,
+          min_temperature: 18.2,
+          max_temperature: 35.8
+        };
+
+        const mockResponse = {
+          success: true,
+          data: mockStats
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: async () => JSON.stringify(mockResponse),
+        } as Response);
+
+        const result = await getMeasurementStats('device-1');
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/measurement/stats?deviceUuid=device-1'),
+          expect.any(Object)
+        );
+
+        expect(result).toEqual(mockResponse);
+      });
+
+      it('should handle errors when fetching stats', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Stats calculation error'));
+
+        await expect(getMeasurementStats('device-1')).rejects.toThrow('API request failed: Stats calculation error');
       });
     });
   });
