@@ -33,13 +33,61 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		// Check if user is already logged in
 		const initAuth = async () => {
 			try {
-				if (auth.isLoggedIn()) {
-					const currentUser = await auth.getCurrentUser();
-					setUser(currentUser);
+				const token = auth.getToken();
+				const storedUser = auth.getUser();
+
+				if (token && storedUser) {
+					// Set user immediately from localStorage for fast UI update
+					setUser(storedUser);
+
+					try {
+						// Validate token and refresh user data from server
+						const currentUser = await auth.getCurrentUser();
+						setUser(currentUser);
+					} catch (error) {
+						console.warn(
+							"Token validation failed, attempting refresh:",
+							error
+						);
+
+						try {
+							// Try to refresh the token
+							const refreshedAuth = await auth.refreshToken();
+							console.log(refreshedAuth.user);
+							setUser(refreshedAuth.user);
+						} catch (refreshError) {
+							console.error(
+								"Token refresh failed:",
+								refreshError
+							);
+							// Clear invalid auth data
+							auth.clearAll();
+							setUser(null);
+						}
+					}
+				} else if (token && !storedUser) {
+					// We have a token but no stored user, try to get user info
+					try {
+						const currentUser = await auth.getCurrentUser();
+						console.log(
+							"User fetched with existing token:",
+							currentUser
+						);
+						setUser(currentUser);
+					} catch (error) {
+						console.error(
+							"Failed to get user with existing token:",
+							error
+						);
+						auth.clearAll();
+						setUser(null);
+					}
 				}
+				// If no token, user stays null (not logged in)
 			} catch (error) {
-				console.error("Failed to get current user:", error);
+				console.error("Failed to initialize auth:", error);
 				auth.clearAll();
+				setUser(null);
 			} finally {
 				setLoading(false);
 			}
@@ -70,14 +118,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 	const refreshUser = async () => {
 		try {
-			if (auth.isLoggedIn()) {
+			const token = auth.getToken();
+			if (token) {
 				const currentUser = await auth.getCurrentUser();
 				setUser(currentUser);
+			} else {
+				// No token available
+				setUser(null);
+				auth.clearAll();
 			}
 		} catch (error) {
-			console.error("Failed to refresh user:", error);
-			setUser(null);
-			auth.clearAll();
+			console.warn(
+				"Failed to refresh user, attempting token refresh:",
+				error
+			);
+
+			try {
+				// Try to refresh the token
+				const refreshedAuth = await auth.refreshToken();
+				setUser(refreshedAuth.user);
+			} catch (refreshError) {
+				console.error("Token refresh failed:", refreshError);
+				setUser(null);
+				auth.clearAll();
+			}
 		}
 	};
 

@@ -75,38 +75,45 @@ export interface UsersListResponse {
  * Token management
  */
 class TokenManager {
-  private static readonly TOKEN_KEY = 'auth_token';
-  private static readonly USER_KEY = 'auth_user';
-
   static getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.TOKEN_KEY);
+    return localStorage.getItem('auth_token');
   }
 
   static setToken(token: string): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem('auth_token', token);
   }
 
   static removeToken(): void {
     if (typeof window === 'undefined') return;
-    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem('auth_token');
   }
 
   static getUser(): User | null {
     if (typeof window === 'undefined') return null;
-    const userJson = localStorage.getItem(this.USER_KEY);
-    return userJson ? JSON.parse(userJson) : null;
+    try {
+      const userJson = localStorage.getItem('auth_user');
+      if (!userJson) return null;
+      
+      const user = JSON.parse(userJson);
+      return user.user;
+    } catch (error) {
+      console.error('Failed to parse user data from localStorage:', error);
+      // Clear corrupted data
+      localStorage.removeItem('auth_user');
+      return null;
+    }
   }
 
   static setUser(user: User): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    localStorage.setItem('auth_user', JSON.stringify(user));
   }
 
   static removeUser(): void {
     if (typeof window === 'undefined') return;
-    localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem('auth_user');
   }
 
   static clearAll(): void {

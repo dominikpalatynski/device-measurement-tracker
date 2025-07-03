@@ -10,6 +10,8 @@ export default function AuthHeader() {
 	const [showLoginModal, setShowLoginModal] = useState(false);
 	const [showUserMenu, setShowUserMenu] = useState(false);
 
+	console.log(user);
+
 	const handleLogout = async () => {
 		try {
 			await logout();
@@ -46,6 +48,9 @@ export default function AuthHeader() {
 			</div>
 		);
 	}
+
+	console.log(user.display_name);
+	console.log(user?.display_name);
 
 	return (
 		<div className='flex items-center space-x-4'>
