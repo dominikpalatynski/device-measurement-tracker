@@ -141,7 +141,7 @@ export default function LiveConditionsControl({
 			</div>
 
 			{/* Current Active Condition with Live Data */}
-			{liveFault.current_condition && (
+			{liveFault.current_condition ? (
 				<div className='bg-gradient-to-br from-green-50 to-blue-50 border-2 border-green-200 rounded-lg p-6 mb-6'>
 					<div className='flex items-center justify-between mb-4'>
 						<div className='flex items-center space-x-3'>
@@ -183,113 +183,143 @@ export default function LiveConditionsControl({
 							</div>
 						</div>
 
-						{chartViewMode === "chart" && chartData.length > 0 && (
+						{chartViewMode === "chart" && (
 							<div className='h-64'>
-								<ResponsiveContainer
-									width='100%'
-									height='100%'
-								>
-									<LineChart data={chartData}>
-										<CartesianGrid strokeDasharray='3 3' />
-										<XAxis
-											dataKey='time'
-											tick={{ fontSize: 12 }}
-										/>
-										<YAxis tick={{ fontSize: 12 }} />
-										<Tooltip />
-										<Legend />
-										{dataKeys
-											.slice(0, 3)
-											.map((key, index) => (
-												<Line
-													key={key}
-													type='monotone'
-													dataKey={key}
-													stroke={
-														[
-															"#3b82f6",
-															"#ef4444",
-															"#10b981",
-														][index]
-													}
-													strokeWidth={2}
-													dot={false}
-												/>
-											))}
-									</LineChart>
-								</ResponsiveContainer>
+								{chartData.length > 0 ? (
+									<ResponsiveContainer
+										width='100%'
+										height='100%'
+									>
+										<LineChart data={chartData}>
+											<CartesianGrid strokeDasharray='3 3' />
+											<XAxis
+												dataKey='time'
+												tick={{ fontSize: 12 }}
+											/>
+											<YAxis tick={{ fontSize: 12 }} />
+											<Tooltip />
+											<Legend />
+											{dataKeys
+												.slice(0, 3)
+												.map((key, index) => (
+													<Line
+														key={key}
+														type='monotone'
+														dataKey={key}
+														stroke={
+															[
+																"#3b82f6",
+																"#ef4444",
+																"#10b981",
+															][index]
+														}
+														strokeWidth={2}
+														dot={false}
+													/>
+												))}
+										</LineChart>
+									</ResponsiveContainer>
+								) : (
+									<div className='flex items-center justify-center h-full bg-gray-50 rounded-lg'>
+										<p className='text-gray-500'>
+											Waiting for data...
+										</p>
+									</div>
+								)}
 							</div>
 						)}
 
 						{chartViewMode === "stats" && (
 							<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-								{dataKeys.length > 0 ? (
-									dataKeys.slice(0, 4).map((key) => {
-										const stats = calculateStats(
-											chartData,
-											key
-										);
-										return (
-											<div
-												key={key}
-												className='bg-gray-50 border border-gray-200 rounded-lg p-3'
-											>
-												<h6 className='font-medium text-gray-900 mb-2'>
-													{key}
-												</h6>
-												<div className='grid grid-cols-2 gap-2 text-sm'>
-													<div>
-														<span className='text-gray-600'>
-															Avg:
-														</span>
-														<span className='ml-1 font-medium'>
-															{stats.avg.toFixed(
-																2
-															)}
-														</span>
-													</div>
-													<div>
-														<span className='text-gray-600'>
-															Latest:
-														</span>
-														<span className='ml-1 font-medium'>
-															{stats.latest.toFixed(
-																2
-															)}
-														</span>
-													</div>
-													<div>
-														<span className='text-gray-600'>
-															Min:
-														</span>
-														<span className='ml-1 font-medium'>
-															{stats.min.toFixed(
-																2
-															)}
-														</span>
-													</div>
-													<div>
-														<span className='text-gray-600'>
-															Max:
-														</span>
-														<span className='ml-1 font-medium'>
-															{stats.max.toFixed(
-																2
-															)}
-														</span>
+								{chartData.length > 0 ? (
+									dataKeys.length > 0 ? (
+										dataKeys.slice(0, 4).map((key) => {
+											const stats = calculateStats(
+												chartData,
+												key
+											);
+											return (
+												<div
+													key={key}
+													className='bg-gray-50 border border-gray-200 rounded-lg p-3'
+												>
+													<h6 className='font-medium text-gray-900 mb-2'>
+														{key}
+													</h6>
+													<div className='grid grid-cols-2 gap-2 text-sm'>
+														<div>
+															<span className='text-gray-600'>
+																Avg:
+															</span>
+															<span className='ml-1 font-medium'>
+																{stats.avg.toFixed(
+																	2
+																)}
+															</span>
+														</div>
+														<div>
+															<span className='text-gray-600'>
+																Latest:
+															</span>
+															<span className='ml-1 font-medium'>
+																{stats.latest.toFixed(
+																	2
+																)}
+															</span>
+														</div>
+														<div>
+															<span className='text-gray-600'>
+																Min:
+															</span>
+															<span className='ml-1 font-medium'>
+																{stats.min.toFixed(
+																	2
+																)}
+															</span>
+														</div>
+														<div>
+															<span className='text-gray-600'>
+																Max:
+															</span>
+															<span className='ml-1 font-medium'>
+																{stats.max.toFixed(
+																	2
+																)}
+															</span>
+														</div>
 													</div>
 												</div>
-											</div>
-										);
-									})
+											);
+										})
+									) : (
+										<div className='col-span-2 text-center py-4 text-gray-500'>
+											No numeric data available for
+											statistics
+										</div>
+									)
 								) : (
 									<div className='col-span-2 text-center py-4 text-gray-500'>
-										No numeric data available for statistics
+										Waiting for data...
 									</div>
 								)}
 							</div>
 						)}
 					</div>
+				</div>
+			) : (
+				<div className='bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6 text-center'>
+					<h4 className='text-lg font-medium text-gray-900 mb-2'>
+						No Active Condition
+					</h4>
+					<p className='text-gray-600 mb-4'>
+						Start a new condition to begin collecting data
+					</p>
+					<button
+						onClick={onToggleConditionForm}
+						className='px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700'
+					>
+						Start Condition
+					</button>
 				</div>
 			)}
 
@@ -387,11 +417,30 @@ export default function LiveConditionsControl({
 										</button>
 									)}
 								</div>
-								{condition.description && (
-									<p className='text-sm text-gray-600 mt-1'>
-										{condition.description}
-									</p>
-								)}
+								<div className='mt-1'>
+									{condition.description && (
+										<p className='text-sm text-gray-600'>
+											{condition.description}
+										</p>
+									)}
+									<div className='text-xs text-gray-500 mt-1'>
+										<span>
+											Started:{" "}
+											{new Date(
+												condition.start_time
+											).toLocaleString()}
+										</span>
+										{condition.duration && (
+											<span className='ml-2'>
+												Duration:{" "}
+												{Math.floor(
+													condition.duration / 60
+												)}{" "}
+												min
+											</span>
+										)}
+									</div>
+								</div>
 							</div>
 						))}
 					</div>

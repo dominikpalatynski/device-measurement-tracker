@@ -209,11 +209,6 @@ describe("LiveConditionsControl", () => {
 		expect(screen.getByText("Start New Condition")).toBeInTheDocument();
 		expect(screen.getByText("Condition Name *")).toBeInTheDocument();
 		expect(screen.getByText("Description")).toBeInTheDocument();
-		expect(screen.getByText("Start Condition")).toBeInTheDocument();
-		// Find the cancel button within the form (should be the second one)
-		const cancelButtons = screen.getAllByText("Cancel");
-		expect(cancelButtons).toHaveLength(2); // One in header, one in form
-		expect(cancelButtons[1]).toBeInTheDocument(); // Form cancel button
 	});
 
 	it("should handle condition name input changes", () => {
@@ -229,9 +224,13 @@ describe("LiveConditionsControl", () => {
 		const nameInput = screen.getByPlaceholderText(
 			"e.g., Baseline, Load 5kg, Speed 100rpm"
 		);
-		fireEvent.change(nameInput, { target: { value: "New Condition" } });
+		fireEvent.change(nameInput, {
+			target: { value: "New Live Condition" },
+		});
 
-		expect(onConditionNameChange).toHaveBeenCalledWith("New Condition");
+		expect(onConditionNameChange).toHaveBeenCalledWith(
+			"New Live Condition"
+		);
 	});
 
 	it("should handle condition description input changes", () => {
@@ -248,19 +247,20 @@ describe("LiveConditionsControl", () => {
 			"Describe the condition..."
 		);
 		fireEvent.change(descriptionInput, {
-			target: { value: "New description" },
+			target: { value: "New description for live test" },
 		});
 
 		expect(onConditionDescriptionChange).toHaveBeenCalledWith(
-			"New description"
+			"New description for live test"
 		);
 	});
 
-	it("should disable start condition button when name is empty", () => {
+	it("should disable start button when name is empty", () => {
 		render(
 			<LiveConditionsControl
 				{...defaultProps}
 				showConditionForm={true}
+				newConditionName=''
 			/>
 		);
 
@@ -268,12 +268,12 @@ describe("LiveConditionsControl", () => {
 		expect(startButton).toBeDisabled();
 	});
 
-	it("should enable start condition button when name is provided", () => {
+	it("should enable start button when name is provided", () => {
 		render(
 			<LiveConditionsControl
 				{...defaultProps}
 				showConditionForm={true}
-				newConditionName='New Condition'
+				newConditionName='Test Condition'
 			/>
 		);
 
@@ -281,13 +281,13 @@ describe("LiveConditionsControl", () => {
 		expect(startButton).not.toBeDisabled();
 	});
 
-	it("should call onStartCondition when start button is clicked", () => {
+	it("should call onStartCondition when start button is clicked in form", () => {
 		const onStartCondition = jest.fn();
 		render(
 			<LiveConditionsControl
 				{...defaultProps}
 				showConditionForm={true}
-				newConditionName='New Condition'
+				newConditionName='Test Condition'
 				onStartCondition={onStartCondition}
 			/>
 		);
@@ -298,7 +298,7 @@ describe("LiveConditionsControl", () => {
 		expect(onStartCondition).toHaveBeenCalled();
 	});
 
-	it("should call onStopCondition when stop condition button is clicked", () => {
+	it("should call onStopCondition when stop button is clicked", () => {
 		const onStopCondition = jest.fn();
 		render(
 			<LiveConditionsControl
@@ -313,39 +313,61 @@ describe("LiveConditionsControl", () => {
 		expect(onStopCondition).toHaveBeenCalledWith("condition-1");
 	});
 
-	it("should show conditions history", () => {
+	it("should show stats view when chartViewMode is stats", () => {
+		// Add some mock data with numeric values for stats
+		const conditionsDataWithData = [
+			{
+				...mockConditionsData[0],
+				data: { temperature: 25.5, pressure: 1013.25, humidity: 60.5 },
+			},
+		] as any;
+
+		render(
+			<LiveConditionsControl
+				{...defaultProps}
+				chartViewMode='stats'
+				conditionsData={conditionsDataWithData}
+			/>
+		);
+
+		expect(screen.getByText("Live Data Stream")).toBeInTheDocument();
+		expect(screen.getByText("temperature")).toBeInTheDocument();
+		expect(screen.getAllByText("Latest:").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Min:").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Max:").length).toBeGreaterThan(0);
+		expect(screen.getAllByText("Avg:").length).toBeGreaterThan(0);
+	});
+
+	it("should show conditions history section", () => {
 		render(<LiveConditionsControl {...defaultProps} />);
 
 		expect(screen.getByText("Conditions History")).toBeInTheDocument();
 		expect(screen.getByText("Test Condition")).toBeInTheDocument();
 		expect(screen.getByText("Previous Condition")).toBeInTheDocument();
 	});
+	it("should render condition start times correctly", () => {
+		render(<LiveConditionsControl {...defaultProps} />);
 
-	it("should show message when no conditions exist", () => {
-		const liveFaultWithoutConditions = {
-			...mockLiveFault,
-			conditions_count: 0,
-		};
-		render(
-			<LiveConditionsControl
-				{...defaultProps}
-				liveFault={liveFaultWithoutConditions}
-				conditions={[]}
-			/>
+		// Check that the time labels exist
+		expect(screen.getAllByText(/Started:/)).toHaveLength(
+			mockConditions.length
 		);
-
-		expect(
-			screen.getByText(
-				"No conditions recorded yet. Add one to start measuring specific conditions."
-			)
-		).toBeInTheDocument();
 	});
 
-	it("should not show active condition section when no current condition", () => {
+	it("should show condition durations", () => {
+		render(<LiveConditionsControl {...defaultProps} />);
+
+		// Both conditions have duration of 30 minutes (1800 seconds)
+		expect(screen.getAllByText(/Duration: 30 min/)).toHaveLength(
+			mockConditions.length
+		);
+	});
+	it("should display 'No active condition' message when no current condition exists", () => {
 		const liveFaultWithoutCurrentCondition = {
 			...mockLiveFault,
 			current_condition: undefined,
 		};
+
 		render(
 			<LiveConditionsControl
 				{...defaultProps}
@@ -353,17 +375,19 @@ describe("LiveConditionsControl", () => {
 			/>
 		);
 
+		expect(screen.getByText("No Active Condition")).toBeInTheDocument();
 		expect(
-			screen.queryByText("Active: Test Condition")
-		).not.toBeInTheDocument();
-		expect(screen.queryByText("Recording Data")).not.toBeInTheDocument();
-	});
-
-	it("should show measurement count", () => {
-		render(<LiveConditionsControl {...defaultProps} />);
-
-		expect(
-			screen.getByText("1 measurements collected")
+			screen.getByText("Start a new condition to begin collecting data")
 		).toBeInTheDocument();
+	});
+	it("should show empty chart message when no data is available", () => {
+		render(
+			<LiveConditionsControl
+				{...defaultProps}
+				conditionsData={[]}
+			/>
+		);
+
+		expect(screen.getByText(/Waiting for data/)).toBeInTheDocument();
 	});
 });

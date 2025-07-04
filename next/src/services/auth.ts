@@ -15,6 +15,7 @@ export interface User {
   last_name: string;
   role: 'admin' | 'normal';
   display_name: string;
+  user?: User; 
 }
 
 export interface LoginRequest {

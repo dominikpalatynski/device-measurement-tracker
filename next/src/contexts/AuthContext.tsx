@@ -38,11 +38,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 				if (token && storedUser) {
 					// Set user immediately from localStorage for fast UI update
+					console.log("setuser1", storedUser);
 					setUser(storedUser);
 
 					try {
 						// Validate token and refresh user data from server
 						const currentUser = await auth.getCurrentUser();
+						console.log(
+							"User fetched with existing token:",
+							currentUser
+						);
 						setUser(currentUser);
 					} catch (error) {
 						console.warn(
@@ -71,9 +76,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 						const currentUser = await auth.getCurrentUser();
 						console.log(
 							"User fetched with existing token:",
-							currentUser
+							currentUser.user
 						);
-						setUser(currentUser);
+						setUser(currentUser.user as User);
 					} catch (error) {
 						console.error(
 							"Failed to get user with existing token:",

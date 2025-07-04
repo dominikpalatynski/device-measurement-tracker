@@ -262,4 +262,153 @@ describe("ConditionsManagement", () => {
 
 		expect(onToggleForm).toHaveBeenCalled();
 	});
+
+	it("should call onStartCondition when start button is clicked", () => {
+		const onStartCondition = jest.fn();
+		render(
+			<ConditionsManagement
+				{...defaultProps}
+				onStartCondition={onStartCondition}
+			/>
+		);
+
+		// Find start button for the inactive condition (mockConditions[1])
+		const startButtons = screen.getAllByText("Start");
+		fireEvent.click(startButtons[0]);
+
+		expect(onStartCondition).toHaveBeenCalledWith("condition-2");
+	});
+
+	it("should call onStopCondition when stop button is clicked", () => {
+		const onStopCondition = jest.fn();
+		render(
+			<ConditionsManagement
+				{...defaultProps}
+				onStopCondition={onStopCondition}
+			/>
+		);
+
+		// Find stop button for the active condition (mockConditions[0])
+		const stopButtons = screen.getAllByText("Stop");
+		fireEvent.click(stopButtons[0]);
+
+		expect(onStopCondition).toHaveBeenCalledWith("condition-1");
+	});
+
+	it("should call onFinishCondition when finish button is clicked", () => {
+		const onFinishCondition = jest.fn();
+		render(
+			<ConditionsManagement
+				{...defaultProps}
+				onFinishCondition={onFinishCondition}
+			/>
+		);
+
+		// Find finish button for the active condition (mockConditions[0])
+		const finishButtons = screen.getAllByText("Finish");
+		fireEvent.click(finishButtons[0]);
+
+		expect(onFinishCondition).toHaveBeenCalledWith("condition-1");
+	});
+
+	it("should call copyToClipboard when condition ID is clicked", () => {
+		const copyToClipboard = jest.fn();
+		render(
+			<ConditionsManagement
+				{...defaultProps}
+				copyToClipboard={copyToClipboard}
+			/>
+		);
+
+		// Find and click on the first condition ID
+		fireEvent.click(screen.getAllByText("condition-1")[0]);
+
+		expect(copyToClipboard).toHaveBeenCalledWith(
+			"condition-1",
+			"Condition ID"
+		);
+	});
+
+	it("should show loading state when starting a condition", () => {
+		render(
+			<ConditionsManagement
+				{...defaultProps}
+				offlineConditionActionLoading='condition-2'
+			/>
+		);
+
+		expect(screen.getByText("Starting...")).toBeInTheDocument();
+	});
+
+	it("should show loading state when stopping a condition", () => {
+		// First condition is active, so it has a stop button
+		render(
+			<ConditionsManagement
+				{...defaultProps}
+				offlineConditionActionLoading='condition-1'
+			/>
+		);
+
+		expect(screen.getByText("Stopping...")).toBeInTheDocument();
+	});
+
+	it("should show loading state when finishing a condition", () => {
+		render(
+			<ConditionsManagement
+				{...defaultProps}
+				offlineConditionActionLoading='condition-1'
+			/>
+		);
+
+		expect(screen.getByText("Finishing...")).toBeInTheDocument();
+	});
+
+	it("should show loading state when deleting a condition", () => {
+		render(
+			<ConditionsManagement
+				{...defaultProps}
+				offlineConditionActionLoading='condition-1'
+			/>
+		);
+
+		expect(screen.getByText("Deleting...")).toBeInTheDocument();
+	});
+
+	it("should display usage instructions for inactive conditions", () => {
+		render(<ConditionsManagement {...defaultProps} />);
+
+		// Only inactive conditions should show usage instructions
+		expect(screen.getByText("Usage Instructions:")).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				"1. Start this condition when ready to collect data"
+			)
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				"2. Use the condition ID in your data upload scripts"
+			)
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				"3. Finish the condition when data collection is complete"
+			)
+		).toBeInTheDocument();
+	});
+
+	it("should format and display created date correctly", () => {
+		render(<ConditionsManagement {...defaultProps} />);
+
+		// Since date formatting depends on locale, we'll just check that the "Created:" label exists
+		// followed by some form of date/time string
+		expect(screen.getAllByText(/Created:/)[0]).toBeInTheDocument();
+	});
+
+	it("should format and display start and end times when available", () => {
+		render(<ConditionsManagement {...defaultProps} />);
+
+		// Check that start and end time labels exist
+		expect(screen.getAllByText(/Started:/)[0]).toBeInTheDocument();
+		expect(screen.getAllByText(/Ended:/)[0]).toBeInTheDocument();
+	});
 });

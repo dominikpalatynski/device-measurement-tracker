@@ -49,9 +49,6 @@ export default function AuthHeader() {
 		);
 	}
 
-	console.log(user.display_name);
-	console.log(user?.display_name);
-
 	return (
 		<div className='flex items-center space-x-4'>
 			<div className='flex items-center space-x-2 text-sm text-gray-600'>

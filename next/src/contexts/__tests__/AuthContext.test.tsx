@@ -7,6 +7,12 @@ import { auth } from "../../services/auth";
 jest.mock("../../services/auth");
 const mockAuth = auth as jest.Mocked<typeof auth>;
 
+// Add missing mock functions that might not be automatically mocked
+mockAuth.getToken = jest.fn();
+mockAuth.getUser = jest.fn();
+mockAuth.clearAll = jest.fn();
+mockAuth.refreshToken = jest.fn();
+
 // Test component to access AuthContext
 const TestComponent = () => {
 	const authContext = useAuth();
@@ -51,6 +57,9 @@ describe("AuthContext", () => {
 
 		// Reset all mocks to default implementations
 		mockAuth.isLoggedIn.mockReturnValue(false);
+		mockAuth.getToken.mockReturnValue(null);
+		mockAuth.getUser.mockReturnValue(null);
+		mockAuth.clearAll.mockImplementation(() => {});
 		mockAuth.login.mockResolvedValue({
 			access_token: "test-token",
 			token_type: "Bearer",
@@ -59,6 +68,12 @@ describe("AuthContext", () => {
 		});
 		mockAuth.logout.mockResolvedValue(undefined);
 		mockAuth.getCurrentUser.mockResolvedValue(mockUser);
+		mockAuth.refreshToken.mockResolvedValue({
+			access_token: "refreshed-token",
+			token_type: "Bearer",
+			expires_in: 3600,
+			user: mockUser,
+		});
 	});
 
 	it("should throw error when useAuth is used outside AuthProvider", () => {
@@ -93,7 +108,9 @@ describe("AuthContext", () => {
 	});
 
 	it("should load current user on mount when logged in", async () => {
-		mockAuth.isLoggedIn.mockReturnValue(true);
+		// Mock a logged in state
+		mockAuth.getToken.mockReturnValue("existing-token");
+		mockAuth.getUser.mockReturnValue(mockUser);
 		mockAuth.getCurrentUser.mockResolvedValue(mockUser);
 
 		render(
@@ -179,9 +196,11 @@ describe("AuthContext", () => {
 	});
 
 	it("should handle logout", async () => {
-		mockAuth.isLoggedIn.mockReturnValue(true);
+		// Mock a logged in state
+		mockAuth.getToken.mockReturnValue("existing-token");
+		mockAuth.getUser.mockReturnValue(mockUser);
 		mockAuth.getCurrentUser.mockResolvedValue(mockUser);
-		mockAuth.logout.mockResolvedValue();
+		mockAuth.logout.mockResolvedValue(undefined);
 
 		render(
 			<AuthProvider>
@@ -210,7 +229,10 @@ describe("AuthContext", () => {
 
 	it("should identify admin users correctly", async () => {
 		const adminUser = { ...mockUser, role: "admin" as const };
-		mockAuth.isLoggedIn.mockReturnValue(true);
+
+		// Mock a logged in state with admin user
+		mockAuth.getToken.mockReturnValue("existing-token");
+		mockAuth.getUser.mockReturnValue(adminUser);
 		mockAuth.getCurrentUser.mockResolvedValue(adminUser);
 
 		render(
@@ -225,8 +247,16 @@ describe("AuthContext", () => {
 	});
 
 	it("should clear auth state when getCurrentUser fails on initialization", async () => {
-		mockAuth.isLoggedIn.mockReturnValue(true);
+		// Mock a logged in state but with a failing getCurrentUser
+		mockAuth.getToken.mockReturnValue("existing-token");
+		mockAuth.getUser.mockReturnValue(mockUser);
 		mockAuth.getCurrentUser.mockRejectedValue(new Error("Token expired"));
+		mockAuth.refreshToken.mockRejectedValue(new Error("Refresh failed"));
+		mockAuth.clearAll.mockImplementation(() => {
+			// Simulate clearing auth by updating the mock returns
+			mockAuth.getToken.mockReturnValue(null);
+			mockAuth.getUser.mockReturnValue(null);
+		});
 
 		const consoleSpy = jest
 			.spyOn(console, "error")

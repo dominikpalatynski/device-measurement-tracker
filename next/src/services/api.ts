@@ -16,8 +16,6 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   
   const url = `${API_URL}/${endpoint}`;
   
-  console.log(`API Request: ${url}`);
-  
   try {
     // Simple fetch with minimal options to reduce potential issues
     const response = await fetch(url, {
@@ -28,11 +26,8 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
       },
     });
 
-    console.log(`API Response status: ${response.status} ${response.statusText}`);
-
     // Get the response text first to avoid JSON parsing errors
     const responseText = await response.text();
-    console.log(`Response text length: ${responseText.length} characters`);
     
     // Try to parse as JSON
     try {
@@ -41,7 +36,6 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
       }
       
       const data = JSON.parse(responseText) as T;
-      console.log('API response parsed successfully');
       return data;
     } catch (parseError) {
       console.error('Failed to parse JSON response:', parseError);
