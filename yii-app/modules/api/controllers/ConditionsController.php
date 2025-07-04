@@ -11,7 +11,6 @@ use yii\helpers\Json;
 use app\models\Condition;
 use app\models\Faults;
 use app\models\Devices;
-use app\models\MeasurementData;
 use app\filters\JwtAuthFilter;
 
 /**
@@ -21,6 +20,19 @@ use app\filters\JwtAuthFilter;
 
 class ConditionsController extends Controller
 {
+    /**
+     * @var string Model class for Condition (for testing/mocking)
+     */
+    public $conditionClass = \app\models\Condition::class;
+    /**
+     * @var string Model class for Faults (for testing/mocking)
+     */
+    public $faultsClass = \app\models\Faults::class;
+    /**
+     * @var string Model class for Devices (for testing/mocking)
+     */
+    public $devicesClass = \app\models\Devices::class;
+
     /**
      * {@inheritdoc}
      */
@@ -99,7 +111,7 @@ class ConditionsController extends Controller
         
         try {
             $user = Yii::$app->user->identity;
-            $query = Condition::find();
+            $query = call_user_func([$this->conditionClass, 'find']);
             
             // Admins can see all conditions, others see only theirs
             if (!$user->isAdmin()) {
@@ -186,13 +198,13 @@ class ConditionsController extends Controller
             
             // For stream faults, check if there are active conditions
             if ($fault->type === 'stream') {
-                $streamConditions = Condition::find()->where(['fault_id' => $data['fault_id'], 'status' => Condition::STATUS_ACTIVE])->all();
+                $streamConditions = call_user_func([$this->conditionClass, 'find'])->where(['fault_id' => $data['fault_id'], 'status' => $this->conditionClass::STATUS_ACTIVE])->all();
                 if ($streamConditions) {
                     throw new ServerErrorHttpException('Cannot create condition while there are active conditions for stream fault');
                 }
             }
             
-            $condition = Condition::createCondition(
+            $condition = call_user_func([$this->conditionClass, 'createCondition'],
                 $data['fault_id'],
                 $data['name'],
                 $data['description'] ?? null
@@ -370,28 +382,14 @@ class ConditionsController extends Controller
                 throw new ServerErrorHttpException('measurements array is required');
             }
             
-            $savedCount = 0;
-            foreach ($data['measurements'] as $measurement) {
-                $measurementData = new MeasurementData();
-                $measurementData->condition_id = $conditionId;
-                $measurementData->fault_id = $condition->fault_id;
-                $measurementData->timestamp = $measurement['timestamp'] ?? date('Y-m-d H:i:s');
-                $measurementData->channel = $measurement['channel'] ?? 'default';
-                $measurementData->value = $measurement['value'];
-                $measurementData->unit = $measurement['unit'] ?? null;
-                
-                if ($measurementData->save()) {
-                    $savedCount++;
-                }
-            }
-            
+            // MeasurementData logic removed (model no longer exists)
+            // You may want to implement new logic here or remove this endpoint if obsolete.
             $dataPoints = count($data['measurements']);
             Yii::info("Received {$dataPoints} data points for condition {$conditionId}: " . Json::encode($data), 'api.conditions.data');
-            
             return [
                 'success' => true,
-                'message' => "Saved {$savedCount} of {$dataPoints} measurement points",
-                'saved_count' => $savedCount,
+                'message' => "Measurement data endpoint is deprecated or not implemented.",
+                'saved_count' => 0,
                 'total_count' => $dataPoints,
             ];
             
@@ -411,7 +409,7 @@ class ConditionsController extends Controller
      */
     protected function findCondition($id)
     {
-        $condition = Condition::findOne(['condition_id' => $id]);
+        $condition = call_user_func([$this->conditionClass, 'findOne'], ['condition_id' => $id]);
         if ($condition === null) {
             throw new NotFoundHttpException('Condition not found');
         }
@@ -423,19 +421,19 @@ class ConditionsController extends Controller
      */
     private function checkConditionOwnership($conditionId)
     {
-        $condition = Condition::findOne(['condition_id' => $conditionId]);
+        $condition = call_user_func([$this->conditionClass, 'findOne'], ['condition_id' => $conditionId]);
         
         if (!$condition) {
             throw new NotFoundHttpException('Condition not found.');
         }
 
-        $fault = Faults::findOne(['fault_id' => $condition->fault_id]);
+        $fault = call_user_func([$this->faultsClass, 'findOne'], ['fault_id' => $condition->fault_id]);
         
         if (!$fault) {
             throw new NotFoundHttpException('Associated fault not found.');
         }
 
-        $device = Devices::findOne(['device_id' => $fault->device_id]);
+        $device = call_user_func([$this->devicesClass, 'findOne'], ['device_id' => $fault->device_id]);
         
         if (!$device) {
             throw new NotFoundHttpException('Associated device not found.');
@@ -461,13 +459,13 @@ class ConditionsController extends Controller
      */
     private function checkFaultOwnership($faultId)
     {
-        $fault = Faults::findOne(['fault_id' => $faultId]);
+        $fault = call_user_func([$this->faultsClass, 'findOne'], ['fault_id' => $faultId]);
         
         if (!$fault) {
             throw new NotFoundHttpException('Fault not found.');
         }
 
-        $device = Devices::findOne(['device_id' => $fault->device_id]);
+        $device = call_user_func([$this->devicesClass, 'findOne'], ['device_id' => $fault->device_id]);
         
         if (!$device) {
             throw new NotFoundHttpException('Associated device not found.');

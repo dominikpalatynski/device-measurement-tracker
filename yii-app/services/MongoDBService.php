@@ -18,24 +18,19 @@ use app\models\Faults;
  */
 class MongoDBService extends Component
 {
-    private $client;
-    private $database;
-    
-    // Collections
+    private $mongoClient;
     private $measurementsCollection;
     private $writeStats;
-    
-    public $connectionString = 'mongodb://admin:password@localhost:27017';
-    public $databaseName = 'device_measurements';
     
     // Collection names
     public $collectionsConfig = [
         'measurements' => 'measurements'
     ];
     
-    public function __construct($config = [])
+    public function __construct(?MongoDBClientInterface $mongoClient = null, $config = [])
     {
         parent::__construct($config);
+        $this->mongoClient = $mongoClient ?: new MongoDBClientWrapper();
         $this->initMongoDB();
         $this->initializeWriteStats();
     }
@@ -43,20 +38,17 @@ class MongoDBService extends Component
     private function initMongoDB()
     {
         try {
-            $this->client = new Client($this->connectionString);
-            $this->database = $this->client->selectDatabase($this->databaseName);
-            
-            // Initialize collections
-            $this->measurementsCollection = $this->database->selectCollection($this->collectionsConfig['measurements']);
+            // Initialize collections using the injected client
+            $this->measurementsCollection = $this->mongoClient->getCollection($this->collectionsConfig['measurements']);
             
             // Test the connection
-            $this->client->listDatabases();
+            $this->mongoClient->testConnection();
             
             // Create indexes for performance
             $this->createIndexes();
             
             \Yii::info("MongoDB connection established successfully");
-        } catch (MongoDBException $e) {
+        } catch (\Exception $e) {
             \Yii::error("Failed to connect to MongoDB: " . $e->getMessage());
             throw $e;
         }
@@ -76,18 +68,15 @@ class MongoDBService extends Component
     
     private function createIndexes()
     {
-        try {
-            // Measurements collection indexes
-            $this->measurementsCollection->createIndex(['deviceId' => 1, 'timestamp' => -1]);
-            $this->measurementsCollection->createIndex(['faultId' => 1, 'timestamp' => -1]);
-            $this->measurementsCollection->createIndex(['conditionId' => 1, 'timestamp' => -1]);
-            $this->measurementsCollection->createIndex(['dataSeriesId' => 1, 'timestamp' => -1]);
-            $this->measurementsCollection->createIndex(['timestamp' => -1]);
-            
-            \Yii::info("MongoDB indexes created successfully");
-        } catch (MongoDBException $e) {
-            \Yii::warning("Failed to create some MongoDB indexes: " . $e->getMessage());
-        }
+        $indexes = [
+            ['deviceId' => 1, 'timestamp' => -1],
+            ['faultId' => 1, 'timestamp' => -1],
+            ['conditionId' => 1, 'timestamp' => -1],
+            ['dataSeriesId' => 1, 'timestamp' => -1],
+            ['timestamp' => -1]
+        ];
+        
+        $this->mongoClient->createIndexes($this->collectionsConfig['measurements'], $indexes);
     }
     
     
@@ -1008,8 +997,8 @@ class MongoDBService extends Component
      */
     public function close()
     {
-        // MongoDB PHP driver handles connection cleanup automatically
-        $this->client = null;
+        // MongoDB client wrapper handles connection cleanup automatically
+        $this->mongoClient->close();
         \Yii::info("MongoDB connection closed");
     }
     
@@ -1028,14 +1017,13 @@ class MongoDBService extends Component
     public function testConnection()
     {
         try {
-            // Test connection by listing collections
-            $collections = $this->getCollections();
+            // Test connection using the client wrapper
+            $isConnected = $this->mongoClient->testConnection();
             
             return [
-                'success' => true,
-                'message' => 'MongoDB connection successful',
-                'database' => $this->databaseName,
-                'collections' => $collections
+                'success' => $isConnected,
+                'message' => $isConnected ? 'MongoDB connection successful' : 'MongoDB connection failed',
+                'collections' => $isConnected ? $this->getCollections() : []
             ];
         } catch (\Exception $e) {
             return [
@@ -1051,14 +1039,8 @@ class MongoDBService extends Component
     public function getCollections()
     {
         try {
-            $collections = [];
-            $collectionsList = $this->database->listCollections();
-            
-            foreach ($collectionsList as $collection) {
-                $collections[] = $collection->getName();
-            }
-            
-            return $collections;
+            // Return the configured collections
+            return array_values($this->collectionsConfig);
         } catch (\Exception $e) {
             \Yii::error("Failed to get collections: " . $e->getMessage());
             return [];

@@ -100,7 +100,7 @@ class MQTTDataSender:
         """MQTT publish callback"""
         pass
     
-    def generate_simulated_data(self, config: Dict[str, Any], values_per_channel: int = 10) -> Dict[str, Any]:
+    def generate_simulated_data(self, config: Dict[str, Any], values_per_channel: int = 100) -> Dict[str, Any]:
         self.message_count += 1
         data = {}
         for ch in self.included_channels:

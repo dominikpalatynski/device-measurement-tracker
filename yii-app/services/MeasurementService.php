@@ -14,10 +14,20 @@ class MeasurementService extends Component
 {
     private $mongoService;
     private $redisService;
+    private $deviceRepository;
+    private $conditionRepository;
+    private $faultRepository;
 
-    public function __construct($config = [])
-    {
+    public function __construct(
+        ?DeviceRepositoryInterface $deviceRepository = null,
+        ?ConditionRepositoryInterface $conditionRepository = null,
+        ?FaultRepositoryInterface $faultRepository = null,
+        $config = []
+    ) {
         parent::__construct($config);
+        $this->deviceRepository = $deviceRepository ?: new ActiveRecordDeviceRepository();
+        $this->conditionRepository = $conditionRepository ?: new ActiveRecordConditionRepository();
+        $this->faultRepository = $faultRepository ?: new ActiveRecordFaultRepository();
         try {
             $this->mongoService = new MongoDBService();
             Yii::info("MongoDB service initialized successfully");
@@ -31,7 +41,8 @@ class MeasurementService extends Component
      * Find or create a device by UUID
      */
     protected function getOrCreateDevice($deviceUuid)
-    {        $device = Devices::findByDeviceId($deviceUuid);
+    {
+        $device = $this->deviceRepository->findByDeviceId($deviceUuid);
         
         if (!$device) {
             $device = new Devices();
@@ -58,18 +69,16 @@ class MeasurementService extends Component
             $deviceId = isset($parts[1]) ? $parts[1] : null;
             echo "\033[32m[MQTT] Processing real time data message: $payload\033[0m\n";
             $data = Json::decode($payload);
-            $device = Devices::findByDeviceId($deviceId);
+            $device = $this->deviceRepository->findByDeviceId($deviceId);
             if (!$device) {
                 throw new \Exception("Device not found: $deviceId");
             }
 
             $measurementData = null;
             if($data['condition_name'] != null) {
-            $condition = Condition::find()->where(['name' => $data['condition_name']])->one();
+            $condition = $this->conditionRepository->findByName($data['condition_name']);
             if (!$condition) {
-                $fault = Faults::find()
-                ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
-                ->one();
+                $fault = $this->faultRepository->findActiveByDeviceId($deviceId);
                 if (!$fault) {
                     throw new \Exception("Fault not found: $deviceId");
                 }
@@ -81,9 +90,7 @@ class MeasurementService extends Component
                 $condition->save();
             }
 
-            $fault = Faults::find()
-                ->where(['device_id' => $deviceId, 'status' => Faults::STATUS_ACTIVE])
-                ->one();
+            $fault = $this->faultRepository->findActiveByDeviceId($deviceId);
             if (!$fault) {
                 throw new \Exception("Fault not found: $deviceId");
             }
@@ -108,12 +115,9 @@ class MeasurementService extends Component
             if ($this->mongoService) {
                 // Handle both deviceId (camelCase from real-time sender) and device_id (snake_case)
                 $deviceIdFromPayload = $data['deviceId'] ?? $data['device_id'] ?? $deviceId;
-                
                 $result = $this->mongoService->saveMeasurementData($deviceIdFromPayload, $measurementData);
-                
                 if ($result) {
                     Yii::info("Measurement written to MongoDB successfully", 'mongodb');
-                    
                     return [
                         'success' => true,
                         'dataSeriesId' => $measurementData['data_series'],
@@ -122,8 +126,12 @@ class MeasurementService extends Component
                     ];
                 } else {
                     Yii::error("Failed to write measurement to MongoDB", 'mongodb');
+                    return false;
                 }
-            } 
+            } else {
+                Yii::error("MongoDB service is not available", 'mongodb');
+                return false;
+            }
         } catch (\Exception $e) {
             echo "\033[31m[MQTT] Error: " . $e->getMessage() . "\033[0m\n";
             Yii::error("Error processing real time data MQTT message: " . $e->getMessage(), 'mqtt');

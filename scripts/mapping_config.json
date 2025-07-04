@@ -1,8 +1,8 @@
 {
     "deviceId": "P4gkBhfDWLv3",
     "sampling_frequency": 20000,
-    "condition_name": "",
-    "data_series": "data2",
+    "condition_name": "data5",
+    "data_series": "data4",
     "included_files": [
       "w.dat",
       "udc.dat", 

@@ -3,10 +3,10 @@
     "port": 1883,
     "username": "iot_user",
     "password": "iot_password",
-    "send_interval": 5,
+    "send_interval": 0.08,
     "deviceId": "P4gkBhfDWLv3",
-    "condition_name": "data4",
-    "data_series": "data3",
+    "condition_name": "data6",
+    "data_series": "data6",
     "included_files": [
       "w.dat",
       "udc.dat", 

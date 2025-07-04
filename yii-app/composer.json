@@ -37,7 +37,11 @@
         "codeception/module-yii2": "^1.1",
         "codeception/module-filesystem": "^3.0 || ^2.0 || ^1.1",
         "codeception/verify": "^3.0 || ^2.2",
+<<<<<<< HEAD
         "light/yii2-swagger": "~3.0"
+=======
+        "php-mock/php-mock-phpunit": "^2.13"
+>>>>>>> c04c490 (add unit tests on backend)
     },
     "config": {
         "allow-plugins": {
@@ -81,5 +85,10 @@
             "type": "composer",
             "url": "https://asset-packagist.org"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {
+            "app\\": ""
+        }
+    }
 }

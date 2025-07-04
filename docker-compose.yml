@@ -90,15 +90,6 @@ services:
             - mongodb
         networks:
             - iot-network
-    rabbitmq:
-        image: rabbitmq:management
-        container_name: rabbitmq
-        environment:
-            - RABBITMQ_DEFAULT_USER=user
-            - RABBITMQ_DEFAULT_PASS=password
-        ports:
-            - "5672:5672"
-            - "15672:15672"
 networks:
     iot-network:
         driver: bridge

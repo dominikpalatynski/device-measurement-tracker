@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/services</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../_css/bootstrap.min.css?v=11.0.10" rel="stylesheet" type="text/css">
+  <link href="../_css/nv.d3.min.css?v=11.0.10" rel="stylesheet" type="text/css">
+  <link href="../_css/style.css?v=11.0.10" rel="stylesheet" type="text/css">
+  <link href="../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../index.html">/Users/dominikpalatynski/Public/device-measurement-tracker/yii-app</a></li>
+         <li class="breadcrumb-item"><a href="index.html">services</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="ActiveRecordConditionRepository.php.html#6">app\services\ActiveRecordConditionRepository</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ActiveRecordDeviceRepository.php.html#6">app\services\ActiveRecordDeviceRepository</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ActiveRecordFaultRepository.php.html#6">app\services\ActiveRecordFaultRepository</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#15">app\services\MongoDBClientWrapper</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#19">app\services\MongoDBService</a></td><td class="text-right">5%</td></tr>
+       <tr><td><a href="MeasurementService.php.html#13">app\services\MeasurementService</a></td><td class="text-right">61%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="MongoDBService.php.html#19">app\services\MongoDBService</a></td><td class="text-right">8445</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#15">app\services\MongoDBClientWrapper</a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="MeasurementService.php.html#13">app\services\MeasurementService</a></td><td class="text-right">36</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="ActiveRecordConditionRepository.php.html#8"><abbr title="app\services\ActiveRecordConditionRepository::findByName">findByName</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ActiveRecordDeviceRepository.php.html#8"><abbr title="app\services\ActiveRecordDeviceRepository::findByDeviceId">findByDeviceId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ActiveRecordFaultRepository.php.html#8"><abbr title="app\services\ActiveRecordFaultRepository::findActiveByDeviceId">findActiveByDeviceId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MeasurementService.php.html#43"><abbr title="app\services\MeasurementService::getOrCreateDevice">getOrCreateDevice</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#22"><abbr title="app\services\MongoDBClientWrapper::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#31"><abbr title="app\services\MongoDBClientWrapper::initConnection">initConnection</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#47"><abbr title="app\services\MongoDBClientWrapper::getCollection">getCollection</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#52"><abbr title="app\services\MongoDBClientWrapper::testConnection">testConnection</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#63"><abbr title="app\services\MongoDBClientWrapper::createIndexes">createIndexes</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#80"><abbr title="app\services\MongoDBClientWrapper::close">close</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#90"><abbr title="app\services\MongoDBService::saveMeasurementData">saveMeasurementData</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#174"><abbr title="app\services\MongoDBService::getMeasurements">getMeasurements</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#271"><abbr title="app\services\MongoDBService::formatMeasurementDocument">formatMeasurementDocument</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#296"><abbr title="app\services\MongoDBService::fetchDataSeriesMeasurements">fetchDataSeriesMeasurements</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#352"><abbr title="app\services\MongoDBService::createDataSeries">createDataSeries</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#384"><abbr title="app\services\MongoDBService::fetchConditionData">fetchConditionData</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#471"><abbr title="app\services\MongoDBService::fetchAllConditionsData">fetchAllConditionsData</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#547"><abbr title="app\services\MongoDBService::fetchDataByConditionName">fetchDataByConditionName</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#621"><abbr title="app\services\MongoDBService::fetchDataByDataSeries">fetchDataByDataSeries</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#678"><abbr title="app\services\MongoDBService::createCondition">createCondition</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#713"><abbr title="app\services\MongoDBService::fetchFaultData">fetchFaultData</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#788"><abbr title="app\services\MongoDBService::createFault">createFault</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#823"><abbr title="app\services\MongoDBService::fetchDeviceData">fetchDeviceData</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#906"><abbr title="app\services\MongoDBService::createDevice">createDevice</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#937"><abbr title="app\services\MongoDBService::getAllDevices">getAllDevices</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#965"><abbr title="app\services\MongoDBService::parseTimeRange">parseTimeRange</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#1054"><abbr title="app\services\MongoDBService::getLatestMeasurement">getLatestMeasurement</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#1078"><abbr title="app\services\MongoDBService::getMeasurementsInRange">getMeasurementsInRange</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#1039"><abbr title="app\services\MongoDBService::getCollections">getCollections</abbr></a></td><td class="text-right">25%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#1017"><abbr title="app\services\MongoDBService::testConnection">testConnection</abbr></a></td><td class="text-right">54%</td></tr>
+       <tr><td><a href="MongoDBService.php.html#38"><abbr title="app\services\MongoDBService::initMongoDB">initMongoDB</abbr></a></td><td class="text-right">57%</td></tr>
+       <tr><td><a href="MeasurementService.php.html#21"><abbr title="app\services\MeasurementService::__construct">__construct</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="MeasurementService.php.html#65"><abbr title="app\services\MeasurementService::processRealTimeDataMqttMessage">processRealTimeDataMqttMessage</abbr></a></td><td class="text-right">75%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="MongoDBService.php.html#174"><abbr title="app\services\MongoDBService::getMeasurements">getMeasurements</abbr></a></td><td class="text-right">600</td></tr>
+       <tr><td><a href="MongoDBService.php.html#965"><abbr title="app\services\MongoDBService::parseTimeRange">parseTimeRange</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="MongoDBService.php.html#90"><abbr title="app\services\MongoDBService::saveMeasurementData">saveMeasurementData</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="MongoDBService.php.html#1078"><abbr title="app\services\MongoDBService::getMeasurementsInRange">getMeasurementsInRange</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="MongoDBService.php.html#384"><abbr title="app\services\MongoDBService::fetchConditionData">fetchConditionData</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="MongoDBService.php.html#471"><abbr title="app\services\MongoDBService::fetchAllConditionsData">fetchAllConditionsData</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="MongoDBService.php.html#547"><abbr title="app\services\MongoDBService::fetchDataByConditionName">fetchDataByConditionName</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="MongoDBService.php.html#621"><abbr title="app\services\MongoDBService::fetchDataByDataSeries">fetchDataByDataSeries</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="MongoDBService.php.html#823"><abbr title="app\services\MongoDBService::fetchDeviceData">fetchDeviceData</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="MongoDBService.php.html#1054"><abbr title="app\services\MongoDBService::getLatestMeasurement">getLatestMeasurement</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="MeasurementService.php.html#43"><abbr title="app\services\MeasurementService::getOrCreateDevice">getOrCreateDevice</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#63"><abbr title="app\services\MongoDBClientWrapper::createIndexes">createIndexes</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="MongoDBService.php.html#296"><abbr title="app\services\MongoDBService::fetchDataSeriesMeasurements">fetchDataSeriesMeasurements</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="MongoDBService.php.html#713"><abbr title="app\services\MongoDBService::fetchFaultData">fetchFaultData</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="MongoDBService.php.html#937"><abbr title="app\services\MongoDBService::getAllDevices">getAllDevices</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="MeasurementService.php.html#65"><abbr title="app\services\MeasurementService::processRealTimeDataMqttMessage">processRealTimeDataMqttMessage</abbr></a></td><td class="text-right">11</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#31"><abbr title="app\services\MongoDBClientWrapper::initConnection">initConnection</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="MongoDBClientWrapper.php.html#52"><abbr title="app\services\MongoDBClientWrapper::testConnection">testConnection</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="MongoDBService.php.html#352"><abbr title="app\services\MongoDBService::createDataSeries">createDataSeries</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="MongoDBService.php.html#678"><abbr title="app\services\MongoDBService::createCondition">createCondition</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="MongoDBService.php.html#788"><abbr title="app\services\MongoDBService::createFault">createFault</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="MongoDBService.php.html#906"><abbr title="app\services\MongoDBService::createDevice">createDevice</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="MeasurementService.php.html#21"><abbr title="app\services\MeasurementService::__construct">__construct</abbr></a></td><td class="text-right">5</td></tr>
+       <tr><td><a href="MongoDBService.php.html#1017"><abbr title="app\services\MongoDBService::testConnection">testConnection</abbr></a></td><td class="text-right">5</td></tr>
+       <tr><td><a href="MongoDBService.php.html#1039"><abbr title="app\services\MongoDBService::getCollections">getCollections</abbr></a></td><td class="text-right">3</td></tr>
+       <tr><td><a href="MongoDBService.php.html#38"><abbr title="app\services\MongoDBService::initMongoDB">initMongoDB</abbr></a></td><td class="text-right">2</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 11.0.10</a> using <a href="https://www.php.net/" target="_top">PHP 8.4.8</a> and <a href="https://phpunit.de/">PHPUnit 11.5.25</a> at Fri Jul 4 17:40:52 UTC 2025.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../_js/jquery.min.js?v=11.0.10" type="text/javascript"></script>
+  <script src="../_js/d3.min.js?v=11.0.10" type="text/javascript"></script>
+  <script src="../_js/nv.d3.min.js?v=11.0.10" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([4,1,0,0,0,0,0,1,0,0,0,0], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([28,0,0,1,0,0,2,1,1,0,0,5], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[0,1,"<a href=\"ActiveRecordConditionRepository.php.html#6\">app\\services\\ActiveRecordConditionRepository<\/a>"],[0,1,"<a href=\"ActiveRecordDeviceRepository.php.html#6\">app\\services\\ActiveRecordDeviceRepository<\/a>"],[0,1,"<a href=\"ActiveRecordFaultRepository.php.html#6\">app\\services\\ActiveRecordFaultRepository<\/a>"],[61.53846153846154,18,"<a href=\"MeasurementService.php.html#13\">app\\services\\MeasurementService<\/a>"],[0,10,"<a href=\"MongoDBClientWrapper.php.html#15\">app\\services\\MongoDBClientWrapper<\/a>"],[5.214723926380368,99,"<a href=\"MongoDBService.php.html#19\">app\\services\\MongoDBService<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[0,1,"<a href=\"ActiveRecordConditionRepository.php.html#8\">app\\services\\ActiveRecordConditionRepository::findByName<\/a>"],[0,1,"<a href=\"ActiveRecordDeviceRepository.php.html#8\">app\\services\\ActiveRecordDeviceRepository::findByDeviceId<\/a>"],[0,1,"<a href=\"ActiveRecordFaultRepository.php.html#8\">app\\services\\ActiveRecordFaultRepository::findActiveByDeviceId<\/a>"],[66.66666666666666,5,"<a href=\"MeasurementService.php.html#21\">app\\services\\MeasurementService::__construct<\/a>"],[0,3,"<a href=\"MeasurementService.php.html#43\">app\\services\\MeasurementService::getOrCreateDevice<\/a>"],[75,10,"<a href=\"MeasurementService.php.html#65\">app\\services\\MeasurementService::processRealTimeDataMqttMessage<\/a>"],[0,1,"<a href=\"MongoDBClientWrapper.php.html#22\">app\\services\\MongoDBClientWrapper::__construct<\/a>"],[0,2,"<a href=\"MongoDBClientWrapper.php.html#31\">app\\services\\MongoDBClientWrapper::initConnection<\/a>"],[0,1,"<a href=\"MongoDBClientWrapper.php.html#47\">app\\services\\MongoDBClientWrapper::getCollection<\/a>"],[0,2,"<a href=\"MongoDBClientWrapper.php.html#52\">app\\services\\MongoDBClientWrapper::testConnection<\/a>"],[0,3,"<a href=\"MongoDBClientWrapper.php.html#63\">app\\services\\MongoDBClientWrapper::createIndexes<\/a>"],[0,1,"<a href=\"MongoDBClientWrapper.php.html#80\">app\\services\\MongoDBClientWrapper::close<\/a>"],[100,2,"<a href=\"MongoDBService.php.html#30\">app\\services\\MongoDBService::__construct<\/a>"],[57.14285714285714,2,"<a href=\"MongoDBService.php.html#38\">app\\services\\MongoDBService::initMongoDB<\/a>"],[100,1,"<a href=\"MongoDBService.php.html#57\">app\\services\\MongoDBService::initializeWriteStats<\/a>"],[100,1,"<a href=\"MongoDBService.php.html#69\">app\\services\\MongoDBService::createIndexes<\/a>"],[0,6,"<a href=\"MongoDBService.php.html#90\">app\\services\\MongoDBService::saveMeasurementData<\/a>"],[0,24,"<a href=\"MongoDBService.php.html#174\">app\\services\\MongoDBService::getMeasurements<\/a>"],[0,1,"<a href=\"MongoDBService.php.html#271\">app\\services\\MongoDBService::formatMeasurementDocument<\/a>"],[0,3,"<a href=\"MongoDBService.php.html#296\">app\\services\\MongoDBService::fetchDataSeriesMeasurements<\/a>"],[0,2,"<a href=\"MongoDBService.php.html#352\">app\\services\\MongoDBService::createDataSeries<\/a>"],[0,4,"<a href=\"MongoDBService.php.html#384\">app\\services\\MongoDBService::fetchConditionData<\/a>"],[0,4,"<a href=\"MongoDBService.php.html#471\">app\\services\\MongoDBService::fetchAllConditionsData<\/a>"],[0,4,"<a href=\"MongoDBService.php.html#547\">app\\services\\MongoDBService::fetchDataByConditionName<\/a>"],[0,4,"<a href=\"MongoDBService.php.html#621\">app\\services\\MongoDBService::fetchDataByDataSeries<\/a>"],[0,2,"<a href=\"MongoDBService.php.html#678\">app\\services\\MongoDBService::createCondition<\/a>"],[0,3,"<a href=\"MongoDBService.php.html#713\">app\\services\\MongoDBService::fetchFaultData<\/a>"],[0,2,"<a href=\"MongoDBService.php.html#788\">app\\services\\MongoDBService::createFault<\/a>"],[0,4,"<a href=\"MongoDBService.php.html#823\">app\\services\\MongoDBService::fetchDeviceData<\/a>"],[0,2,"<a href=\"MongoDBService.php.html#906\">app\\services\\MongoDBService::createDevice<\/a>"],[0,3,"<a href=\"MongoDBService.php.html#937\">app\\services\\MongoDBService::getAllDevices<\/a>"],[0,8,"<a href=\"MongoDBService.php.html#965\">app\\services\\MongoDBService::parseTimeRange<\/a>"],[100,1,"<a href=\"MongoDBService.php.html#998\">app\\services\\MongoDBService::close<\/a>"],[100,1,"<a href=\"MongoDBService.php.html#1005\">app\\services\\MongoDBService::__destruct<\/a>"],[54.54545454545454,4,"<a href=\"MongoDBService.php.html#1017\">app\\services\\MongoDBService::testConnection<\/a>"],[25,2,"<a href=\"MongoDBService.php.html#1039\">app\\services\\MongoDBService::getCollections<\/a>"],[0,4,"<a href=\"MongoDBService.php.html#1054\">app\\services\\MongoDBService::getLatestMeasurement<\/a>"],[0,5,"<a href=\"MongoDBService.php.html#1078\">app\\services\\MongoDBService::getMeasurementsInRange<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>

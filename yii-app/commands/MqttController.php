@@ -3,27 +3,18 @@ namespace app\commands;
 
 use Yii;
 use yii\console\Controller;
-use app\components\MqttComponent;
 use app\services\MeasurementService;
-use app\models\VerificationToken;
-use app\services\RabbitMQService;
 class MqttController extends Controller
 {
     /**
      * @var MeasurementService
      */
-    private $measurementService;
-
-    /**
-     * @var RabbitMQService
-     */
-    private $rabbitMQService;
+    protected $measurementService;
     
     public function __construct($id, $module, $config = [])
     {
         // Create the measurement service
         $this->measurementService = new MeasurementService();
-        $this->rabbitMQService = new RabbitMQService();
         parent::__construct($id, $module, $config);
     }
     
@@ -39,10 +30,7 @@ class MqttController extends Controller
         
         try {
             $client = Yii::$app->mqtt->subscribe($topic, function ($topic, $message) {
-                $this->stdout("Received message on topic {$topic}: {$message}\n");
-                
                 $this->processRealTimeDataMessage($topic, $message);
-                
             }, 1);
             
             $client->loop(true);
@@ -61,7 +49,7 @@ class MqttController extends Controller
     {
         try {
             $this->stdout("Processing real time data message...\n");
-            $this->rabbitMQService->publishMqttMessage($topic, $message);
+            $this->measurementService->processRealTimeDataMqttMessage($topic, $message);
         } catch (\Exception $e) {
             $this->stderr("Error processing device real time data: " . $e->getMessage() . "\n");
         }

@@ -30,6 +30,11 @@ class JwtAuthFilter extends ActionFilter
     public $throwException = true;
 
     /**
+     * @var string User class for token lookup (for testing)
+     */
+    public $userClass = \app\models\User::class;
+
+    /**
      * {@inheritdoc}
      */
     public function beforeAction($action)
@@ -52,7 +57,7 @@ class JwtAuthFilter extends ActionFilter
         }
 
         // Find user by access token
-        $user = User::findIdentityByAccessToken($token);
+        $user = call_user_func([$this->userClass, 'findIdentityByAccessToken'], $token);
 
         if (!$user) {
             if ($this->throwException) {
