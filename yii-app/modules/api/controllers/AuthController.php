@@ -48,6 +48,22 @@ class AuthController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/auth/test",
+     *     tags={"Authentication"},
+     *     summary="Test authentication endpoint",
+     *     description="Test endpoint to verify authentication controller is working",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Test successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Auth controller is working"),
+     *             @OA\Property(property="timestamp", type="string", format="date-time")
+     *         )
+     *     )
+     * )
+     * 
      * Test endpoint
      * GET /api/auth/test
      */
@@ -61,6 +77,43 @@ class AuthController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/auth/login",
+     *     tags={"Authentication"},
+     *     summary="User login",
+     *     description="Authenticate user and return JWT token",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"username","password"},
+     *             @OA\Property(property="username", type="string", example="admin"),
+     *             @OA\Property(property="password", type="string", example="password")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Login successful."),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="token", type="string"),
+     *                 @OA\Property(property="user", type="object")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request - Invalid input",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Invalid credentials.")
+     *         )
+     *     )
+     * )
+     * 
      * Login endpoint
      * POST /api/auth/login
      */
@@ -94,6 +147,24 @@ class AuthController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/auth/logout",
+     *     tags={"Authentication"},
+     *     summary="User logout",
+     *     description="Logout current user and revoke access token",
+     *     security={{"BearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout successful",
+     *         @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     * 
      * Logout endpoint
      * POST /api/auth/logout
      */
@@ -112,6 +183,31 @@ class AuthController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/auth/me",
+     *     tags={"Authentication"},
+     *     summary="Get current user information",
+     *     description="Retrieve information about the currently authenticated user",
+     *     security={{"BearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User information retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="user", ref="#/components/schemas/User")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     * 
      * Get current user info
      * GET /api/auth/me
      */
@@ -137,6 +233,38 @@ class AuthController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/auth/change-password",
+     *     tags={"Authentication"},
+     *     summary="Change user password",
+     *     description="Change password for the currently authenticated user",
+     *     security={{"BearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"current_password","new_password","confirm_password"},
+     *             @OA\Property(property="current_password", type="string", example="oldpassword123"),
+     *             @OA\Property(property="new_password", type="string", example="newpassword456"),
+     *             @OA\Property(property="confirm_password", type="string", example="newpassword456")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Password changed successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/SuccessResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     * 
      * Change password
      * POST /api/auth/change-password
      */

@@ -14,6 +14,11 @@ use app\models\Devices;
 use app\models\MeasurementData;
 use app\filters\JwtAuthFilter;
 
+/**
+ * Conditions Management Controller
+ * Handles condition CRUD operations and condition lifecycle management
+ */
+
 class ConditionsController extends Controller
 {
     /**
@@ -62,6 +67,29 @@ class ConditionsController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/condition/list",
+     *     tags={"Conditions"},
+     *     summary="Get list of conditions",
+     *     description="Retrieve all conditions (admin) or conditions from user's devices (regular user)",
+     *     security={{"BearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Condition list retrieved successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/ConditionList")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     * 
      * Get all conditions
      * GET /api/conditions
      */

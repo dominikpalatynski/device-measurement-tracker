@@ -16,6 +16,7 @@ use app\filters\JwtAuthFilter;
 
 /**
  * Users API Controller (Admin only)
+ * Handles user management operations - restricted to admin users only
  */
 class UsersController extends Controller
 {
@@ -58,6 +59,49 @@ class UsersController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/users",
+     *     tags={"Users"},
+     *     summary="Get list of users",
+     *     description="Retrieve list of all users (admin only)",
+     *     security={{"BearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="role",
+     *         in="query",
+     *         description="Filter by user role",
+     *         @OA\Schema(type="string", enum={"admin", "operator", "viewer"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="status",
+     *         in="query",
+     *         description="Filter by user status",
+     *         @OA\Schema(type="string", enum={"Active", "Inactive"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Search in username or email",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(ref="#/components/parameters/LimitQuery"),
+     *     @OA\Parameter(ref="#/components/parameters/OffsetQuery"),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User list retrieved successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/UserList")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden - Admin access required",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     * 
      * List all users
      * GET /api/users
      */

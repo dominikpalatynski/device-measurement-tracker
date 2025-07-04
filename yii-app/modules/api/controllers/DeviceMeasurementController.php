@@ -14,6 +14,17 @@ use app\services\MongoDBService;
 use app\filters\JwtAuthFilter;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use OpenApi\Attributes as OA;
+
+/**
+ * Device Measurement Controller
+ * Handles measurement data operations and statistics
+ * 
+ * @OA\Tag(
+ *     name="Device Measurements",
+ *     description="Device measurement data operations including batch processing and token management"
+ * )
+ */
 
 class DeviceMeasurementController extends Controller
 {
@@ -70,6 +81,45 @@ class DeviceMeasurementController extends Controller
 
     /**
      * Generate batch token for device
+     * 
+     * @OA\Post(
+     *     path="/device-measurement/generate-batch-token",
+     *     tags={"Device Measurements"},
+     *     summary="Generate batch token for device",
+     *     description="Generate a JWT token for batch measurement operations for a specific device",
+     *     security={{"BearerAuth": {}}},
+     *     @OA\Parameter(ref="#/components/parameters/DeviceIdPath"),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Batch token generated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="batch_token", type="string", description="JWT batch token"),
+     *                 @OA\Property(property="device_id", type="string", example="DEV001"),
+     *                 @OA\Property(property="expires_at", type="integer", description="Unix timestamp of expiration"),
+     *                 @OA\Property(property="expires_in", type="integer", example=3600, description="Token lifetime in seconds")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request - Missing deviceId or device not active",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Device not found",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
      */
     public function actionGenerateBatchToken()
     {
@@ -143,6 +193,50 @@ class DeviceMeasurementController extends Controller
         }
     }
 
+    /**
+     * Process batch measurement data
+     * 
+     * @OA\Post(
+     *     path="/device-measurement/phenomen-batch",
+     *     tags={"Device Measurements"},
+     *     summary="Process batch measurement data",
+     *     description="Submit batch measurement data for a device with proper authentication token",
+     *     security={{"BatchAuth": {}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Batch measurement data",
+     *         @OA\JsonContent(
+     *             required={"deviceId", "data_series"},
+     *             @OA\Property(property="deviceId", type="string", example="DEV001", description="Device identifier"),
+     *             @OA\Property(property="data_series", type="array", @OA\Items(ref="#/components/schemas/DataSeries"), description="Array of measurement data series"),
+     *             @OA\Property(property="condition_name", type="string", example="normal_operation", description="Optional condition name"),
+     *             @OA\Property(property="data", type="object", description="Additional data payload")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Batch data processed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request - Invalid JSON or missing required fields",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized - Invalid or missing batch token",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     */
     public function actionPhenomenBatch()
     {
         try {

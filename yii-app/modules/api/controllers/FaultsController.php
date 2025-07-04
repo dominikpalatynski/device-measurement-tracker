@@ -13,6 +13,11 @@ use app\models\Devices;
 use app\models\Condition;
 use app\filters\JwtAuthFilter;
 
+/**
+ * Faults Management Controller
+ * Handles fault CRUD operations and fault monitoring
+ */
+
 class FaultsController extends Controller
 {    /**
      * {@inheritdoc}
@@ -118,6 +123,30 @@ class FaultsController extends Controller
      * Get all faults (filtered by device ownership)
      * GET /api/faults
      */
+    /**
+     * @OA\Get(
+     *     path="/fault/list",
+     *     tags={"Faults"},
+     *     summary="Get list of faults",
+     *     description="Retrieve all faults (admin) or faults from user's devices (regular user)",
+     *     security={{"BearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Fault list retrieved successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/FaultList")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     */
     public function actionList()
     {
         Yii::info("Faults list endpoint called", 'api.faults');
@@ -197,6 +226,44 @@ class FaultsController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/fault/create",
+     *     tags={"Faults"},
+     *     summary="Create a new fault",
+     *     description="Create a new fault for a device",
+     *     security={{"BearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"fault_name","device_id"},
+     *             @OA\Property(property="fault_name", type="string", example="Overheating Issue"),
+     *             @OA\Property(property="device_id", type="string", example="DEV001"),
+     *             @OA\Property(property="description", type="string", example="Device temperature exceeds normal range"),
+     *             @OA\Property(property="severity", type="string", enum={"Low", "Medium", "High", "Critical"}, example="High"),
+     *             @OA\Property(property="status", type="string", enum={"Active", "Inactive", "Resolved"}, example="Active")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Fault created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Fault created successfully"),
+     *             @OA\Property(property="data", ref="#/components/schemas/Fault")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     * 
      * Create a new fault
      * POST /api/faults
      */

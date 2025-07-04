@@ -20,7 +20,8 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
     // Simple fetch with minimal options to reduce potential issues
     const response = await fetch(url, {
       ...options,
-      headers: {
+      headers:
+ {
         'Accept': 'application/json',
         ...options.headers,
       },
@@ -1773,3 +1774,180 @@ async function fetchApiWithAuth<T>(endpoint: string, options: RequestInit = {}):
     headers: authHeaders,
   });
 }
+
+/**
+ * Export API functions
+ */
+
+/**
+ * Export faults data with filters
+ */
+export async function exportFaultsData(filters: {
+  deviceId?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+} = {}): Promise<any> {
+  // Get all faults and filter them
+  const faults = await faultApi.getFaults();
+  
+  let filteredFaults = faults;
+  
+  // Apply filters
+  if (filters.deviceId) {
+    filteredFaults = filteredFaults.filter(fault => fault.device_id === filters.deviceId);
+  }
+  
+  if (filters.status) {
+    filteredFaults = filteredFaults.filter(fault => fault.status === filters.status);
+  }
+  
+  if (filters.startDate || filters.endDate) {
+    filteredFaults = filteredFaults.filter(fault => {
+      const faultDate = new Date(fault.start_date || fault.created_at);
+      const start = filters.startDate ? new Date(filters.startDate) : new Date(0);
+      const end = filters.endDate ? new Date(filters.endDate) : new Date();
+      return faultDate >= start && faultDate <= end;
+    });
+  }
+  
+  return filteredFaults;
+}
+
+/**
+ * Export conditions data with filters
+ */
+export async function exportConditionsData(filters: {
+  deviceId?: string;
+  faultId?: string;
+  conditionId?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+} = {}): Promise<any> {
+  // Get MongoDB measurements that include condition data
+  const response = await getMongoMeasurements(
+    filters.deviceId,
+    filters.faultId,
+    filters.conditionId,
+    undefined, // dataSeriesId
+    filters.startDate && filters.endDate 
+      ? `${new Date(filters.startDate).getTime() / 1000}-${new Date(filters.endDate).getTime() / 1000}`
+      : undefined,
+    10000, // high limit to get all data
+    0, // offset
+    true, // includeData
+    undefined, // conditionName
+    undefined, // faultName
+    undefined // dataSeriesValue
+  );
+  
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to fetch conditions data');
+  }
+  
+  // Group data by condition
+  const conditionsMap = new Map();
+  
+  response.data.forEach((measurement: any) => {
+    const condId = measurement.conditionId || 'unknown';
+    if (!conditionsMap.has(condId)) {
+      conditionsMap.set(condId, {
+        condition_id: condId,
+        fault_id: measurement.faultId,
+        device_id: measurement.deviceId,
+        measurements: [],
+        start_time: measurement.timestamp,
+        end_time: measurement.timestamp,
+        total_measurements: 0
+      });
+    }
+    
+    const condition = conditionsMap.get(condId);
+    condition.measurements.push(measurement);
+    condition.total_measurements++;
+    
+    // Update time range
+    if (measurement.timestamp < condition.start_time) {
+      condition.start_time = measurement.timestamp;
+    }
+    if (measurement.timestamp > condition.end_time) {
+      condition.end_time = measurement.timestamp;
+    }
+  });
+  
+  return Array.from(conditionsMap.values());
+}
+
+/**
+ * Export data series data with filters
+ */
+export async function exportDataSeriesData(filters: {
+  deviceId?: string;
+  faultId?: string;
+  conditionId?: string;
+  dataSeriesId?: string;
+  startDate?: string;
+  endDate?: string;
+  includePayload?: boolean;
+} = {}): Promise<any> {
+  const response = await getMongoMeasurements(
+    filters.deviceId,
+    filters.faultId,
+    filters.conditionId,
+    filters.dataSeriesId,
+    filters.startDate && filters.endDate 
+      ? `${new Date(filters.startDate).getTime() / 1000}-${new Date(filters.endDate).getTime() / 1000}`
+      : undefined,
+    10000, // high limit to get all data
+    0, // offset
+    filters.includePayload !== false, // includeData (default true)
+    undefined, // conditionName
+    undefined, // faultName
+    undefined // dataSeriesValue
+  );
+  
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to fetch data series data');
+  }
+  
+  // Group by data series if no specific dataSeriesId is provided
+  if (!filters.dataSeriesId) {
+    const dataSeriesMap = new Map();
+    
+    response.data.forEach((measurement: any) => {
+      const seriesId = measurement.dataSeriesId || 'unknown';
+      if (!dataSeriesMap.has(seriesId)) {
+        dataSeriesMap.set(seriesId, {
+          data_series_id: seriesId,
+          device_id: measurement.deviceId,
+          fault_id: measurement.faultId,
+          condition_id: measurement.conditionId,
+          measurements: [],
+          total_measurements: 0,
+          start_time: measurement.timestamp,
+          end_time: measurement.timestamp
+        });
+      }
+      
+      const series = dataSeriesMap.get(seriesId);
+      series.measurements.push(measurement);
+      series.total_measurements++;
+      
+      // Update time range
+      if (measurement.timestamp < series.start_time) {
+        series.start_time = measurement.timestamp;
+      }
+      if (measurement.timestamp > series.end_time) {
+        series.end_time = measurement.timestamp;
+      }
+    });
+    
+    return Array.from(dataSeriesMap.values());
+  }
+  
+  // Return raw data for specific data series
+  return response.data;
+}
+
+export { TokenManager };

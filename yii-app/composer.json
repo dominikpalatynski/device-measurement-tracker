@@ -23,7 +23,9 @@
         "php-http/guzzle7-adapter": "^1.1",
         "predis/predis": "^3.0",
         "php-amqplib/php-amqplib": "^3.7",
-        "firebase/php-jwt": "^6.11"
+        "firebase/php-jwt": "^6.11",
+        "bower-asset/swagger-ui": "^5.25",
+        "doctrine/annotations": "^2.0"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
@@ -34,7 +36,8 @@
         "codeception/module-asserts": "^3.0 || ^1.1",
         "codeception/module-yii2": "^1.1",
         "codeception/module-filesystem": "^3.0 || ^2.0 || ^1.1",
-        "codeception/verify": "^3.0 || ^2.2"
+        "codeception/verify": "^3.0 || ^2.2",
+        "light/yii2-swagger": "~3.0"
     },
     "config": {
         "allow-plugins": {

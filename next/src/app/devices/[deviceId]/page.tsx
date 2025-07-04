@@ -583,8 +583,7 @@ export default function DeviceDetailPage() {
 			>
 				<div className='container mx-auto px-4 py-8'>
 					{/* Header */}
-					<div className='flex items-center justify-between mb-8'>
-						{" "}
+					<div className='flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4'>
 						<div className='flex items-center'>
 							<Link
 								href='/devices'
@@ -600,15 +599,16 @@ export default function DeviceDetailPage() {
 									<div>
 										<h1 className='text-3xl font-bold text-gray-900'>
 											{device.device_name}
-										</h1>{" "}
+										</h1>
 										<p className='text-gray-600'>
 											ID: {device.device_id}
 										</p>
 									</div>
 								</div>
 							</div>
-						</div>{" "}
-						<div className='flex space-x-2'>
+						</div>
+						{/* Responsive button group */}
+						<div className='flex flex-wrap gap-2'>
 							{/* Activate Controls - For Inactive devices */}
 							{device.status === "Inactive" && (
 								<button
@@ -626,18 +626,15 @@ export default function DeviceDetailPage() {
 								>
 									⏸️ Deactivate
 								</button>
-							)}{" "}
+							)}
 							{/* Fault Controls - Only for Active devices */}
 							{device.status === "Active" && (
-								<>
-									{/* Always show option to create Offline fault */}{" "}
-									<Link
-										href={`/devices/${deviceId}/faults/create`}
-										className='inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'
-									>
-										Create Fault
-									</Link>
-								</>
+								<Link
+									href={`/devices/${deviceId}/faults/create`}
+									className='inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50'
+								>
+									Create Fault
+								</Link>
 							)}
 							{/* BatchToken button */}
 							<button

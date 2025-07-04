@@ -6,9 +6,11 @@ import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import DeviceProtectedRoute from "@/components/DeviceProtectedRoute";
 import AdvancedZoomChart from "@/components/AdvancedZoomChart";
+import ExportButton from "@/components/ExportButton";
 import {
 	deviceApi,
 	getMongoMeasurements,
+	exportDataSeriesData,
 	Device,
 	MeasurementData,
 } from "@/services/api";
@@ -338,7 +340,7 @@ export default function UnassignedDataSeriesDetailPage() {
 					{/* Header */}
 					<div className='bg-orange-50 p-6 rounded-lg border border-orange-200'>
 						<div className='flex justify-between items-start mb-4'>
-							<div>
+							<div className="flex-1">
 								<h2 className='text-2xl font-bold text-orange-900 mb-2'>
 									🔍 Unknown Data Series {dataseriesId}
 								</h2>
@@ -353,7 +355,24 @@ export default function UnassignedDataSeriesDetailPage() {
 								</div>
 							</div>
 
-							<div className='flex space-x-2'>
+							<div className='flex items-center space-x-4'>
+								<ExportButton
+									onExport={async (filters) => {
+										return await exportDataSeriesData({
+											deviceId,
+											dataSeriesId: dataseriesId,
+											startDate: startDate,
+											endDate: endDate,
+											includePayload: true,
+											...filters
+										});
+									}}
+									exportType="dataseries"
+									context={`${deviceId}_${dataseriesId}_unassigned`}
+									buttonText="Export Data"
+									size="sm"
+									variant="primary"
+								/>
 								<label className='flex items-center space-x-2'>
 									<input
 										type='checkbox'

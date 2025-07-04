@@ -14,6 +14,7 @@ use app\models\Faults;
 
 /**
  * MongoDB API Controller for testing measurement data operations
+ * Handles MongoDB measurement data retrieval and debugging operations
  */
 class MongoDBController extends Controller
 {
@@ -77,6 +78,60 @@ class MongoDBController extends Controller
     }
     
     /**
+     * @OA\Get(
+     *     path="/mongodb/measurements",
+     *     tags={"Measurements"},
+     *     summary="Get measurement data from MongoDB",
+     *     description="Retrieve measurement data with various filtering options",
+     *     @OA\Parameter(
+     *         name="deviceId",
+     *         in="query",
+     *         description="Filter by device ID",
+     *         @OA\Schema(type="string", example="DEV001")
+     *     ),
+     *     @OA\Parameter(
+     *         name="faultId",
+     *         in="query",
+     *         description="Filter by fault ID",
+     *         @OA\Schema(type="string", example="FAULT001")
+     *     ),
+     *     @OA\Parameter(
+     *         name="conditionId",
+     *         in="query",
+     *         description="Filter by condition ID",
+     *         @OA\Schema(type="string", example="COND001")
+     *     ),
+     *     @OA\Parameter(
+     *         name="dataSeriesId",
+     *         in="query",
+     *         description="Filter by data series ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(ref="#/components/parameters/TimeRangeQuery"),
+     *     @OA\Parameter(ref="#/components/parameters/LimitQuery"),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Sort order",
+     *         @OA\Schema(type="string", enum={"asc", "desc"}, default="desc")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Measurement data retrieved successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/MeasurementList")
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(ref="#/components/schemas/ErrorResponse")
+     *     )
+     * )
+     * 
      * GET /api/mongodb/measurements
      * Get measurement data with flexible filtering
      * 

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import DeviceProtectedRoute from "@/components/DeviceProtectedRoute";
+import ExportButton from "@/components/ExportButton";
 import {
 	deviceApi,
 	faultApi,
@@ -12,6 +13,7 @@ import {
 	Fault,
 	ActiveCondition,
 	getDataSeriesList,
+	exportConditionsData,
 } from "@/services/api";
 
 export default function ConditionDetailPage() {
@@ -200,7 +202,7 @@ export default function ConditionDetailPage() {
 					{/* Condition Header */}
 					<div className='bg-white p-6 rounded-lg border border-gray-200'>
 						<div className='flex justify-between items-start mb-4'>
-							<div>
+							<div className="flex-1">
 								<h2 className='text-2xl font-bold text-gray-900 mb-2'>
 									{condition.name}
 								</h2>
@@ -226,6 +228,23 @@ export default function ConditionDetailPage() {
 										{condition.duration % 60}s
 									</span>
 								</div>
+							</div>
+							<div className="flex flex-col space-y-2">
+								<ExportButton
+									onExport={async (filters) => {
+										return await exportConditionsData({
+											deviceId,
+											faultId,
+											conditionId,
+											...filters
+										});
+									}}
+									exportType="conditions"
+									context={`${deviceId}_${faultId}_${conditionId}`}
+									buttonText="Export Condition"
+									size="sm"
+									variant="primary"
+								/>
 							</div>
 						</div>
 					</div>

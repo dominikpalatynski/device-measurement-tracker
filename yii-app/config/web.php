@@ -89,7 +89,13 @@ $config = [
         ],        'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
-            'rules' => [                // Device endpoints (using DeviceRegisterController since DevicesController is empty)
+            'rules' => [                // Swagger/API Documentation endpoints
+                'swagger' => 'swagger/index',
+                'swagger/doc' => 'swagger/doc',
+                'swagger/api' => 'swagger/api',
+                'swagger/refresh-assets' => 'swagger/refresh-assets',
+                
+                // Device endpoints (using DeviceRegisterController since DevicesController is empty)
                 'api/device/list' => 'api/device-register/list',
                 'api/device/view' => 'api/device-register/view',
                 'api/device/register' => 'api/device-register/register',
