@@ -666,6 +666,8 @@ export default function FaultDetailPage() {
 
 					{/* Conditions Management */}
 					<ConditionsManagement
+						deviceId={deviceId}
+						faultId={faultId}
 						offlineConditions={offlineConditions}
 						showOfflineConditionForm={showOfflineConditionForm}
 						newOfflineConditionName={newOfflineConditionName}

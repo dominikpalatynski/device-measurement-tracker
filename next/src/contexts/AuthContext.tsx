@@ -6,8 +6,44 @@ import React, {
 	useEffect,
 	useState,
 	ReactNode,
+	useRef,
 } from "react";
 import { auth, User } from "../services/auth";
+
+// Utility function to decode JWT payload without verification
+function decodeJWT(token: string): any {
+	try {
+		if (!token || typeof token !== "string") {
+			return null;
+		}
+
+		const parts = token.split(".");
+		if (parts.length !== 3) {
+			return null;
+		}
+
+		const base64Url = parts[1];
+		const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+		const jsonPayload = decodeURIComponent(
+			atob(base64)
+				.split("")
+				.map(
+					(c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)
+				)
+				.join("")
+		);
+		return JSON.parse(jsonPayload);
+	} catch (error) {
+		console.error("Failed to decode JWT token:", error);
+		return null;
+	}
+}
+
+// Utility function to get token expiration time
+function getTokenExpiration(token: string): number | null {
+	const payload = decodeJWT(token);
+	return payload?.exp ? payload.exp * 1000 : null; // Convert to milliseconds
+}
 
 interface AuthContextType {
 	user: User | null;
@@ -28,6 +64,64 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
 	const [user, setUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
+	const tokenTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+	// Clear existing timer
+	const clearTokenTimer = () => {
+		if (tokenTimerRef.current) {
+			clearTimeout(tokenTimerRef.current);
+			tokenTimerRef.current = null;
+		}
+	};
+
+	// Set up token expiration timer
+	const setupTokenTimer = (token: string) => {
+		clearTokenTimer();
+
+		const expirationTime = getTokenExpiration(token);
+		if (!expirationTime) return;
+
+		const currentTime = Date.now();
+		const timeUntilExpiration = expirationTime - currentTime;
+
+		// If token is already expired or expires in less than 30 seconds, logout immediately
+		if (timeUntilExpiration <= 30000) {
+			console.warn("Token expired or expiring soon, logging out");
+			handleTokenExpiration();
+			return;
+		}
+
+		// Set timer to logout user when token expires
+		tokenTimerRef.current = setTimeout(() => {
+			console.warn("Token has expired, logging out user");
+			handleTokenExpiration();
+		}, timeUntilExpiration);
+
+		console.log(
+			`Token timer set: expires in ${Math.round(
+				timeUntilExpiration / 1000
+			)} seconds`
+		);
+	};
+
+	// Handle token expiration
+	const handleTokenExpiration = async () => {
+		console.log("Handling token expiration");
+		clearTokenTimer();
+
+		try {
+			await auth.logout();
+		} catch (error) {
+			console.error("Error during logout:", error);
+		}
+
+		setUser(null);
+
+		// Refresh the page to ensure clean state
+		if (typeof window !== "undefined") {
+			window.location.reload();
+		}
+	};
 
 	useEffect(() => {
 		// Check if user is already logged in
@@ -41,14 +135,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 					console.log("setuser1", storedUser);
 					setUser(storedUser);
 
+					// Set up token expiration timer
+					setupTokenTimer(token);
+
 					try {
 						// Validate token and refresh user data from server
 						const currentUser = await auth.getCurrentUser();
-						console.log(
-							"User fetched with existing token:",
-							currentUser
-						);
-						setUser(currentUser);
+
+						setUser(currentUser?.user as User);
 					} catch (error) {
 						console.warn(
 							"Token validation failed, attempting refresh:",
@@ -60,6 +154,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 							const refreshedAuth = await auth.refreshToken();
 							console.log(refreshedAuth.user);
 							setUser(refreshedAuth.user);
+
+							// Update timer with new token
+							setupTokenTimer(refreshedAuth.access_token);
 						} catch (refreshError) {
 							console.error(
 								"Token refresh failed:",
@@ -68,10 +165,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 							// Clear invalid auth data
 							auth.clearAll();
 							setUser(null);
+							clearTokenTimer();
 						}
 					}
 				} else if (token && !storedUser) {
 					// We have a token but no stored user, try to get user info
+					setupTokenTimer(token);
+
 					try {
 						const currentUser = await auth.getCurrentUser();
 						console.log(
@@ -86,6 +186,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 						);
 						auth.clearAll();
 						setUser(null);
+						clearTokenTimer();
 					}
 				}
 				// If no token, user stays null (not logged in)
@@ -93,18 +194,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				console.error("Failed to initialize auth:", error);
 				auth.clearAll();
 				setUser(null);
+				clearTokenTimer();
 			} finally {
 				setLoading(false);
 			}
 		};
 
 		initAuth();
+
+		// Cleanup timer on unmount
+		return () => {
+			clearTokenTimer();
+		};
 	}, []);
 
 	const login = async (username: string, password: string) => {
 		try {
 			const response = await auth.login({ username, password });
 			setUser(response.user);
+
+			// Set up token expiration timer
+			setupTokenTimer(response.access_token);
+
+			// Refresh the page after successful login to ensure clean state
+			if (typeof window !== "undefined") {
+				setTimeout(() => {
+					window.location.reload();
+				}, 100);
+			}
 		} catch (error) {
 			console.error("Login failed:", error);
 			throw error;
@@ -118,6 +235,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			console.error("Logout failed:", error);
 		} finally {
 			setUser(null);
+			clearTokenTimer();
+
+			// Refresh the page after logout to ensure clean state
+			if (typeof window !== "undefined") {
+				setTimeout(() => {
+					window.location.reload();
+				}, 100);
+			}
 		}
 	};
 
@@ -125,12 +250,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		try {
 			const token = auth.getToken();
 			if (token) {
+				// Update timer with current token
+				setupTokenTimer(token);
+
 				const currentUser = await auth.getCurrentUser();
 				setUser(currentUser);
 			} else {
 				// No token available
 				setUser(null);
 				auth.clearAll();
+				clearTokenTimer();
 			}
 		} catch (error) {
 			console.warn(
@@ -142,10 +271,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				// Try to refresh the token
 				const refreshedAuth = await auth.refreshToken();
 				setUser(refreshedAuth.user);
+
+				// Update timer with new token
+				setupTokenTimer(refreshedAuth.access_token);
 			} catch (refreshError) {
 				console.error("Token refresh failed:", refreshError);
 				setUser(null);
 				auth.clearAll();
+				clearTokenTimer();
 			}
 		}
 	};

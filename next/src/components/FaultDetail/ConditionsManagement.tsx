@@ -1,7 +1,10 @@
 import React from "react";
+import Link from "next/link";
 import { Condition } from "@/services/api";
 
 interface ConditionsManagementProps {
+	deviceId: string;
+	faultId: string;
 	offlineConditions: Condition[];
 	showOfflineConditionForm: boolean;
 	newOfflineConditionName: string;
@@ -20,6 +23,8 @@ interface ConditionsManagementProps {
 }
 
 export default function ConditionsManagement({
+	deviceId,
+	faultId,
 	offlineConditions,
 	showOfflineConditionForm,
 	newOfflineConditionName,
@@ -122,9 +127,12 @@ export default function ConditionsManagement({
 								<div className='flex justify-between items-start'>
 									<div className='flex-1'>
 										<div className='flex items-center space-x-3 mb-2'>
-											<h5 className='font-medium text-gray-900'>
+											<Link
+												href={`/devices/${deviceId}/faults/${faultId}/conditions/${condition.condition_id}`}
+												className='font-medium text-blue-600 hover:text-blue-800 hover:underline'
+											>
 												{condition.name}
-											</h5>
+											</Link>
 											<span
 												className={`px-2 py-1 rounded-full text-xs font-medium ${
 													condition.status ===
@@ -182,6 +190,12 @@ export default function ConditionsManagement({
 									</div>
 
 									<div className='flex space-x-2 ml-4'>
+										<Link
+											href={`/devices/${deviceId}/faults/${faultId}/conditions/${condition.condition_id}`}
+											className='px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700'
+										>
+											View Details
+										</Link>
 										{condition.status === "Inactive" && (
 											<button
 												onClick={() =>
