@@ -34,9 +34,13 @@ export default function DataSeriesDetailPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	// Measurement data state
-	const [measurementData, setMeasurementData] = useState<MeasurementData[]>([]);
+	const [measurementData, setMeasurementData] = useState<MeasurementData[]>(
+		[]
+	);
 	const [measurementLoading, setMeasurementLoading] = useState(false);
-	const [measurementError, setMeasurementError] = useState<string | null>(null);
+	const [measurementError, setMeasurementError] = useState<string | null>(
+		null
+	);
 
 	// Filter state
 	const [startDate, setStartDate] = useState<string>("");
@@ -91,12 +95,9 @@ export default function DataSeriesDetailPage() {
 				return;
 			}
 			setFault(faultData);
-
 		} catch (err) {
 			setError(
-				err instanceof Error
-					? err.message
-					: "Failed to load basic data"
+				err instanceof Error ? err.message : "Failed to load basic data"
 			);
 		} finally {
 			setLoading(false);
@@ -109,22 +110,39 @@ export default function DataSeriesDetailPage() {
 		try {
 			setMeasurementLoading(true);
 			setMeasurementError(null);
-			
+
 			// First, let's check what data series are available for this condition
 			console.log("=== CHECKING AVAILABLE DATA SERIES ===");
-			const dataSeriesResponse = await getDataSeriesList(deviceId, conditionId, faultId);
+			const dataSeriesResponse = await getDataSeriesList(
+				deviceId,
+				conditionId,
+				faultId
+			);
 			console.log("Available data series:", dataSeriesResponse.data);
-			console.log("Looking for data series:", dataseriesId, "type:", typeof dataseriesId);
-			console.log("Data series types:", dataSeriesResponse.data.map(d => typeof d));
-			
+			console.log(
+				"Looking for data series:",
+				dataseriesId,
+				"type:",
+				typeof dataseriesId
+			);
+			console.log(
+				"Data series types:",
+				dataSeriesResponse.data.map((d) => typeof d)
+			);
+
 			// Convert dataseriesId to number for comparison since API returns numbers
 			const dataSeriesIdNum = parseInt(dataseriesId);
-			const dataSeriesExists = dataSeriesResponse.data.includes(dataSeriesIdNum);
+			const dataSeriesExists =
+				dataSeriesResponse.data.includes(dataSeriesIdNum);
 			console.log("Data series exists:", dataSeriesExists);
 			console.log("Data series list response:", dataSeriesResponse);
 
 			if (!dataSeriesExists) {
-				setMeasurementError(`Data series ${dataseriesId} not found. Available: ${dataSeriesResponse.data.join(', ')}`);
+				setMeasurementError(
+					`Data series ${dataseriesId} not found. Available: ${dataSeriesResponse.data.join(
+						", "
+					)}`
+				);
 				setMeasurementData([]);
 				return;
 			}
@@ -132,7 +150,7 @@ export default function DataSeriesDetailPage() {
 			// Use the EXACT same approach as the working data-series-list endpoint
 			// Create a custom request that mimics the successful data-series-list logic
 			console.log("=== USING MYSQL CONDITION LOOKUP ===");
-			
+
 			// Calculate time range if dates are provided
 			let timeRange: string | undefined;
 			if (startDate || endDate) {
@@ -149,7 +167,7 @@ export default function DataSeriesDetailPage() {
 			const response = await getMongoMeasurements(
 				deviceId, // deviceId
 				undefined, // faultId - not used, relying on fault_name
-				undefined, // conditionId - not used, relying on condition_name  
+				undefined, // conditionId - not used, relying on condition_name
 				dataseriesId, // dataSeriesId - filter by specific data series
 				timeRange,
 				1000, // limit
@@ -159,13 +177,14 @@ export default function DataSeriesDetailPage() {
 				dataSeriesResponse.condition_info?.fault_name, // Use the fault name from MySQL lookup
 				undefined // dataSeriesValue
 			);
-			
+
 			console.log("MongoDB query with:", {
 				deviceId: deviceId,
 				dataSeriesId: dataseriesId,
-				conditionName: dataSeriesResponse.condition_info?.condition_name,
+				conditionName:
+					dataSeriesResponse.condition_info?.condition_name,
 				faultName: dataSeriesResponse.condition_info?.fault_name,
-				timeRange: timeRange
+				timeRange: timeRange,
 			});
 
 			if (response.success && response.data.length > 0) {
@@ -191,7 +210,10 @@ export default function DataSeriesDetailPage() {
 				);
 
 				setMeasurementData(convertedData);
-				console.log("Data series measurements loaded:", convertedData.length);
+				console.log(
+					"Data series measurements loaded:",
+					convertedData.length
+				);
 				console.log("MongoDB response:", response);
 			} else {
 				console.log(
@@ -203,7 +225,9 @@ export default function DataSeriesDetailPage() {
 			}
 		} catch (error) {
 			console.error("Error loading measurements:", error);
-			setMeasurementError(error instanceof Error ? error.message : "Unknown error");
+			setMeasurementError(
+				error instanceof Error ? error.message : "Unknown error"
+			);
 			setMeasurementData([]);
 		} finally {
 			setMeasurementLoading(false);
@@ -334,9 +358,11 @@ export default function DataSeriesDetailPage() {
 	if (error) {
 		return (
 			<DeviceProtectedRoute deviceId={deviceId}>
-				<PageLayout title="Error">
+				<PageLayout title='Error'>
 					<div className='text-center py-12'>
-						<div className='text-red-600 text-xl mb-4'>⚠️ {error}</div>
+						<div className='text-red-600 text-xl mb-4'>
+							⚠️ {error}
+						</div>
 						<Link
 							href={`/devices/${deviceId}/faults/${faultId}/conditions/${conditionId}`}
 							className='text-blue-600 hover:text-blue-900'
@@ -356,7 +382,10 @@ export default function DataSeriesDetailPage() {
 				breadcrumbs={[
 					{ label: "Home", href: "/" },
 					{ label: "Devices", href: "/devices" },
-					{ label: device?.device_name || "Device", href: `/devices/${deviceId}` },
+					{
+						label: device?.device_name || "Device",
+						href: `/devices/${deviceId}`,
+					},
 					{
 						label: fault?.fault_name || fault?.fault_id || "Fault",
 						href: `/devices/${deviceId}/faults/${faultId}`,
@@ -375,16 +404,22 @@ export default function DataSeriesDetailPage() {
 					{/* Header */}
 					<div className='bg-white p-6 rounded-lg border border-gray-200'>
 						<div className='flex justify-between items-start mb-4'>
-							<div className="flex-1">
+							<div className='flex-1'>
 								<h2 className='text-2xl font-bold text-gray-900 mb-2'>
 									Data Series {dataseriesId}
 								</h2>
 								<p className='text-gray-600 mb-4'>
-									Detailed measurement analysis for data series {dataseriesId}
+									Detailed measurement analysis for data
+									series {dataseriesId}
 								</p>
 								<div className='flex space-x-4 text-sm text-gray-500'>
-									<span>📱 Device: {device?.device_name}</span>
-									<span>🔧 Fault: {fault?.fault_name || fault?.fault_id}</span>
+									<span>
+										📱 Device: {device?.device_name}
+									</span>
+									<span>
+										🔧 Fault:{" "}
+										{fault?.fault_name || fault?.fault_id}
+									</span>
 									<span>📊 Condition: {conditionId}</span>
 									<span>🔢 Series: {dataseriesId}</span>
 								</div>
@@ -401,14 +436,14 @@ export default function DataSeriesDetailPage() {
 											startDate: startDate,
 											endDate: endDate,
 											includePayload: true,
-											...filters
+											...filters,
 										});
 									}}
-									exportType="dataseries"
+									exportType='dataseries'
 									context={`${deviceId}_${faultId}_${conditionId}_${dataseriesId}`}
-									buttonText="Export Data"
-									size="sm"
-									variant="primary"
+									buttonText='Export Data'
+									size='sm'
+									variant='primary'
 								/>
 								<label className='flex items-center space-x-2'>
 									<input
@@ -419,7 +454,9 @@ export default function DataSeriesDetailPage() {
 										}
 										className='rounded'
 									/>
-									<span className='text-sm'>Auto-refresh</span>
+									<span className='text-sm'>
+										Auto-refresh
+									</span>
 								</label>
 							</div>
 						</div>
@@ -433,31 +470,45 @@ export default function DataSeriesDetailPage() {
 
 						{/* Active Filters Display */}
 						<div className='bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6'>
-							<h4 className='text-sm font-medium text-blue-800 mb-3'>Active Filters</h4>
+							<h4 className='text-sm font-medium text-blue-800 mb-3'>
+								Active Filters
+							</h4>
 							<div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm'>
 								<div className='flex items-center space-x-2'>
 									<span className='text-blue-600'>🏷️</span>
-									<span className='font-medium'>Condition:</span>
-									<span className='text-blue-800'>{conditionId}</span>
+									<span className='font-medium'>
+										Condition:
+									</span>
+									<span className='text-blue-800'>
+										{conditionId}
+									</span>
 								</div>
 								<div className='flex items-center space-x-2'>
 									<span className='text-blue-600'>📋</span>
 									<span className='font-medium'>Fault:</span>
-									<span className='text-blue-800'>{fault?.fault_name}</span>
+									<span className='text-blue-800'>
+										{fault?.fault_name}
+									</span>
 								</div>
 								<div className='flex items-center space-x-2'>
 									<span className='text-blue-600'>🖥️</span>
 									<span className='font-medium'>Device:</span>
-									<span className='text-blue-800'>{device?.device_name}</span>
+									<span className='text-blue-800'>
+										{device?.device_name}
+									</span>
 								</div>
 							</div>
 							<div className='text-xs text-blue-600 mt-2'>
-								Filtering uses condition_name and fault_name from database for improved accuracy
+								Filtering uses condition_name and fault_name
+								from database for improved accuracy
 							</div>
 						</div>
 
 						{/* Date Range Filter */}
-						<form onSubmit={handleFilterSubmit} className='space-y-4'>
+						<form
+							onSubmit={handleFilterSubmit}
+							className='space-y-4'
+						>
 							<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
 								<div>
 									<label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -466,7 +517,9 @@ export default function DataSeriesDetailPage() {
 									<input
 										type='datetime-local'
 										value={startDate}
-										onChange={(e) => setStartDate(e.target.value)}
+										onChange={(e) =>
+											setStartDate(e.target.value)
+										}
 										className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500'
 										placeholder='dd/mm/yyyy, --:--'
 									/>
@@ -478,7 +531,9 @@ export default function DataSeriesDetailPage() {
 									<input
 										type='datetime-local'
 										value={endDate}
-										onChange={(e) => setEndDate(e.target.value)}
+										onChange={(e) =>
+											setEndDate(e.target.value)
+										}
 										className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500'
 										placeholder='dd/mm/yyyy, --:--'
 									/>
@@ -489,7 +544,9 @@ export default function DataSeriesDetailPage() {
 										disabled={measurementLoading}
 										className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50'
 									>
-										{measurementLoading ? 'Loading...' : 'Filter'}
+										{measurementLoading
+											? "Loading..."
+											: "Filter"}
 									</button>
 									<button
 										type='button'
@@ -515,14 +572,18 @@ export default function DataSeriesDetailPage() {
 									return (
 										<button
 											key={key}
-											onClick={() => setActiveChartTab(key)}
+											onClick={() =>
+												setActiveChartTab(key)
+											}
 											className={`p-3 rounded-lg border text-center transition-all ${
 												activeChartTab === key
-													? 'border-blue-500 bg-blue-50 text-blue-700'
-													: 'border-gray-200 hover:border-gray-300 bg-white'
+													? "border-blue-500 bg-blue-50 text-blue-700"
+													: "border-gray-200 hover:border-gray-300 bg-white"
 											}`}
 										>
-											<div className='font-medium'>{key}</div>
+											<div className='font-medium'>
+												{key}
+											</div>
 											<div className='text-xs text-gray-500 mt-1'>
 												({stats.count} points)
 											</div>
@@ -540,16 +601,21 @@ export default function DataSeriesDetailPage() {
 								📈 {activeChartTab} Data Visualization
 							</h4>
 							<div className='text-sm text-green-600 mb-4'>
-								Advanced Chart Mode Enabled - Professional zoom & analysis tools active
+								Advanced Chart Mode Enabled - Professional zoom
+								& analysis tools active
 							</div>
-							
+
 							{/* Chart Container */}
 							<div className='bg-gray-50 border border-gray-200 rounded-lg p-4'>
 								<AdvancedZoomChart
-									data={chartData[activeChartTab].map((item) => ({
-										...item,
-										timestamp: Date.parse(item.timestamp) || item.index,
-									}))}
+									data={chartData[activeChartTab].map(
+										(item) => ({
+											...item,
+											timestamp:
+												Date.parse(item.timestamp) ||
+												item.index,
+										})
+									)}
 									dataKey='value'
 									xAxisKey='timestampFormatted'
 									title={`${activeChartTab} - Advanced Data Analysis`}
@@ -565,7 +631,8 @@ export default function DataSeriesDetailPage() {
 							{/* Chart Statistics */}
 							<div className='mt-6 grid grid-cols-2 md:grid-cols-4 gap-4'>
 								{(() => {
-									const stats = getChartStatistics(activeChartTab);
+									const stats =
+										getChartStatistics(activeChartTab);
 									return [
 										{
 											label: "Average",
@@ -584,7 +651,9 @@ export default function DataSeriesDetailPage() {
 										},
 										{
 											label: "Latest",
-											value: stats.latest?.toFixed(3) || "N/A",
+											value:
+												stats.latest?.toFixed(3) ||
+												"N/A",
 											icon: "Latest",
 										},
 									].map((stat, index) => (
@@ -593,7 +662,9 @@ export default function DataSeriesDetailPage() {
 											className='bg-gray-50 p-3 rounded border'
 										>
 											<div className='flex items-center space-x-2'>
-												<span className='text-lg'>{stat.icon}</span>
+												<span className='text-lg'>
+													{stat.icon}
+												</span>
 												<div>
 													<p className='text-sm text-gray-600'>
 														{stat.label}
@@ -614,25 +685,38 @@ export default function DataSeriesDetailPage() {
 					{measurementLoading && (
 						<div className='bg-white p-6 rounded-lg border border-gray-200 text-center'>
 							<div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4'></div>
-							<p className='text-gray-600'>Loading measurement data...</p>
+							<p className='text-gray-600'>
+								Loading measurement data...
+							</p>
 						</div>
 					)}
 
 					{!measurementLoading && measurementData.length === 0 && (
 						<div className='bg-white p-6 rounded-lg border border-gray-200 text-center'>
-							<div className='text-gray-400 text-4xl mb-4'>📊</div>
+							<div className='text-gray-400 text-4xl mb-4'>
+								📊
+							</div>
 							<h4 className='text-lg font-medium text-gray-600 mb-2'>
 								No Measurement Data Found
 							</h4>
 							<p className='text-gray-500 mb-4'>
-								No measurement data was found for data series {dataseriesId}.
+								No measurement data was found for data series{" "}
+								{dataseriesId}.
 							</p>
 							<div className='text-sm text-gray-400'>
 								<p>This might mean:</p>
 								<ul className='mt-2 space-y-1'>
-									<li>• No measurements have been recorded for this data series</li>
-									<li>• The data series ID doesn't match recorded data</li>
-									<li>• Try adjusting the date range filters</li>
+									<li>
+										• No measurements have been recorded for
+										this data series
+									</li>
+									<li>
+										• The data series ID doesn't match
+										recorded data
+									</li>
+									<li>
+										• Try adjusting the date range filters
+									</li>
 								</ul>
 							</div>
 						</div>
@@ -640,8 +724,12 @@ export default function DataSeriesDetailPage() {
 
 					{measurementError && (
 						<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-							<div className='text-red-800 font-medium'>Error Loading Data</div>
-							<div className='text-red-600 text-sm mt-1'>{measurementError}</div>
+							<div className='text-red-800 font-medium'>
+								Error Loading Data
+							</div>
+							<div className='text-red-600 text-sm mt-1'>
+								{measurementError}
+							</div>
 						</div>
 					)}
 

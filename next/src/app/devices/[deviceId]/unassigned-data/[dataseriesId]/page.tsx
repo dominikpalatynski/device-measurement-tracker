@@ -27,9 +27,13 @@ export default function UnassignedDataSeriesDetailPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	// Measurement data state
-	const [measurementData, setMeasurementData] = useState<MeasurementData[]>([]);
+	const [measurementData, setMeasurementData] = useState<MeasurementData[]>(
+		[]
+	);
 	const [measurementLoading, setMeasurementLoading] = useState(false);
-	const [measurementError, setMeasurementError] = useState<string | null>(null);
+	const [measurementError, setMeasurementError] = useState<string | null>(
+		null
+	);
 
 	// Filter state
 	const [startDate, setStartDate] = useState<string>("");
@@ -72,7 +76,6 @@ export default function UnassignedDataSeriesDetailPage() {
 				return;
 			}
 			setDevice(deviceData);
-
 		} catch (err) {
 			setError(
 				err instanceof Error
@@ -90,11 +93,11 @@ export default function UnassignedDataSeriesDetailPage() {
 		try {
 			setMeasurementLoading(true);
 			setMeasurementError(null);
-			
+
 			console.log("=== LOADING UNKNOWN DATA SERIES MEASUREMENTS ===");
 			console.log("Device ID:", deviceId);
 			console.log("Data Series ID:", dataseriesId);
-			
+
 			// Calculate time range if dates are provided
 			let timeRange: string | undefined;
 			if (startDate || endDate) {
@@ -110,24 +113,24 @@ export default function UnassignedDataSeriesDetailPage() {
 			// Get measurements for this specific unknown data series
 			const response = await getMongoMeasurements(
 				deviceId, // deviceId
-				undefined, // faultId 
+				undefined, // faultId
 				undefined, // conditionId
 				dataseriesId, // dataSeriesId - filter by specific data series
 				timeRange, // timeRange
 				1000, // limit
 				0, // offset
 				true, // includeData
-				'unknown_condition', // conditionName
-				'unknown_fault', // faultName
+				"unknown_condition", // conditionName
+				"unknown_fault", // faultName
 				undefined // dataSeriesValue
 			);
-			
+
 			console.log("MongoDB query with:", {
 				deviceId: deviceId,
 				dataSeriesId: dataseriesId,
-				conditionName: 'unknown_condition',
-				faultName: 'unknown_fault',
-				timeRange: timeRange
+				conditionName: "unknown_condition",
+				faultName: "unknown_fault",
+				timeRange: timeRange,
 			});
 
 			if (response.success && response.data.length > 0) {
@@ -137,15 +140,26 @@ export default function UnassignedDataSeriesDetailPage() {
 						// Safely handle timestamp conversion
 						let timestamp: string;
 						try {
-							if (item.timestamp_unix && !isNaN(item.timestamp_unix)) {
-								timestamp = new Date(item.timestamp_unix * 1000).toISOString();
+							if (
+								item.timestamp_unix &&
+								!isNaN(item.timestamp_unix)
+							) {
+								timestamp = new Date(
+									item.timestamp_unix * 1000
+								).toISOString();
 							} else if (item.timestamp) {
-								timestamp = new Date(item.timestamp).toISOString();
+								timestamp = new Date(
+									item.timestamp
+								).toISOString();
 							} else {
 								timestamp = new Date().toISOString();
 							}
 						} catch (error) {
-							console.error('Error converting timestamp for item:', item._id, error);
+							console.error(
+								"Error converting timestamp for item:",
+								item._id,
+								error
+							);
 							timestamp = new Date().toISOString();
 						}
 
@@ -164,7 +178,10 @@ export default function UnassignedDataSeriesDetailPage() {
 				);
 
 				setMeasurementData(convertedData);
-				console.log("Unknown data series measurements loaded:", convertedData.length);
+				console.log(
+					"Unknown data series measurements loaded:",
+					convertedData.length
+				);
 				console.log("MongoDB response:", response);
 			} else {
 				console.log(
@@ -176,7 +193,9 @@ export default function UnassignedDataSeriesDetailPage() {
 			}
 		} catch (error) {
 			console.error("Error loading measurements:", error);
-			setMeasurementError(error instanceof Error ? error.message : "Unknown error");
+			setMeasurementError(
+				error instanceof Error ? error.message : "Unknown error"
+			);
 			setMeasurementData([]);
 		} finally {
 			setMeasurementLoading(false);
@@ -307,9 +326,11 @@ export default function UnassignedDataSeriesDetailPage() {
 	if (error) {
 		return (
 			<DeviceProtectedRoute deviceId={deviceId}>
-				<PageLayout title="Error">
+				<PageLayout title='Error'>
 					<div className='text-center py-12'>
-						<div className='text-red-600 text-xl mb-4'>⚠️ {error}</div>
+						<div className='text-red-600 text-xl mb-4'>
+							⚠️ {error}
+						</div>
 						<Link
 							href={`/devices/${deviceId}`}
 							className='text-blue-600 hover:text-blue-900'
@@ -329,7 +350,10 @@ export default function UnassignedDataSeriesDetailPage() {
 				breadcrumbs={[
 					{ label: "Home", href: "/" },
 					{ label: "Devices", href: "/devices" },
-					{ label: device?.device_name || "Device", href: `/devices/${deviceId}` },
+					{
+						label: device?.device_name || "Device",
+						href: `/devices/${deviceId}`,
+					},
 					{
 						label: `Unknown Series ${dataseriesId}`,
 						href: `/devices/${deviceId}/unassigned-data/${dataseriesId}`,
@@ -340,15 +364,18 @@ export default function UnassignedDataSeriesDetailPage() {
 					{/* Header */}
 					<div className='bg-orange-50 p-6 rounded-lg border border-orange-200'>
 						<div className='flex justify-between items-start mb-4'>
-							<div className="flex-1">
+							<div className='flex-1'>
 								<h2 className='text-2xl font-bold text-orange-900 mb-2'>
 									🔍 Unknown Data Series {dataseriesId}
 								</h2>
 								<p className='text-orange-700 mb-4'>
-									Detailed analysis for unassigned measurement data series {dataseriesId}
+									Detailed analysis for unassigned measurement
+									data series {dataseriesId}
 								</p>
 								<div className='flex space-x-4 text-sm text-orange-600'>
-									<span>📱 Device: {device?.device_name}</span>
+									<span>
+										📱 Device: {device?.device_name}
+									</span>
 									<span>🔧 Fault: unknown_fault</span>
 									<span>📊 Condition: unknown_condition</span>
 									<span>🔢 Series: {dataseriesId}</span>
@@ -364,14 +391,14 @@ export default function UnassignedDataSeriesDetailPage() {
 											startDate: startDate,
 											endDate: endDate,
 											includePayload: true,
-											...filters
+											...filters,
 										});
 									}}
-									exportType="dataseries"
+									exportType='dataseries'
 									context={`${deviceId}_${dataseriesId}_unassigned`}
-									buttonText="Export Data"
-									size="sm"
-									variant="primary"
+									buttonText='Export Data'
+									size='sm'
+									variant='primary'
 								/>
 								<label className='flex items-center space-x-2'>
 									<input
@@ -382,7 +409,9 @@ export default function UnassignedDataSeriesDetailPage() {
 										}
 										className='rounded'
 									/>
-									<span className='text-sm text-orange-700'>Auto-refresh</span>
+									<span className='text-sm text-orange-700'>
+										Auto-refresh
+									</span>
 								</label>
 							</div>
 						</div>
@@ -396,31 +425,46 @@ export default function UnassignedDataSeriesDetailPage() {
 
 						{/* Active Filters Display */}
 						<div className='bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6'>
-							<h4 className='text-sm font-medium text-orange-800 mb-3'>Active Filters</h4>
+							<h4 className='text-sm font-medium text-orange-800 mb-3'>
+								Active Filters
+							</h4>
 							<div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm'>
 								<div className='flex items-center space-x-2'>
 									<span className='text-orange-600'>🏷️</span>
-									<span className='font-medium'>Condition:</span>
-									<span className='text-orange-800'>unknown_condition</span>
+									<span className='font-medium'>
+										Condition:
+									</span>
+									<span className='text-orange-800'>
+										unknown_condition
+									</span>
 								</div>
 								<div className='flex items-center space-x-2'>
 									<span className='text-orange-600'>📋</span>
 									<span className='font-medium'>Fault:</span>
-									<span className='text-orange-800'>unknown_fault</span>
+									<span className='text-orange-800'>
+										unknown_fault
+									</span>
 								</div>
 								<div className='flex items-center space-x-2'>
 									<span className='text-orange-600'>🖥️</span>
 									<span className='font-medium'>Device:</span>
-									<span className='text-orange-800'>{device?.device_name}</span>
+									<span className='text-orange-800'>
+										{device?.device_name}
+									</span>
 								</div>
 							</div>
 							<div className='text-xs text-orange-600 mt-2'>
-								This data series contains measurements that haven't been assigned to specific conditions or faults
+								This data series contains measurements that
+								haven't been assigned to specific conditions or
+								faults
 							</div>
 						</div>
 
 						{/* Date Range Filter */}
-						<form onSubmit={handleFilterSubmit} className='space-y-4'>
+						<form
+							onSubmit={handleFilterSubmit}
+							className='space-y-4'
+						>
 							<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
 								<div>
 									<label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -429,7 +473,9 @@ export default function UnassignedDataSeriesDetailPage() {
 									<input
 										type='datetime-local'
 										value={startDate}
-										onChange={(e) => setStartDate(e.target.value)}
+										onChange={(e) =>
+											setStartDate(e.target.value)
+										}
 										className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500'
 										placeholder='dd/mm/yyyy, --:--'
 									/>
@@ -441,7 +487,9 @@ export default function UnassignedDataSeriesDetailPage() {
 									<input
 										type='datetime-local'
 										value={endDate}
-										onChange={(e) => setEndDate(e.target.value)}
+										onChange={(e) =>
+											setEndDate(e.target.value)
+										}
 										className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-orange-500 focus:border-orange-500'
 										placeholder='dd/mm/yyyy, --:--'
 									/>
@@ -452,7 +500,9 @@ export default function UnassignedDataSeriesDetailPage() {
 										disabled={measurementLoading}
 										className='px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50'
 									>
-										{measurementLoading ? 'Loading...' : 'Filter'}
+										{measurementLoading
+											? "Loading..."
+											: "Filter"}
 									</button>
 									<button
 										type='button'
@@ -478,14 +528,18 @@ export default function UnassignedDataSeriesDetailPage() {
 									return (
 										<button
 											key={key}
-											onClick={() => setActiveChartTab(key)}
+											onClick={() =>
+												setActiveChartTab(key)
+											}
 											className={`p-3 rounded-lg border text-center transition-all ${
 												activeChartTab === key
-													? 'border-orange-500 bg-orange-50 text-orange-700'
-													: 'border-gray-200 hover:border-orange-300 bg-white'
+													? "border-orange-500 bg-orange-50 text-orange-700"
+													: "border-gray-200 hover:border-orange-300 bg-white"
 											}`}
 										>
-											<div className='font-medium'>{key}</div>
+											<div className='font-medium'>
+												{key}
+											</div>
 											<div className='text-xs text-gray-500 mt-1'>
 												({stats.count} points)
 											</div>
@@ -503,16 +557,21 @@ export default function UnassignedDataSeriesDetailPage() {
 								📈 {activeChartTab} Data Visualization
 							</h4>
 							<div className='text-sm text-orange-600 mb-4'>
-								Advanced Chart Mode Enabled - Professional zoom & analysis tools active for unknown data
+								Advanced Chart Mode Enabled - Professional zoom
+								& analysis tools active for unknown data
 							</div>
-							
+
 							{/* Chart Container */}
 							<div className='bg-orange-50 border border-orange-200 rounded-lg p-4'>
 								<AdvancedZoomChart
-									data={chartData[activeChartTab].map((item) => ({
-										...item,
-										timestamp: Date.parse(item.timestamp) || item.index,
-									}))}
+									data={chartData[activeChartTab].map(
+										(item) => ({
+											...item,
+											timestamp:
+												Date.parse(item.timestamp) ||
+												item.index,
+										})
+									)}
 									dataKey='value'
 									xAxisKey='timestampFormatted'
 									title={`${activeChartTab} - Unknown Data Series Analysis`}
@@ -528,7 +587,8 @@ export default function UnassignedDataSeriesDetailPage() {
 							{/* Chart Statistics */}
 							<div className='mt-6 grid grid-cols-2 md:grid-cols-4 gap-4'>
 								{(() => {
-									const stats = getChartStatistics(activeChartTab);
+									const stats =
+										getChartStatistics(activeChartTab);
 									return [
 										{
 											label: "Average",
@@ -547,7 +607,9 @@ export default function UnassignedDataSeriesDetailPage() {
 										},
 										{
 											label: "Latest",
-											value: stats.latest?.toFixed(3) || "N/A",
+											value:
+												stats.latest?.toFixed(3) ||
+												"N/A",
 											icon: "🔄",
 										},
 									].map((stat, index) => (
@@ -556,7 +618,9 @@ export default function UnassignedDataSeriesDetailPage() {
 											className='bg-orange-50 p-3 rounded border border-orange-200'
 										>
 											<div className='flex items-center space-x-2'>
-												<span className='text-lg'>{stat.icon}</span>
+												<span className='text-lg'>
+													{stat.icon}
+												</span>
 												<div>
 													<p className='text-sm text-orange-600'>
 														{stat.label}
@@ -581,24 +645,34 @@ export default function UnassignedDataSeriesDetailPage() {
 							</h4>
 							<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
 								<div className='bg-orange-50 p-4 rounded-lg border border-orange-200'>
-									<div className='text-sm font-medium text-orange-600'>Total Measurements</div>
+									<div className='text-sm font-medium text-orange-600'>
+										Total Measurements
+									</div>
 									<div className='text-2xl font-bold text-orange-900'>
 										{measurementData.length}
 									</div>
 								</div>
 								<div className='bg-orange-50 p-4 rounded-lg border border-orange-200'>
-									<div className='text-sm font-medium text-orange-600'>Data Channels</div>
+									<div className='text-sm font-medium text-orange-600'>
+										Data Channels
+									</div>
 									<div className='text-2xl font-bold text-orange-900'>
 										{chartKeys.length}
 									</div>
 								</div>
 								<div className='bg-orange-50 p-4 rounded-lg border border-orange-200'>
-									<div className='text-sm font-medium text-orange-600'>Latest Measurement</div>
+									<div className='text-sm font-medium text-orange-600'>
+										Latest Measurement
+									</div>
 									<div className='text-sm font-bold text-orange-900'>
-										{measurementData.length > 0 
-											? new Date(measurementData[measurementData.length - 1].timestamp).toLocaleString()
-											: 'N/A'
-										}
+										{measurementData.length > 0
+											? new Date(
+													measurementData[
+														measurementData.length -
+															1
+													].timestamp
+											  ).toLocaleString()
+											: "N/A"}
 									</div>
 								</div>
 							</div>
@@ -609,25 +683,38 @@ export default function UnassignedDataSeriesDetailPage() {
 					{measurementLoading && (
 						<div className='bg-white p-6 rounded-lg border border-orange-200 text-center'>
 							<div className='animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4'></div>
-							<p className='text-orange-600'>Loading measurement data...</p>
+							<p className='text-orange-600'>
+								Loading measurement data...
+							</p>
 						</div>
 					)}
 
 					{!measurementLoading && measurementData.length === 0 && (
 						<div className='bg-white p-6 rounded-lg border border-orange-200 text-center'>
-							<div className='text-orange-400 text-4xl mb-4'>🔍</div>
+							<div className='text-orange-400 text-4xl mb-4'>
+								🔍
+							</div>
 							<h4 className='text-lg font-medium text-orange-600 mb-2'>
 								No Unknown Data Found
 							</h4>
 							<p className='text-orange-500 mb-4'>
-								No unassigned measurement data was found for data series {dataseriesId}.
+								No unassigned measurement data was found for
+								data series {dataseriesId}.
 							</p>
 							<div className='text-sm text-orange-400'>
 								<p>This might mean:</p>
 								<ul className='mt-2 space-y-1'>
-									<li>• No measurements have been recorded for this data series</li>
-									<li>• The data series has been assigned to specific conditions/faults</li>
-									<li>• Try adjusting the date range filters</li>
+									<li>
+										• No measurements have been recorded for
+										this data series
+									</li>
+									<li>
+										• The data series has been assigned to
+										specific conditions/faults
+									</li>
+									<li>
+										• Try adjusting the date range filters
+									</li>
 								</ul>
 							</div>
 						</div>
@@ -635,8 +722,12 @@ export default function UnassignedDataSeriesDetailPage() {
 
 					{measurementError && (
 						<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-							<div className='text-red-800 font-medium'>Error Loading Data</div>
-							<div className='text-red-600 text-sm mt-1'>{measurementError}</div>
+							<div className='text-red-800 font-medium'>
+								Error Loading Data
+							</div>
+							<div className='text-red-600 text-sm mt-1'>
+								{measurementError}
+							</div>
 						</div>
 					)}
 

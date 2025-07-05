@@ -12,6 +12,7 @@ use yii\helpers\Json;
 use app\models\User;
 use app\models\LoginForm;
 use app\filters\JwtAuthFilter;
+use app\components\PerformanceLogger;
 
 /**
  * Authentication API Controller
@@ -119,19 +120,51 @@ class AuthController extends Controller
      */
     public function actionLogin()
     {
+        PerformanceLogger::startLog('auth_login_method', PerformanceLogger::CATEGORY_API, [
+            'endpoint' => '/api/auth/login',
+            'method' => 'POST'
+        ]);
+        
+        PerformanceLogger::startLog('auth_login_validation', PerformanceLogger::CATEGORY_VALIDATION);
         $data = Json::decode(Yii::$app->request->rawBody);
 
         if (!isset($data['username']) || !isset($data['password'])) {
+            PerformanceLogger::stopLog('auth_login_validation', [
+                'validation_result' => 'failed',
+                'reason' => 'missing_credentials'
+            ]);
+            PerformanceLogger::stopLog('auth_login_method', [
+                'success' => false,
+                'error' => 'missing_credentials'
+            ]);
             throw new BadRequestHttpException('Username and password are required.');
         }
+        PerformanceLogger::stopLog('auth_login_validation', [
+            'validation_result' => 'passed',
+            'username' => $data['username']
+        ]);
 
+        PerformanceLogger::startLog('auth_login_authentication', PerformanceLogger::CATEGORY_AUTHENTICATION, [
+            'username' => $data['username']
+        ]);
+        
         $loginForm = new LoginForm();
         $loginForm->username = $data['username'];
         $loginForm->password = $data['password'];
 
         $result = $loginForm->loginApi();
+        
+        PerformanceLogger::stopLog('auth_login_authentication', [
+            'authentication_successful' => $result !== false,
+            'username' => $data['username']
+        ]);
 
         if (!$result) {
+            PerformanceLogger::stopLog('auth_login_method', [
+                'success' => false,
+                'error' => 'invalid_credentials',
+                'username' => $data['username']
+            ]);
             return [
                 'success' => false,
                 'message' => 'Invalid credentials.',
@@ -139,6 +172,12 @@ class AuthController extends Controller
             ];
         }
 
+        PerformanceLogger::stopLog('auth_login_method', [
+            'success' => true,
+            'username' => $data['username'],
+            'user_id' => $result['user']['id'] ?? 'unknown'
+        ]);
+        
         return [
             'success' => true,
             'message' => 'Login successful.',
@@ -170,11 +209,31 @@ class AuthController extends Controller
      */
     public function actionLogout()
     {
+        PerformanceLogger::startLog('auth_logout_method', PerformanceLogger::CATEGORY_API, [
+            'endpoint' => '/api/auth/logout',
+            'method' => 'POST'
+        ]);
+        
         $user = Yii::$app->user->identity;
+        $userId = $user ? $user->id : null;
+        
+        PerformanceLogger::startLog('auth_logout_token_revocation', PerformanceLogger::CATEGORY_AUTHENTICATION, [
+            'user_id' => $userId
+        ]);
         
         if ($user) {
             $user->revokeAccessToken();
         }
+        
+        PerformanceLogger::stopLog('auth_logout_token_revocation', [
+            'token_revoked' => $user !== null,
+            'user_id' => $userId
+        ]);
+
+        PerformanceLogger::stopLog('auth_logout_method', [
+            'success' => true,
+            'user_id' => $userId
+        ]);
 
         return [
             'success' => true,

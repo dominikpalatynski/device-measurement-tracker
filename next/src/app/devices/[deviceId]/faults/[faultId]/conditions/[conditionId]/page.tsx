@@ -21,7 +21,7 @@ export default function ConditionDetailPage() {
 	const deviceId = params.deviceId as string;
 	const faultId = params.faultId as string;
 	const conditionId = params.conditionId as string;
-	
+
 	const [device, setDevice] = useState<Device | null>(null);
 	const [fault, setFault] = useState<Fault | null>(null);
 	const [condition, setCondition] = useState<ActiveCondition | null>(null);
@@ -50,17 +50,17 @@ export default function ConditionDetailPage() {
 	// Load data series list
 	const loadDataSeriesList = async () => {
 		if (!conditionId) return;
-		
+
 		try {
 			setDataSeriesLoading(true);
 			setDataSeriesError(null);
-			
+
 			const response = await getDataSeriesList(
 				deviceId,
 				conditionId,
 				faultId
 			);
-			
+
 			if (response.success) {
 				setDataSeriesList(response.data);
 				setDebugInfo((response as any).debug_info);
@@ -68,13 +68,17 @@ export default function ConditionDetailPage() {
 				console.log("Condition info:", response.condition_info);
 				console.log("Debug info:", (response as any).debug_info);
 			} else {
-				setDataSeriesError(response.error || "Failed to load data series list");
+				setDataSeriesError(
+					response.error || "Failed to load data series list"
+				);
 				setDebugInfo((response as any).debug_info);
 				console.error("API Error:", response.error);
 				console.error("Debug info:", (response as any).debug_info);
 			}
 		} catch (error) {
-			setDataSeriesError(error instanceof Error ? error.message : "Unknown error");
+			setDataSeriesError(
+				error instanceof Error ? error.message : "Unknown error"
+			);
 			console.error("Error loading data series list:", error);
 		} finally {
 			setDataSeriesLoading(false);
@@ -202,7 +206,7 @@ export default function ConditionDetailPage() {
 					{/* Condition Header */}
 					<div className='bg-white p-6 rounded-lg border border-gray-200'>
 						<div className='flex justify-between items-start mb-4'>
-							<div className="flex-1">
+							<div className='flex-1'>
 								<h2 className='text-2xl font-bold text-gray-900 mb-2'>
 									{condition.name}
 								</h2>
@@ -229,21 +233,21 @@ export default function ConditionDetailPage() {
 									</span>
 								</div>
 							</div>
-							<div className="flex flex-col space-y-2">
+							<div className='flex flex-col space-y-2'>
 								<ExportButton
 									onExport={async (filters) => {
 										return await exportConditionsData({
 											deviceId,
 											faultId,
 											conditionId,
-											...filters
+											...filters,
 										});
 									}}
-									exportType="conditions"
+									exportType='conditions'
 									context={`${deviceId}_${faultId}_${conditionId}`}
-									buttonText="Export Condition"
-									size="sm"
-									variant="primary"
+									buttonText='Export Condition'
+									size='sm'
+									variant='primary'
 								/>
 							</div>
 						</div>
@@ -254,21 +258,28 @@ export default function ConditionDetailPage() {
 						<h3 className='text-lg font-medium text-gray-900 mb-4'>
 							📊 Available Data Series
 						</h3>
-						
+
 						{dataSeriesLoading ? (
 							<div className='flex items-center justify-center py-8'>
-								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-								<span className='ml-2 text-gray-600'>Loading data series...</span>
+								<div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+								<span className='ml-2 text-gray-600'>
+									Loading data series...
+								</span>
 							</div>
 						) : dataSeriesError ? (
 							<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-								<div className='text-red-800 font-medium'>Error loading data series</div>
-								<div className='text-red-600 text-sm mt-1'>{dataSeriesError}</div>
+								<div className='text-red-800 font-medium'>
+									Error loading data series
+								</div>
+								<div className='text-red-600 text-sm mt-1'>
+									{dataSeriesError}
+								</div>
 							</div>
 						) : dataSeriesList.length > 0 ? (
 							<div className='space-y-4'>
 								<div className='text-sm text-gray-600 mb-3'>
-									Found {dataSeriesList.length} unique data series for this condition:
+									Found {dataSeriesList.length} unique data
+									series for this condition:
 								</div>
 								<div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3'>
 									{dataSeriesList.map((seriesId, index) => (
@@ -279,7 +290,9 @@ export default function ConditionDetailPage() {
 										>
 											<div className='bg-blue-50 border border-blue-200 rounded-lg p-3 transition-all hover:bg-blue-100 hover:border-blue-300 group-hover:shadow-md'>
 												<div className='text-center'>
-													<div className='text-2xl mb-2'>📈</div>
+													<div className='text-2xl mb-2'>
+														📈
+													</div>
 													<div className='font-medium text-blue-900 text-sm'>
 														Series {seriesId}
 													</div>
@@ -292,57 +305,95 @@ export default function ConditionDetailPage() {
 									))}
 								</div>
 								<div className='text-xs text-gray-500 mt-4'>
-									💡 Tip: Click on any data series to view detailed measurements and charts for that specific series.
+									💡 Tip: Click on any data series to view
+									detailed measurements and charts for that
+									specific series.
 								</div>
 							</div>
 						) : (
 							<div className='space-y-4'>
 								<div className='text-center py-8 bg-gray-50 rounded-lg'>
-									<div className='text-gray-400 text-4xl mb-4'>📊</div>
+									<div className='text-gray-400 text-4xl mb-4'>
+										📊
+									</div>
 									<h4 className='text-lg font-medium text-gray-600 mb-2'>
 										No Data Series Found
 									</h4>
 									<p className='text-gray-500 mb-4'>
-										No data series were found for this condition. This might mean:
+										No data series were found for this
+										condition. This might mean:
 									</p>
 									<ul className='text-sm text-gray-400 space-y-1'>
-										<li>• No measurements have been recorded yet</li>
-										<li>• The condition name doesn't match recorded data</li>
-										<li>• Data is stored under a different condition identifier</li>
+										<li>
+											• No measurements have been recorded
+											yet
+										</li>
+										<li>
+											• The condition name doesn't match
+											recorded data
+										</li>
+										<li>
+											• Data is stored under a different
+											condition identifier
+										</li>
 									</ul>
 								</div>
-								
+
 								{/* Debug Information */}
 								{debugInfo && (
 									<div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4'>
-										<h5 className='text-sm font-medium text-yellow-800 mb-3'>🔍 Debug Information</h5>
+										<h5 className='text-sm font-medium text-yellow-800 mb-3'>
+											🔍 Debug Information
+										</h5>
 										<div className='text-xs space-y-2'>
 											{debugInfo.mysql_condition_found && (
-												<div className='text-green-700'>✅ Condition found in MySQL</div>
+												<div className='text-green-700'>
+													✅ Condition found in MySQL
+												</div>
 											)}
 											{debugInfo.mongodb_query_filters && (
 												<div>
-													<span className='font-medium text-yellow-800'>MongoDB Query Filters:</span>
+													<span className='font-medium text-yellow-800'>
+														MongoDB Query Filters:
+													</span>
 													<pre className='bg-yellow-100 p-2 rounded mt-1 text-xs overflow-auto'>
-														{JSON.stringify(debugInfo.mongodb_query_filters, null, 2)}
+														{JSON.stringify(
+															debugInfo.mongodb_query_filters,
+															null,
+															2
+														)}
 													</pre>
 												</div>
 											)}
 											{debugInfo.sample_measurements && (
 												<div>
-													<span className='font-medium text-yellow-800'>Sample Measurements:</span>
+													<span className='font-medium text-yellow-800'>
+														Sample Measurements:
+													</span>
 													<pre className='bg-yellow-100 p-2 rounded mt-1 text-xs overflow-auto'>
-														{typeof debugInfo.sample_measurements === 'string' 
-															? debugInfo.sample_measurements 
-															: JSON.stringify(debugInfo.sample_measurements, null, 2)}
+														{typeof debugInfo.sample_measurements ===
+														"string"
+															? debugInfo.sample_measurements
+															: JSON.stringify(
+																	debugInfo.sample_measurements,
+																	null,
+																	2
+															  )}
 													</pre>
 												</div>
 											)}
 											{debugInfo.available_conditions && (
 												<div>
-													<span className='font-medium text-yellow-800'>Available Conditions in MySQL:</span>
+													<span className='font-medium text-yellow-800'>
+														Available Conditions in
+														MySQL:
+													</span>
 													<pre className='bg-yellow-100 p-2 rounded mt-1 text-xs overflow-auto'>
-														{JSON.stringify(debugInfo.available_conditions, null, 2)}
+														{JSON.stringify(
+															debugInfo.available_conditions,
+															null,
+															2
+														)}
 													</pre>
 												</div>
 											)}

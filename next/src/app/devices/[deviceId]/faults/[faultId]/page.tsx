@@ -624,36 +624,40 @@ export default function FaultDetailPage() {
 					<div className='bg-white p-4 rounded-lg border border-gray-200'>
 						<div className='flex justify-between items-center'>
 							<div>
-								<h3 className='text-lg font-medium text-gray-900'>Export Data</h3>
-								<p className='text-sm text-gray-600'>Export fault and conditions data</p>
+								<h3 className='text-lg font-medium text-gray-900'>
+									Export Data
+								</h3>
+								<p className='text-sm text-gray-600'>
+									Export fault and conditions data
+								</p>
 							</div>
 							<div className='flex space-x-3'>
 								<ExportButton
 									onExport={async (filters) => {
 										return await exportFaultsData({
 											deviceId,
-											...filters
+											...filters,
 										});
 									}}
-									exportType="faults"
+									exportType='faults'
 									context={`${deviceId}_${faultId}`}
-									buttonText="Export Fault"
-									size="sm"
-									variant="outline"
+									buttonText='Export Fault'
+									size='sm'
+									variant='outline'
 								/>
 								<ExportButton
 									onExport={async (filters) => {
 										return await exportConditionsData({
 											deviceId,
 											faultId,
-											...filters
+											...filters,
 										});
 									}}
-									exportType="conditions"
+									exportType='conditions'
 									context={`${deviceId}_${faultId}`}
-									buttonText="Export Conditions"
-									size="sm"
-									variant="primary"
+									buttonText='Export Conditions'
+									size='sm'
+									variant='primary'
 								/>
 							</div>
 						</div>

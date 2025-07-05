@@ -12,6 +12,7 @@ use app\models\Faults;
 use app\models\Devices;
 use app\models\Condition;
 use app\filters\JwtAuthFilter;
+use app\components\PerformanceLogger;
 
 /**
  * Faults Management Controller
@@ -19,7 +20,22 @@ use app\filters\JwtAuthFilter;
  */
 
 class FaultsController extends Controller
-{    /**
+{
+    /**
+     * @var PerformanceLogger Performance logging component
+     */
+    private $performanceLogger;
+
+    /**
+     * Initialize the controller and performance logger
+     */
+    public function init()
+    {
+        parent::init();
+        $this->performanceLogger = new PerformanceLogger();
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function behaviors()
@@ -149,10 +165,22 @@ class FaultsController extends Controller
      */
     public function actionList()
     {
+        $this->performanceLogger->startLog('method_time', 'API', [
+            'endpoint' => '/api/faults',
+            'method' => 'GET',
+            'action' => 'list'
+        ]);
+        
         Yii::info("Faults list endpoint called", 'api.faults');
         
         try {
             $user = Yii::$app->user->identity;
+            
+            $this->performanceLogger->startLog('query_build', 'Database', [
+                'operation' => 'query_build',
+                'model' => 'Faults',
+                'user_type' => $user->isAdmin() ? 'admin' : 'regular'
+            ]);
             
             if ($user->isAdmin()) {
                 // Admin can see all faults
@@ -169,13 +197,26 @@ class FaultsController extends Controller
                     ->all();
             }
             
-            return [
+            $this->performanceLogger->stopLog('query_build');
+            
+            $this->performanceLogger->startLog('serialization', 'API', [
+                'operation' => 'serialization',
+                'record_count' => count($faults)
+            ]);
+            
+            $result = [
                 'success' => true,
                 'data' => array_map(function($fault) {
                     return $fault->toArray();
                 }, $faults),
             ];
+            
+            $this->performanceLogger->stopLog('serialization');
+            $this->performanceLogger->stopLog('method_time');
+            
+            return $result;
         } catch (\Exception $e) {
+            $this->performanceLogger->stopLog('method_time');
             Yii::error("Error fetching faults: " . $e->getMessage());
             throw new ServerErrorHttpException('Failed to fetch faults: ' . $e->getMessage());
         }

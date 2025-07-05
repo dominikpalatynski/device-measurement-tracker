@@ -12,6 +12,7 @@ use app\models\Condition;
 use app\models\Faults;
 use app\models\Devices;
 use app\filters\JwtAuthFilter;
+use app\components\PerformanceLogger;
 
 /**
  * Conditions Management Controller
@@ -32,6 +33,20 @@ class ConditionsController extends Controller
      * @var string Model class for Devices (for testing/mocking)
      */
     public $devicesClass = \app\models\Devices::class;
+
+    /**
+     * @var PerformanceLogger Performance logging component
+     */
+    private $performanceLogger;
+
+    /**
+     * Initialize the controller and performance logger
+     */
+    public function init()
+    {
+        parent::init();
+        $this->performanceLogger = new PerformanceLogger();
+    }
 
     /**
      * {@inheritdoc}
@@ -107,10 +122,22 @@ class ConditionsController extends Controller
      */
     public function actionList()
     {
+        $this->performanceLogger->startLog('method_time', 'API', [
+            'endpoint' => '/api/conditions',
+            'method' => 'GET',
+            'action' => 'list'
+        ]);
+        
         Yii::info("Conditions list endpoint called", 'api.conditions');
         
         try {
             $user = Yii::$app->user->identity;
+            
+            $this->performanceLogger->startLog('query_build', 'Database', [
+                'operation' => 'query_build',
+                'model' => 'Condition'
+            ]);
+            
             $query = call_user_func([$this->conditionClass, 'find']);
             
             // Admins can see all conditions, others see only theirs
@@ -119,15 +146,36 @@ class ConditionsController extends Controller
                       ->where(['devices.owner_id' => $user->id]);
             }
             
+            $this->performanceLogger->stopLog('query_build');
+            
+            $this->performanceLogger->startLog('db_query', 'Database', [
+                'operation' => 'select',
+                'model' => 'Condition',
+                'user_type' => $user->isAdmin() ? 'admin' : 'regular'
+            ]);
+            
             $conditions = $query->all();
             
-            return [
+            $this->performanceLogger->stopLog('db_query');
+            
+            $this->performanceLogger->startLog('serialization', 'API', [
+                'operation' => 'serialization',
+                'record_count' => count($conditions)
+            ]);
+            
+            $result = [
                 'success' => true,
                 'data' => array_map(function($condition) {
                     return $condition->toArray();
                 }, $conditions),
             ];
+            
+            $this->performanceLogger->stopLog('serialization');
+            $this->performanceLogger->stopLog('method_time');
+            
+            return $result;
         } catch (\Exception $e) {
+            $this->performanceLogger->stopLog('method_time');
             Yii::error("Error fetching conditions: " . $e->getMessage());
             throw new ServerErrorHttpException('Failed to fetch conditions: ' . $e->getMessage());
         }
@@ -154,21 +202,48 @@ class ConditionsController extends Controller
      */
     public function actionView($id)
     {
+        $this->performanceLogger->startLog('method_time', 'API', [
+            'endpoint' => "/api/conditions/$id",
+            'method' => 'GET',
+            'action' => 'view',
+            'condition_id' => $id
+        ]);
+        
         Yii::info("Condition view endpoint called", 'api.conditions');
         
         try {
+            $this->performanceLogger->startLog('ownership_check', 'Database', [
+                'operation' => 'ownership_check',
+                'condition_id' => $id
+            ]);
+            
             $condition = $this->checkConditionOwnership($id);
-            return [
+            
+            $this->performanceLogger->stopLog('ownership_check');
+            
+            $this->performanceLogger->startLog('serialization', 'API', [
+                'operation' => 'serialization',
+                'record_count' => 1
+            ]);
+            
+            $result = [
                 'success' => true,
                 'data' => $condition->toArray(),
             ];
+            
+            $this->performanceLogger->stopLog('serialization');
+            $this->performanceLogger->stopLog('method_time');
+            
+            return $result;
         } catch (NotFoundHttpException $e) {
+            $this->performanceLogger->stopLog('method_time');
             Yii::error("Condition not found: $id");
             return [
                 'success' => false,
                 'error' => 'Condition not found',
             ];
         } catch (\yii\web\ForbiddenHttpException $e) {
+            $this->performanceLogger->stopLog('method_time');
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
@@ -182,19 +257,43 @@ class ConditionsController extends Controller
      */
     public function actionCreate()
     {
+        $this->performanceLogger->startLog('method_time', 'API', [
+            'endpoint' => '/api/conditions',
+            'method' => 'POST',
+            'action' => 'create'
+        ]);
+        
         Yii::info("Condition create endpoint called", 'api.conditions');
         
         $data = Yii::$app->request->post();
         Yii::info("Received condition data: " . Json::encode($data), 'api.conditions');
         
         try {
+            $this->performanceLogger->startLog('validation', 'API', [
+                'operation' => 'input_validation'
+            ]);
+            
             // Validate required fields
             if (!isset($data['fault_id']) || !isset($data['name'])) {
                 throw new ServerErrorHttpException('fault_id and name are required');
             }
             
+            $this->performanceLogger->stopLog('validation');
+            
+            $this->performanceLogger->startLog('fault_check', 'Database', [
+                'operation' => 'fault_ownership_check',
+                'fault_id' => $data['fault_id']
+            ]);
+            
             // Check if fault exists and user has permission
             $fault = $this->checkFaultOwnership($data['fault_id']);
+            
+            $this->performanceLogger->stopLog('fault_check');
+            
+            $this->performanceLogger->startLog('stream_condition_check', 'Database', [
+                'operation' => 'active_condition_check',
+                'fault_type' => $fault->type
+            ]);
             
             // For stream faults, check if there are active conditions
             if ($fault->type === 'stream') {
@@ -203,6 +302,13 @@ class ConditionsController extends Controller
                     throw new ServerErrorHttpException('Cannot create condition while there are active conditions for stream fault');
                 }
             }
+            
+            $this->performanceLogger->stopLog('stream_condition_check');
+            
+            $this->performanceLogger->startLog('condition_creation', 'Database', [
+                'operation' => 'create_condition',
+                'fault_id' => $data['fault_id']
+            ]);
             
             $condition = call_user_func([$this->conditionClass, 'createCondition'],
                 $data['fault_id'],
@@ -214,13 +320,26 @@ class ConditionsController extends Controller
                 throw new ServerErrorHttpException('Failed to create condition');
             }
             
-            return [
+            $this->performanceLogger->stopLog('condition_creation');
+            
+            $this->performanceLogger->startLog('serialization', 'API', [
+                'operation' => 'serialization',
+                'record_count' => 1
+            ]);
+            
+            $result = [
                 'success' => true,
                 'data' => $condition->toArray(),
                 'message' => 'Condition created successfully',
             ];
             
+            $this->performanceLogger->stopLog('serialization');
+            $this->performanceLogger->stopLog('method_time');
+            
+            return $result;
+            
         } catch (\Exception $e) {
+            $this->performanceLogger->stopLog('method_time');
             Yii::error("Error creating condition: " . $e->getMessage());
             throw new ServerErrorHttpException('Failed to create condition: ' . $e->getMessage());
         }
@@ -308,27 +427,62 @@ class ConditionsController extends Controller
      */
     public function actionStart($id)
     {
+        $this->performanceLogger->startLog('method_time', 'API', [
+            'endpoint' => "/api/conditions/$id/start",
+            'method' => 'POST',
+            'action' => 'start',
+            'condition_id' => $id
+        ]);
+        
         Yii::info("Condition start endpoint called for ID: $id", 'api.conditions');
         
         try {
+            $this->performanceLogger->startLog('ownership_check', 'Database', [
+                'operation' => 'ownership_check',
+                'condition_id' => $id
+            ]);
+            
             $condition = $this->checkConditionOwnership($id);
             
+            $this->performanceLogger->stopLog('ownership_check');
+            
+            $this->performanceLogger->startLog('condition_activation', 'Business Logic', [
+                'operation' => 'activate_condition',
+                'condition_id' => $id
+            ]);
+            
             if ($condition->activateCondition()) {
-                return [
+                $this->performanceLogger->stopLog('condition_activation');
+                
+                $this->performanceLogger->startLog('serialization', 'API', [
+                    'operation' => 'serialization',
+                    'record_count' => 1
+                ]);
+                
+                $result = [
                     'success' => true,
                     'data' => $condition->toArray(),
                     'message' => 'Condition activated successfully',
                 ];
+                
+                $this->performanceLogger->stopLog('serialization');
+                $this->performanceLogger->stopLog('method_time');
+                
+                return $result;
             } else {
+                $this->performanceLogger->stopLog('condition_activation');
+                $this->performanceLogger->stopLog('method_time');
                 throw new ServerErrorHttpException('Failed to activate condition');
             }
             
         } catch (NotFoundHttpException $e) {
+            $this->performanceLogger->stopLog('method_time');
             return [
                 'success' => false,
                 'error' => 'Condition not found',
             ];
         } catch (\Exception $e) {
+            $this->performanceLogger->stopLog('method_time');
             Yii::error("Error starting condition: " . $e->getMessage());
             throw new ServerErrorHttpException('Failed to start condition: ' . $e->getMessage());
         }

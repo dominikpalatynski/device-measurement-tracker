@@ -14,7 +14,6 @@ export default function CreateFaultPage() {
 
 	const [faultName, setFaultName] = useState("");
 	const [faultDescription, setFaultDescription] = useState("");
-	const [faultType, setFaultType] = useState<"batch" | "stream">("stream");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +26,7 @@ export default function CreateFaultPage() {
 				fault_name: faultName.trim(),
 				description: faultDescription.trim() || undefined,
 				device_id: deviceId,
-				type: faultType,
+				type: "stream" as const,
 				mode: "Offline" as const,
 				status: "Inactive" as const,
 			};
@@ -123,39 +122,12 @@ export default function CreateFaultPage() {
 									required
 								/>
 							</div>
-							<div>
-								<label
-									htmlFor='faultType'
-									className='block text-sm font-medium text-gray-700 mb-2'
-								>
-									Fault Type *
-								</label>
-								<select
-									id='faultType'
-									value={faultType}
-									onChange={(e) =>
-										setFaultType(
-											e.target.value as "batch" | "stream"
-										)
-									}
-									className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500'
-									required
-								>
-									<option value='stream'>
-										🔄 Stream - Continuous real-time data
-										collection
-									</option>
-									<option value='batch'>
-										📦 Batch - Predefined data upload
-										sessions
-									</option>
-								</select>
-								<p className='mt-1 text-sm text-gray-500'>
-									{faultType === "stream"
-										? "Stream faults collect data continuously in real-time from connected devices."
-										: "Batch faults are designed for uploading and processing predefined datasets."}
-								</p>
-							</div>
+							{/* Hidden input for fault type - always stream */}
+							<input
+								type='hidden'
+								name='faultType'
+								value='stream'
+							/>
 							<div>
 								<label
 									htmlFor='faultDescription'

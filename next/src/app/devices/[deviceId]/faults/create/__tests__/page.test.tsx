@@ -107,25 +107,27 @@ describe("Create Fault Page", () => {
 		});
 	});
 
-	it("should display the correct explanation text for stream fault type", () => {
+	it("should automatically use stream fault type", async () => {
+		mockCreateFault.mockResolvedValue({ fault_id: "new-fault-123" });
+
 		render(<CreateFaultPage />);
 
-		// Default is stream type
-		expect(
-			screen.getByText(/Stream faults collect data continuously/i)
-		).toBeInTheDocument();
-
-		// Change to batch and back to stream
-		fireEvent.change(screen.getByLabelText(/Fault Type/i), {
-			target: { value: "batch" },
-		});
-		fireEvent.change(screen.getByLabelText(/Fault Type/i), {
-			target: { value: "stream" },
+		// Fill required form fields
+		fireEvent.change(screen.getByLabelText(/Fault Name/i), {
+			target: { value: "Test Stream Fault" },
 		});
 
-		// Verify explanation is for stream type
-		expect(
-			screen.getByText(/Stream faults collect data continuously/i)
-		).toBeInTheDocument();
+		// Submit the form
+		fireEvent.click(screen.getByText(/Create Fault$/i));
+
+		// Verify API call includes stream type automatically
+		await waitFor(() => {
+			expect(mockCreateFault).toHaveBeenCalledWith(
+				expect.objectContaining({
+					fault_name: "Test Stream Fault",
+					type: "stream",
+				})
+			);
+		});
 	});
 });

@@ -15,6 +15,7 @@ use app\filters\JwtAuthFilter;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use OpenApi\Attributes as OA;
+use app\components\PerformanceLogger;
 
 /**
  * Device Measurement Controller
@@ -123,23 +124,56 @@ class DeviceMeasurementController extends Controller
      */
     public function actionGenerateBatchToken()
     {
+        PerformanceLogger::startLog('generate_batch_token_method', PerformanceLogger::CATEGORY_API, [
+            'endpoint' => '/api/device-measurement/generate-batch-token',
+            'method' => 'POST'
+        ]);
+        
         try {
             Yii::$app->response->format = Response::FORMAT_JSON;
             $request = Yii::$app->request;
             
+            PerformanceLogger::startLog('generate_batch_token_validation', PerformanceLogger::CATEGORY_VALIDATION);
             // Get device ID from request
             $deviceId = $request->get('deviceId');
             if (!$deviceId) {
+                PerformanceLogger::stopLog('generate_batch_token_validation', [
+                    'validation_result' => 'failed',
+                    'reason' => 'missing_device_id'
+                ]);
+                PerformanceLogger::stopLog('generate_batch_token_method', [
+                    'success' => false,
+                    'error' => 'missing_device_id'
+                ]);
                 Yii::$app->response->statusCode = 400;
                 return [
                     'success' => false,
                     'error' => 'Missing deviceId parameter'
                 ];
             }
+            PerformanceLogger::stopLog('generate_batch_token_validation', [
+                'validation_result' => 'passed',
+                'device_id' => $deviceId
+            ]);
             
             // Validate device exists and is active
+            PerformanceLogger::startLog('generate_batch_token_db_query', PerformanceLogger::CATEGORY_DATABASE, [
+                'table' => 'devices',
+                'operation' => 'find_by_device_id',
+                'device_id' => $deviceId
+            ]);
             $device = Devices::findByDeviceId($deviceId);
+            PerformanceLogger::stopLog('generate_batch_token_db_query', [
+                'device_found' => $device !== null,
+                'device_id' => $deviceId
+            ]);
+            
             if (!$device) {
+                PerformanceLogger::stopLog('generate_batch_token_method', [
+                    'success' => false,
+                    'error' => 'device_not_found',
+                    'device_id' => $deviceId
+                ]);
                 Yii::$app->response->statusCode = 404;
                 return [
                     'success' => false,
@@ -147,15 +181,39 @@ class DeviceMeasurementController extends Controller
                 ];
             }
             
+            PerformanceLogger::startLog('generate_batch_token_business_logic', PerformanceLogger::CATEGORY_BUSINESS_LOGIC, [
+                'checking' => 'device_status',
+                'device_id' => $deviceId,
+                'device_status' => $device->status
+            ]);
             if ($device->status !== Devices::STATUS_ACTIVE) {
+                PerformanceLogger::stopLog('generate_batch_token_business_logic', [
+                    'validation_result' => 'failed',
+                    'reason' => 'device_inactive',
+                    'device_status' => $device->status
+                ]);
+                PerformanceLogger::stopLog('generate_batch_token_method', [
+                    'success' => false,
+                    'error' => 'device_inactive',
+                    'device_id' => $deviceId
+                ]);
                 Yii::$app->response->statusCode = 400;
                 return [
                     'success' => false,
                     'error' => "Device $deviceId is not active"
                 ];
             }
+            PerformanceLogger::stopLog('generate_batch_token_business_logic', [
+                'validation_result' => 'passed'
+            ]);
             
             // Generate JWT batch token
+            PerformanceLogger::startLog('generate_batch_token_jwt_creation', PerformanceLogger::CATEGORY_BUSINESS_LOGIC, [
+                'token_type' => 'JWT',
+                'algorithm' => 'HS256',
+                'expires_in_seconds' => 3600
+            ]);
+            
             $secretKey = Yii::$app->params['jwtSecretKey'] ?? 'your-secret-key';
             $issuedAt = time();
             $expiresAt = $issuedAt + 3600; // 1 hour
@@ -170,9 +228,18 @@ class DeviceMeasurementController extends Controller
             ];
             
             $batchToken = JWT::encode($payload, $secretKey, 'HS256');
+            PerformanceLogger::stopLog('generate_batch_token_jwt_creation', [
+                'token_length' => strlen($batchToken),
+                'device_id' => $deviceId
+            ]);
             
             Yii::info("Generated batch token for device: $deviceId", 'api.device-measurement');
             
+            PerformanceLogger::stopLog('generate_batch_token_method', [
+                'success' => true,
+                'device_id' => $deviceId,
+                'token_expires_at' => $expiresAt
+            ]);
             return [
                 'success' => true,
                 'data' => [
@@ -184,6 +251,7 @@ class DeviceMeasurementController extends Controller
             ];
             
         } catch (\Throwable $e) {
+            PerformanceLogger::stopLog('generate_batch_token_method');
             Yii::error("Error generating batch token: " . $e->getMessage(), 'api.device-measurement');
             Yii::$app->response->statusCode = 500;
             return [
@@ -239,13 +307,30 @@ class DeviceMeasurementController extends Controller
      */
     public function actionPhenomenBatch()
     {
+        PerformanceLogger::startLog('phenomen_batch_method', PerformanceLogger::CATEGORY_API, [
+            'endpoint' => '/api/device-measurement/phenomen-batch',
+            'method' => 'POST'
+        ]);
+        
         try {
         Yii::$app->response->format = Response::FORMAT_JSON;
         $request = Yii::$app->request;
         $body = $request->getRawBody();
+        
+        PerformanceLogger::startLog('phenomen_batch_json_parsing', PerformanceLogger::CATEGORY_SERIALIZATION, [
+            'payload_size_bytes' => strlen($body)
+        ]);
         $data = json_decode($body, true);
+        PerformanceLogger::stopLog('phenomen_batch_json_parsing', [
+            'parsing_successful' => $data !== null,
+            'payload_size_bytes' => strlen($body)
+        ]);
 
         if (!$data) {
+            PerformanceLogger::stopLog('phenomen_batch_method', [
+                'success' => false,
+                'error' => 'invalid_json'
+            ]);
             Yii::$app->response->statusCode = 400;
             return [
                 'success' => false,
@@ -254,15 +339,41 @@ class DeviceMeasurementController extends Controller
         }
 
         // Validate batch token
+        PerformanceLogger::startLog('phenomen_batch_token_validation', PerformanceLogger::CATEGORY_AUTHENTICATION, [
+            'device_id' => $data['deviceId'] ?? 'unknown'
+        ]);
         $this->validateBatchToken($data);
+        PerformanceLogger::stopLog('phenomen_batch_token_validation', [
+            'validation_successful' => true,
+            'device_id' => $data['deviceId'] ?? 'unknown'
+        ]);
 
+        PerformanceLogger::startLog('phenomen_batch_data_processing', PerformanceLogger::CATEGORY_BUSINESS_LOGIC, [
+            'device_id' => $data['deviceId'] ?? 'unknown',
+            'data_channels' => isset($data['data']) ? count($data['data']) : 0,
+            'sequence_number' => $data['sequenceNumber'] ?? 'unknown'
+        ]);
         $mongoResult = $this->processBatchData($data);
+        PerformanceLogger::stopLog('phenomen_batch_data_processing', [
+            'processing_successful' => true,
+            'device_id' => $data['deviceId'] ?? 'unknown'
+        ]);
 
+            PerformanceLogger::stopLog('phenomen_batch_method', [
+                'success' => true,
+                'device_id' => $data['deviceId'] ?? 'unknown',
+                'data_channels' => isset($data['data']) ? count($data['data']) : 0
+            ]);
             return [
                 'success' => true,
             ];
             
         } catch (\Throwable $e) {
+            PerformanceLogger::stopLog('phenomen_batch_method', [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'error_type' => get_class($e)
+            ]);
             Yii::error("Error saving batch measurement: " . $e->getMessage(), 'api.device-measurement');
             Yii::$app->response->statusCode = 500;
             return [

@@ -13,6 +13,7 @@ use app\models\VerificationToken;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use app\filters\JwtAuthFilter;
+use app\components\PerformanceLogger;
 
 /**
  * Device Registration and Management Controller
@@ -20,7 +21,22 @@ use app\filters\JwtAuthFilter;
  */
 
 class DeviceRegisterController extends Controller
-{    /**
+{
+    /**
+     * @var PerformanceLogger Performance logging component
+     */
+    private $performanceLogger;
+
+    /**
+     * Initialize the controller and performance logger
+     */
+    public function init()
+    {
+        parent::init();
+        $this->performanceLogger = new PerformanceLogger();
+    }
+
+    /**
      * {@inheritdoc}
      */    public function behaviors()
     {
