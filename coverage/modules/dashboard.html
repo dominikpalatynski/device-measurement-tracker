@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/modules</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../_css/bootstrap.min.css?v=11.0.10" rel="stylesheet" type="text/css">
+  <link href="../_css/nv.d3.min.css?v=11.0.10" rel="stylesheet" type="text/css">
+  <link href="../_css/style.css?v=11.0.10" rel="stylesheet" type="text/css">
+  <link href="../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../index.html">/Users/dominikpalatynski/Public/device-measurement-tracker/yii-app</a></li>
+         <li class="breadcrumb-item"><a href="index.html">modules</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="api/controllers/AuthController.php.html#19">app\modules\api\controllers\AuthController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#21">app\modules\api\controllers\ConditionsController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#29">app\modules\api\controllers\DeviceMeasurementController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#21">app\modules\api\controllers\FaultsController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#26">app\modules\api\controllers\MeasurementChannelController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#19">app\modules\api\controllers\MongoDBController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#21">app\modules\api\controllers\UsersController</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#22">app\modules\api\controllers\DeviceRegisterController</a></td><td class="text-right">17%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#22">app\modules\api\controllers\DeviceRegisterController</a></td><td class="text-right">3919</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#21">app\modules\api\controllers\ConditionsController</a></td><td class="text-right">2756</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#19">app\modules\api\controllers\MongoDBController</a></td><td class="text-right">2450</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#29">app\modules\api\controllers\DeviceMeasurementController</a></td><td class="text-right">1560</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#21">app\modules\api\controllers\FaultsController</a></td><td class="text-right">1406</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#26">app\modules\api\controllers\MeasurementChannelController</a></td><td class="text-right">1122</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#21">app\modules\api\controllers\UsersController</a></td><td class="text-right">552</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#19">app\modules\api\controllers\AuthController</a></td><td class="text-right">272</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="api/controllers/AuthController.php.html#24"><abbr title="app\modules\api\controllers\AuthController::behaviors">behaviors</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#70"><abbr title="app\modules\api\controllers\AuthController::actionTest">actionTest</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#120"><abbr title="app\modules\api\controllers\AuthController::actionLogin">actionLogin</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#171"><abbr title="app\modules\api\controllers\AuthController::actionLogout">actionLogout</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#214"><abbr title="app\modules\api\controllers\AuthController::actionMe">actionMe</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#271"><abbr title="app\modules\api\controllers\AuthController::actionChangePassword">actionChangePassword</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#312"><abbr title="app\modules\api\controllers\AuthController::actionRefresh">actionRefresh</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#39"><abbr title="app\modules\api\controllers\ConditionsController::behaviors">behaviors</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#108"><abbr title="app\modules\api\controllers\ConditionsController::actionList">actionList</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#140"><abbr title="app\modules\api\controllers\ConditionsController::actionTest">actionTest</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#155"><abbr title="app\modules\api\controllers\ConditionsController::actionView">actionView</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#183"><abbr title="app\modules\api\controllers\ConditionsController::actionCreate">actionCreate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#233"><abbr title="app\modules\api\controllers\ConditionsController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#277"><abbr title="app\modules\api\controllers\ConditionsController::actionDelete">actionDelete</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#309"><abbr title="app\modules\api\controllers\ConditionsController::actionStart">actionStart</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#341"><abbr title="app\modules\api\controllers\ConditionsController::actionStop">actionStop</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#373"><abbr title="app\modules\api\controllers\ConditionsController::actionData">actionData</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#410"><abbr title="app\modules\api\controllers\ConditionsController::findCondition">findCondition</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#422"><abbr title="app\modules\api\controllers\ConditionsController::checkConditionOwnership">checkConditionOwnership</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#460"><abbr title="app\modules\api\controllers\ConditionsController::checkFaultOwnership">checkFaultOwnership</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#39"><abbr title="app\modules\api\controllers\DeviceMeasurementController::init">init</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#55"><abbr title="app\modules\api\controllers\DeviceMeasurementController::behaviors">behaviors</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#124"><abbr title="app\modules\api\controllers\DeviceMeasurementController::actionGenerateBatchToken">actionGenerateBatchToken</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#240"><abbr title="app\modules\api\controllers\DeviceMeasurementController::actionPhenomenBatch">actionPhenomenBatch</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#281"><abbr title="app\modules\api\controllers\DeviceMeasurementController::validateBatchToken">validateBatchToken</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#352"><abbr title="app\modules\api\controllers\DeviceMeasurementController::processBatchData">processBatchData</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#25"><abbr title="app\modules\api\controllers\DeviceRegisterController::behaviors">behaviors</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#442"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#518"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionDelete">actionDelete</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#566"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionList">actionList</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#634"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionView">actionView</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#704"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionActivate">actionActivate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#781"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionCreate">actionCreate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#892"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionDeactivate">actionDeactivate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#926"><abbr title="app\modules\api\controllers\DeviceRegisterController::checkDeviceOwnership">checkDeviceOwnership</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#952"><abbr title="app\modules\api\controllers\DeviceRegisterController::findDevice">findDevice</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1033"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionLiveFault">actionLiveFault</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1051"><abbr title="app\modules\api\controllers\DeviceRegisterController::getLiveFault">getLiveFault</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1093"><abbr title="app\modules\api\controllers\DeviceRegisterController::startLiveFault">startLiveFault</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1150"><abbr title="app\modules\api\controllers\DeviceRegisterController::stopLiveFault">stopLiveFault</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1242"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionStartCondition">actionStartCondition</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1341"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionStopCondition">actionStopCondition</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#25"><abbr title="app\modules\api\controllers\FaultsController::behaviors">behaviors</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#67"><abbr title="app\modules\api\controllers\FaultsController::checkFaultOwnership">checkFaultOwnership</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#99"><abbr title="app\modules\api\controllers\FaultsController::checkDeviceOwnership">checkDeviceOwnership</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#150"><abbr title="app\modules\api\controllers\FaultsController::actionList">actionList</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#188"><abbr title="app\modules\api\controllers\FaultsController::actionTest">actionTest</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#203"><abbr title="app\modules\api\controllers\FaultsController::actionView">actionView</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#270"><abbr title="app\modules\api\controllers\FaultsController::actionCreate">actionCreate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#328"><abbr title="app\modules\api\controllers\FaultsController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#372"><abbr title="app\modules\api\controllers\FaultsController::actionDelete">actionDelete</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#412"><abbr title="app\modules\api\controllers\FaultsController::findFault">findFault</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#28"><abbr title="app\modules\api\controllers\MeasurementChannelController::behaviors">behaviors</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#96"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionList">actionList</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#148"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionTest">actionTest</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#199"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionView">actionView</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#267"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionCreate">actionCreate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#352"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#428"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionDelete">actionDelete</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#454"><abbr title="app\modules\api\controllers\MeasurementChannelController::findChannel">findChannel</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#466"><abbr title="app\modules\api\controllers\MeasurementChannelController::checkChannelOwnership">checkChannelOwnership</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#498"><abbr title="app\modules\api\controllers\MeasurementChannelController::checkDeviceOwnership">checkDeviceOwnership</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#23"><abbr title="app\modules\api\controllers\MongoDBController::behaviors">behaviors</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#45"><abbr title="app\modules\api\controllers\MongoDBController::init">init</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#61"><abbr title="app\modules\api\controllers\MongoDBController::actionTest">actionTest</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#153"><abbr title="app\modules\api\controllers\MongoDBController::actionMeasurements">actionMeasurements</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#252"><abbr title="app\modules\api\controllers\MongoDBController::actionDataSeriesList">actionDataSeriesList</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#352"><abbr title="app\modules\api\controllers\MongoDBController::actionTestNew">actionTestNew</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#365"><abbr title="app\modules\api\controllers\MongoDBController::actionDebugConditions">actionDebugConditions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#476"><abbr title="app\modules\api\controllers\MongoDBController::actionUnknownDataSeriesList">actionUnknownDataSeriesList</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#26"><abbr title="app\modules\api\controllers\UsersController::behaviors">behaviors</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#108"><abbr title="app\modules\api\controllers\UsersController::actionIndex">actionIndex</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#177"><abbr title="app\modules\api\controllers\UsersController::actionView">actionView</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#203"><abbr title="app\modules\api\controllers\UsersController::actionCreate">actionCreate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#241"><abbr title="app\modules\api\controllers\UsersController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#278"><abbr title="app\modules\api\controllers\UsersController::actionDelete">actionDelete</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#308"><abbr title="app\modules\api\controllers\UsersController::actionActivate">actionActivate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#327"><abbr title="app\modules\api\controllers\UsersController::actionDeactivate">actionDeactivate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#356"><abbr title="app\modules\api\controllers\UsersController::actionOptions">actionOptions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#373"><abbr title="app\modules\api\controllers\UsersController::findUser">findUser</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#155"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionRegenerateToken">actionRegenerateToken</abbr></a></td><td class="text-right">36%</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#294"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionRegister">actionRegister</abbr></a></td><td class="text-right">77%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#281"><abbr title="app\modules\api\controllers\DeviceMeasurementController::validateBatchToken">validateBatchToken</abbr></a></td><td class="text-right">342</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#153"><abbr title="app\modules\api\controllers\MongoDBController::actionMeasurements">actionMeasurements</abbr></a></td><td class="text-right">272</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#252"><abbr title="app\modules\api\controllers\MongoDBController::actionDataSeriesList">actionDataSeriesList</abbr></a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#352"><abbr title="app\modules\api\controllers\DeviceMeasurementController::processBatchData">processBatchData</abbr></a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#365"><abbr title="app\modules\api\controllers\MongoDBController::actionDebugConditions">actionDebugConditions</abbr></a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#183"><abbr title="app\modules\api\controllers\ConditionsController::actionCreate">actionCreate</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#233"><abbr title="app\modules\api\controllers\ConditionsController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#328"><abbr title="app\modules\api\controllers\FaultsController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#271"><abbr title="app\modules\api\controllers\AuthController::actionChangePassword">actionChangePassword</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#422"><abbr title="app\modules\api\controllers\ConditionsController::checkConditionOwnership">checkConditionOwnership</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#781"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionCreate">actionCreate</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#270"><abbr title="app\modules\api\controllers\FaultsController::actionCreate">actionCreate</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#476"><abbr title="app\modules\api\controllers\MongoDBController::actionUnknownDataSeriesList">actionUnknownDataSeriesList</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#155"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionRegenerateToken">actionRegenerateToken</abbr></a></td><td class="text-right">35</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#373"><abbr title="app\modules\api\controllers\ConditionsController::actionData">actionData</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#460"><abbr title="app\modules\api\controllers\ConditionsController::checkFaultOwnership">checkFaultOwnership</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#124"><abbr title="app\modules\api\controllers\DeviceMeasurementController::actionGenerateBatchToken">actionGenerateBatchToken</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#442"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1093"><abbr title="app\modules\api\controllers\DeviceRegisterController::startLiveFault">startLiveFault</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#67"><abbr title="app\modules\api\controllers\FaultsController::checkFaultOwnership">checkFaultOwnership</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#372"><abbr title="app\modules\api\controllers\FaultsController::actionDelete">actionDelete</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#267"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionCreate">actionCreate</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#352"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#466"><abbr title="app\modules\api\controllers\MeasurementChannelController::checkChannelOwnership">checkChannelOwnership</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#108"><abbr title="app\modules\api\controllers\UsersController::actionIndex">actionIndex</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#120"><abbr title="app\modules\api\controllers\AuthController::actionLogin">actionLogin</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#277"><abbr title="app\modules\api\controllers\ConditionsController::actionDelete">actionDelete</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#309"><abbr title="app\modules\api\controllers\ConditionsController::actionStart">actionStart</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#341"><abbr title="app\modules\api\controllers\ConditionsController::actionStop">actionStop</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#704"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionActivate">actionActivate</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#892"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionDeactivate">actionDeactivate</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#926"><abbr title="app\modules\api\controllers\DeviceRegisterController::checkDeviceOwnership">checkDeviceOwnership</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1033"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionLiveFault">actionLiveFault</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1150"><abbr title="app\modules\api\controllers\DeviceRegisterController::stopLiveFault">stopLiveFault</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1242"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionStartCondition">actionStartCondition</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1341"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionStopCondition">actionStopCondition</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#99"><abbr title="app\modules\api\controllers\FaultsController::checkDeviceOwnership">checkDeviceOwnership</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#428"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionDelete">actionDelete</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#498"><abbr title="app\modules\api\controllers\MeasurementChannelController::checkDeviceOwnership">checkDeviceOwnership</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#294"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionRegister">actionRegister</abbr></a></td><td class="text-right">15</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#108"><abbr title="app\modules\api\controllers\ConditionsController::actionList">actionList</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#155"><abbr title="app\modules\api\controllers\ConditionsController::actionView">actionView</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#240"><abbr title="app\modules\api\controllers\DeviceMeasurementController::actionPhenomenBatch">actionPhenomenBatch</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#518"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionDelete">actionDelete</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#566"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionList">actionList</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#634"><abbr title="app\modules\api\controllers\DeviceRegisterController::actionView">actionView</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#1051"><abbr title="app\modules\api\controllers\DeviceRegisterController::getLiveFault">getLiveFault</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#150"><abbr title="app\modules\api\controllers\FaultsController::actionList">actionList</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#203"><abbr title="app\modules\api\controllers\FaultsController::actionView">actionView</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#96"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionList">actionList</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#199"><abbr title="app\modules\api\controllers\MeasurementChannelController::actionView">actionView</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#278"><abbr title="app\modules\api\controllers\UsersController::actionDelete">actionDelete</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#327"><abbr title="app\modules\api\controllers\UsersController::actionDeactivate">actionDeactivate</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#373"><abbr title="app\modules\api\controllers\UsersController::findUser">findUser</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="api/controllers/AuthController.php.html#171"><abbr title="app\modules\api\controllers\AuthController::actionLogout">actionLogout</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/ConditionsController.php.html#410"><abbr title="app\modules\api\controllers\ConditionsController::findCondition">findCondition</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/DeviceMeasurementController.php.html#39"><abbr title="app\modules\api\controllers\DeviceMeasurementController::init">init</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/DeviceRegisterController.php.html#952"><abbr title="app\modules\api\controllers\DeviceRegisterController::findDevice">findDevice</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/FaultsController.php.html#412"><abbr title="app\modules\api\controllers\FaultsController::findFault">findFault</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/MeasurementChannelController.php.html#454"><abbr title="app\modules\api\controllers\MeasurementChannelController::findChannel">findChannel</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#45"><abbr title="app\modules\api\controllers\MongoDBController::init">init</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/MongoDBController.php.html#61"><abbr title="app\modules\api\controllers\MongoDBController::actionTest">actionTest</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#203"><abbr title="app\modules\api\controllers\UsersController::actionCreate">actionCreate</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#241"><abbr title="app\modules\api\controllers\UsersController::actionUpdate">actionUpdate</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="api/controllers/UsersController.php.html#308"><abbr title="app\modules\api\controllers\UsersController::actionActivate">actionActivate</abbr></a></td><td class="text-right">6</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 11.0.10</a> using <a href="https://www.php.net/" target="_top">PHP 8.4.8</a> and <a href="https://phpunit.de/">PHPUnit 11.5.25</a> at Sat Jul 5 8:39:23 UTC 2025.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../_js/jquery.min.js?v=11.0.10" type="text/javascript"></script>
+  <script src="../_js/d3.min.js?v=11.0.10" type="text/javascript"></script>
+  <script src="../_js/nv.d3.min.js?v=11.0.10" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([7,0,1,0,0,0,0,0,0,0,0,0], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([80,0,0,0,1,0,0,0,1,0,0,1], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[0,16,"<a href=\"api\/controllers\/AuthController.php.html#19\">app\\modules\\api\\controllers\\AuthController<\/a>"],[0,52,"<a href=\"api\/controllers\/ConditionsController.php.html#21\">app\\modules\\api\\controllers\\ConditionsController<\/a>"],[0,39,"<a href=\"api\/controllers\/DeviceMeasurementController.php.html#29\">app\\modules\\api\\controllers\\DeviceMeasurementController<\/a>"],[17.729083665338646,83,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#22\">app\\modules\\api\\controllers\\DeviceRegisterController<\/a>"],[0,37,"<a href=\"api\/controllers\/FaultsController.php.html#21\">app\\modules\\api\\controllers\\FaultsController<\/a>"],[0,33,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#26\">app\\modules\\api\\controllers\\MeasurementChannelController<\/a>"],[0,49,"<a href=\"api\/controllers\/MongoDBController.php.html#19\">app\\modules\\api\\controllers\\MongoDBController<\/a>"],[0,23,"<a href=\"api\/controllers\/UsersController.php.html#21\">app\\modules\\api\\controllers\\UsersController<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[0,1,"<a href=\"api\/controllers\/AuthController.php.html#24\">app\\modules\\api\\controllers\\AuthController::behaviors<\/a>"],[0,1,"<a href=\"api\/controllers\/AuthController.php.html#70\">app\\modules\\api\\controllers\\AuthController::actionTest<\/a>"],[0,4,"<a href=\"api\/controllers\/AuthController.php.html#120\">app\\modules\\api\\controllers\\AuthController::actionLogin<\/a>"],[0,2,"<a href=\"api\/controllers\/AuthController.php.html#171\">app\\modules\\api\\controllers\\AuthController::actionLogout<\/a>"],[0,1,"<a href=\"api\/controllers\/AuthController.php.html#214\">app\\modules\\api\\controllers\\AuthController::actionMe<\/a>"],[0,6,"<a href=\"api\/controllers\/AuthController.php.html#271\">app\\modules\\api\\controllers\\AuthController::actionChangePassword<\/a>"],[0,1,"<a href=\"api\/controllers\/AuthController.php.html#312\">app\\modules\\api\\controllers\\AuthController::actionRefresh<\/a>"],[0,1,"<a href=\"api\/controllers\/ConditionsController.php.html#39\">app\\modules\\api\\controllers\\ConditionsController::behaviors<\/a>"],[0,3,"<a href=\"api\/controllers\/ConditionsController.php.html#108\">app\\modules\\api\\controllers\\ConditionsController::actionList<\/a>"],[0,1,"<a href=\"api\/controllers\/ConditionsController.php.html#140\">app\\modules\\api\\controllers\\ConditionsController::actionTest<\/a>"],[0,3,"<a href=\"api\/controllers\/ConditionsController.php.html#155\">app\\modules\\api\\controllers\\ConditionsController::actionView<\/a>"],[0,7,"<a href=\"api\/controllers\/ConditionsController.php.html#183\">app\\modules\\api\\controllers\\ConditionsController::actionCreate<\/a>"],[0,7,"<a href=\"api\/controllers\/ConditionsController.php.html#233\">app\\modules\\api\\controllers\\ConditionsController::actionUpdate<\/a>"],[0,4,"<a href=\"api\/controllers\/ConditionsController.php.html#277\">app\\modules\\api\\controllers\\ConditionsController::actionDelete<\/a>"],[0,4,"<a href=\"api\/controllers\/ConditionsController.php.html#309\">app\\modules\\api\\controllers\\ConditionsController::actionStart<\/a>"],[0,4,"<a href=\"api\/controllers\/ConditionsController.php.html#341\">app\\modules\\api\\controllers\\ConditionsController::actionStop<\/a>"],[0,5,"<a href=\"api\/controllers\/ConditionsController.php.html#373\">app\\modules\\api\\controllers\\ConditionsController::actionData<\/a>"],[0,2,"<a href=\"api\/controllers\/ConditionsController.php.html#410\">app\\modules\\api\\controllers\\ConditionsController::findCondition<\/a>"],[0,6,"<a href=\"api\/controllers\/ConditionsController.php.html#422\">app\\modules\\api\\controllers\\ConditionsController::checkConditionOwnership<\/a>"],[0,5,"<a href=\"api\/controllers\/ConditionsController.php.html#460\">app\\modules\\api\\controllers\\ConditionsController::checkFaultOwnership<\/a>"],[0,2,"<a href=\"api\/controllers\/DeviceMeasurementController.php.html#39\">app\\modules\\api\\controllers\\DeviceMeasurementController::init<\/a>"],[0,1,"<a href=\"api\/controllers\/DeviceMeasurementController.php.html#55\">app\\modules\\api\\controllers\\DeviceMeasurementController::behaviors<\/a>"],[0,5,"<a href=\"api\/controllers\/DeviceMeasurementController.php.html#124\">app\\modules\\api\\controllers\\DeviceMeasurementController::actionGenerateBatchToken<\/a>"],[0,3,"<a href=\"api\/controllers\/DeviceMeasurementController.php.html#240\">app\\modules\\api\\controllers\\DeviceMeasurementController::actionPhenomenBatch<\/a>"],[0,18,"<a href=\"api\/controllers\/DeviceMeasurementController.php.html#281\">app\\modules\\api\\controllers\\DeviceMeasurementController::validateBatchToken<\/a>"],[0,10,"<a href=\"api\/controllers\/DeviceMeasurementController.php.html#352\">app\\modules\\api\\controllers\\DeviceMeasurementController::processBatchData<\/a>"],[0,1,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#25\">app\\modules\\api\\controllers\\DeviceRegisterController::behaviors<\/a>"],[100,1,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#92\">app\\modules\\api\\controllers\\DeviceRegisterController::actionTest<\/a>"],[36.231884057971016,10,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#155\">app\\modules\\api\\controllers\\DeviceRegisterController::actionRegenerateToken<\/a>"],[77.02702702702703,13,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#294\">app\\modules\\api\\controllers\\DeviceRegisterController::actionRegister<\/a>"],[0,5,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#442\">app\\modules\\api\\controllers\\DeviceRegisterController::actionUpdate<\/a>"],[0,3,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#518\">app\\modules\\api\\controllers\\DeviceRegisterController::actionDelete<\/a>"],[0,3,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#566\">app\\modules\\api\\controllers\\DeviceRegisterController::actionList<\/a>"],[0,3,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#634\">app\\modules\\api\\controllers\\DeviceRegisterController::actionView<\/a>"],[0,4,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#704\">app\\modules\\api\\controllers\\DeviceRegisterController::actionActivate<\/a>"],[0,6,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#781\">app\\modules\\api\\controllers\\DeviceRegisterController::actionCreate<\/a>"],[0,4,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#892\">app\\modules\\api\\controllers\\DeviceRegisterController::actionDeactivate<\/a>"],[0,4,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#926\">app\\modules\\api\\controllers\\DeviceRegisterController::checkDeviceOwnership<\/a>"],[0,2,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#952\">app\\modules\\api\\controllers\\DeviceRegisterController::findDevice<\/a>"],[0,4,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#1033\">app\\modules\\api\\controllers\\DeviceRegisterController::actionLiveFault<\/a>"],[0,3,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#1051\">app\\modules\\api\\controllers\\DeviceRegisterController::getLiveFault<\/a>"],[0,5,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#1093\">app\\modules\\api\\controllers\\DeviceRegisterController::startLiveFault<\/a>"],[0,4,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#1150\">app\\modules\\api\\controllers\\DeviceRegisterController::stopLiveFault<\/a>"],[0,4,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#1242\">app\\modules\\api\\controllers\\DeviceRegisterController::actionStartCondition<\/a>"],[0,4,"<a href=\"api\/controllers\/DeviceRegisterController.php.html#1341\">app\\modules\\api\\controllers\\DeviceRegisterController::actionStopCondition<\/a>"],[0,1,"<a href=\"api\/controllers\/FaultsController.php.html#25\">app\\modules\\api\\controllers\\FaultsController::behaviors<\/a>"],[0,5,"<a href=\"api\/controllers\/FaultsController.php.html#67\">app\\modules\\api\\controllers\\FaultsController::checkFaultOwnership<\/a>"],[0,4,"<a href=\"api\/controllers\/FaultsController.php.html#99\">app\\modules\\api\\controllers\\FaultsController::checkDeviceOwnership<\/a>"],[0,3,"<a href=\"api\/controllers\/FaultsController.php.html#150\">app\\modules\\api\\controllers\\FaultsController::actionList<\/a>"],[0,1,"<a href=\"api\/controllers\/FaultsController.php.html#188\">app\\modules\\api\\controllers\\FaultsController::actionTest<\/a>"],[0,3,"<a href=\"api\/controllers\/FaultsController.php.html#203\">app\\modules\\api\\controllers\\FaultsController::actionView<\/a>"],[0,6,"<a href=\"api\/controllers\/FaultsController.php.html#270\">app\\modules\\api\\controllers\\FaultsController::actionCreate<\/a>"],[0,7,"<a href=\"api\/controllers\/FaultsController.php.html#328\">app\\modules\\api\\controllers\\FaultsController::actionUpdate<\/a>"],[0,5,"<a href=\"api\/controllers\/FaultsController.php.html#372\">app\\modules\\api\\controllers\\FaultsController::actionDelete<\/a>"],[0,2,"<a href=\"api\/controllers\/FaultsController.php.html#412\">app\\modules\\api\\controllers\\FaultsController::findFault<\/a>"],[0,1,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#28\">app\\modules\\api\\controllers\\MeasurementChannelController::behaviors<\/a>"],[0,3,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#96\">app\\modules\\api\\controllers\\MeasurementChannelController::actionList<\/a>"],[0,1,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#148\">app\\modules\\api\\controllers\\MeasurementChannelController::actionTest<\/a>"],[0,3,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#199\">app\\modules\\api\\controllers\\MeasurementChannelController::actionView<\/a>"],[0,5,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#267\">app\\modules\\api\\controllers\\MeasurementChannelController::actionCreate<\/a>"],[0,5,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#352\">app\\modules\\api\\controllers\\MeasurementChannelController::actionUpdate<\/a>"],[0,4,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#428\">app\\modules\\api\\controllers\\MeasurementChannelController::actionDelete<\/a>"],[0,2,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#454\">app\\modules\\api\\controllers\\MeasurementChannelController::findChannel<\/a>"],[0,5,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#466\">app\\modules\\api\\controllers\\MeasurementChannelController::checkChannelOwnership<\/a>"],[0,4,"<a href=\"api\/controllers\/MeasurementChannelController.php.html#498\">app\\modules\\api\\controllers\\MeasurementChannelController::checkDeviceOwnership<\/a>"],[0,1,"<a href=\"api\/controllers\/MongoDBController.php.html#23\">app\\modules\\api\\controllers\\MongoDBController::behaviors<\/a>"],[0,2,"<a href=\"api\/controllers\/MongoDBController.php.html#45\">app\\modules\\api\\controllers\\MongoDBController::init<\/a>"],[0,2,"<a href=\"api\/controllers\/MongoDBController.php.html#61\">app\\modules\\api\\controllers\\MongoDBController::actionTest<\/a>"],[0,16,"<a href=\"api\/controllers\/MongoDBController.php.html#153\">app\\modules\\api\\controllers\\MongoDBController::actionMeasurements<\/a>"],[0,11,"<a href=\"api\/controllers\/MongoDBController.php.html#252\">app\\modules\\api\\controllers\\MongoDBController::actionDataSeriesList<\/a>"],[0,1,"<a href=\"api\/controllers\/MongoDBController.php.html#352\">app\\modules\\api\\controllers\\MongoDBController::actionTestNew<\/a>"],[0,10,"<a href=\"api\/controllers\/MongoDBController.php.html#365\">app\\modules\\api\\controllers\\MongoDBController::actionDebugConditions<\/a>"],[0,6,"<a href=\"api\/controllers\/MongoDBController.php.html#476\">app\\modules\\api\\controllers\\MongoDBController::actionUnknownDataSeriesList<\/a>"],[0,1,"<a href=\"api\/controllers\/UsersController.php.html#26\">app\\modules\\api\\controllers\\UsersController::behaviors<\/a>"],[0,5,"<a href=\"api\/controllers\/UsersController.php.html#108\">app\\modules\\api\\controllers\\UsersController::actionIndex<\/a>"],[0,1,"<a href=\"api\/controllers\/UsersController.php.html#177\">app\\modules\\api\\controllers\\UsersController::actionView<\/a>"],[0,2,"<a href=\"api\/controllers\/UsersController.php.html#203\">app\\modules\\api\\controllers\\UsersController::actionCreate<\/a>"],[0,2,"<a href=\"api\/controllers\/UsersController.php.html#241\">app\\modules\\api\\controllers\\UsersController::actionUpdate<\/a>"],[0,3,"<a href=\"api\/controllers\/UsersController.php.html#278\">app\\modules\\api\\controllers\\UsersController::actionDelete<\/a>"],[0,2,"<a href=\"api\/controllers\/UsersController.php.html#308\">app\\modules\\api\\controllers\\UsersController::actionActivate<\/a>"],[0,3,"<a href=\"api\/controllers\/UsersController.php.html#327\">app\\modules\\api\\controllers\\UsersController::actionDeactivate<\/a>"],[0,1,"<a href=\"api\/controllers\/UsersController.php.html#356\">app\\modules\\api\\controllers\\UsersController::actionOptions<\/a>"],[0,3,"<a href=\"api\/controllers\/UsersController.php.html#373\">app\\modules\\api\\controllers\\UsersController::findUser<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>

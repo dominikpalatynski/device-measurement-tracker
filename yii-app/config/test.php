@@ -1,46 +1,52 @@
 <?php
-$params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/test_db.php';
 
 /**
  * Application configuration shared by all test types
  */
 return [
-    'id' => 'basic-tests',
+    'id' => 'test-app',
     'basePath' => dirname(__DIR__),
-    'aliases' => [
-        '@bower' => '@vendor/bower-asset',
-        '@npm'   => '@vendor/npm-asset',
-    ],
     'language' => 'en-US',
+    'sourceLanguage' => 'en-US',
     'components' => [
         'db' => $db,
-        'mailer' => [
-            'class' => \yii\symfonymailer\Mailer::class,
-            'viewPath' => '@app/mail',
-            // send all mails to a file by default.
-            'useFileTransport' => true,
-            'messageClass' => 'yii\symfonymailer\Message'
+        'request' => [
+            'class' => 'yii\web\Request',
+            'enableCookieValidation' => false,
+            'scriptFile' => __DIR__ . '/../web/index.php',
+            'scriptUrl' => '/index.php',
         ],
-        'assetManager' => [
-            'basePath' => __DIR__ . '/../web/assets',
-        ],
-        'urlManager' => [
-            'showScriptName' => true,
+        'response' => [
+            'class' => 'yii\web\Response',
         ],
         'user' => [
+            'class' => 'yii\web\User',
             'identityClass' => 'app\models\User',
+            'enableAutoLogin' => false,
+            'enableSession' => false,
         ],
-        'request' => [
-            'cookieValidationKey' => 'test',
-            'enableCsrfValidation' => false,
-            // but if you absolutely need it set cookie domain to localhost
-            /*
-            'csrfCookie' => [
-                'domain' => 'localhost',
+        'i18n' => [
+            'translations' => [
+                'app*' => [
+                    'class' => 'yii\i18n\PhpMessageSource',
+                    'sourceLanguage' => 'en-US',
+                    'basePath' => '@app/messages',
+                ],
             ],
-            */
+        ],
+        'log' => [
+            'class' => 'yii\log\Dispatcher',
+            'targets' => [], // Disable logging in tests
+        ],
+        'mqtt' => [
+            'class' => 'app\components\MqttComponent',
+            // Mock configuration for tests
         ],
     ],
-    'params' => $params,
+    'modules' => [
+        'api' => [
+            'class' => 'app\modules\api\Module',
+        ],
+    ],
 ];

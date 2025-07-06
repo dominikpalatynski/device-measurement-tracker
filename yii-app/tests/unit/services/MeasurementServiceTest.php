@@ -27,12 +27,13 @@ class MeasurementServiceTest extends TestCase
 
     public function testProcessRealTimeDataMqttMessageWithMocks()
     {
-        // Mock device
-        $deviceMock = $this->createMock(Devices::class);
-        $deviceMock->device_id = 'dev-123';
-        $deviceMock->device_name = 'Device dev-123';
-        $deviceMock->device_type = 'pmsm-mechanical-vibration';
-        $deviceMock->status = 'Active';
+        // Use a stub class for Devices
+        $deviceMock = new class {
+            public $device_id = 'dev-123';
+            public $device_name = 'Device dev-123';
+            public $device_type = 'pmsm-mechanical-vibration';
+            public $status = 'Active';
+        };
 
         // Mock condition
         $conditionMock = $this->createMock(Condition::class);
@@ -131,9 +132,10 @@ class MeasurementServiceTest extends TestCase
 
     public function testProcessRealTimeDataMqttMessageConditionAndFaultNotFound()
     {
-        $deviceMock = $this->createMock(Devices::class);
-        $deviceMock->device_id = 'dev-123';
-        $deviceMock->status = 'Active';
+        $deviceMock = new class {
+            public $device_id = 'dev-123';
+            public $status = 'Active';
+        };
         $deviceRepo = $this->createMock(DeviceRepositoryInterface::class);
         $deviceRepo->expects($this->once())
             ->method('findByDeviceId')
@@ -172,9 +174,10 @@ class MeasurementServiceTest extends TestCase
 
     public function testProcessRealTimeDataMqttMessageMongoServiceNull()
     {
-        $deviceMock = $this->createMock(Devices::class);
-        $deviceMock->device_id = 'dev-123';
-        $deviceMock->status = 'Active';
+        $deviceMock = new class {
+            public $device_id = 'dev-123';
+            public $status = 'Active';
+        };
         $deviceRepo = $this->createMock(DeviceRepositoryInterface::class);
         $deviceRepo->expects($this->once())
             ->method('findByDeviceId')
@@ -212,9 +215,10 @@ class MeasurementServiceTest extends TestCase
 
     public function testProcessRealTimeDataMqttMessageMongoServiceSaveFails()
     {
-        $deviceMock = $this->createMock(Devices::class);
-        $deviceMock->device_id = 'dev-123';
-        $deviceMock->status = 'Active';
+        $deviceMock = new class {
+            public $device_id = 'dev-123';
+            public $status = 'Active';
+        };
         $deviceRepo = $this->createMock(DeviceRepositoryInterface::class);
         $deviceRepo->expects($this->once())
             ->method('findByDeviceId')
@@ -330,9 +334,10 @@ class MeasurementServiceTest extends TestCase
 
     public function testProcessRealTimeDataWithNullMongoService()
     {
-        $deviceMock = $this->createMock(Devices::class);
-        $deviceMock->device_id = 'dev-123';
-        $deviceMock->status = 'Active';
+        $deviceMock = new class {
+            public $device_id = 'dev-123';
+            public $status = 'Active';
+        };
         $deviceRepo = $this->createMock(DeviceRepositoryInterface::class);
         $deviceRepo->expects($this->once())
             ->method('findByDeviceId')
@@ -379,13 +384,14 @@ class MeasurementServiceTest extends TestCase
 
     public function testProcessRealTimeDataWithComplexDataStructure()
     {
-        $deviceMock = $this->createMock(Devices::class);
-        $deviceMock->device_id = 'dev-complex';
-        $deviceMock->status = 'Active';
+        $deviceMock = new class {
+            public $device_id = 'dev-123';
+            public $status = 'Active';
+        };
         $deviceRepo = $this->createMock(DeviceRepositoryInterface::class);
         $deviceRepo->expects($this->once())
             ->method('findByDeviceId')
-            ->with('dev-complex')
+            ->with('dev-123')
             ->willReturn($deviceMock);
 
         $conditionMock = $this->createMock(Condition::class);
@@ -401,7 +407,7 @@ class MeasurementServiceTest extends TestCase
         $faultRepo = $this->createMock(FaultRepositoryInterface::class);
         $faultRepo->expects($this->once())
             ->method('findActiveByDeviceId')
-            ->with('dev-complex')
+            ->with('dev-123')
             ->willReturn($faultMock);
 
         $mongoServiceMock = $this->getMockBuilder(MongoDBService::class)
@@ -420,7 +426,7 @@ class MeasurementServiceTest extends TestCase
         $property->setAccessible(true);
         $property->setValue($service, $mongoServiceMock);
 
-        $topic = 'devices/dev-complex/data';
+        $topic = 'devices/dev-123/data';
         $complexData = [
             'timestamp' => '2023-01-01T10:00:00Z',
             'measurements' => [
@@ -430,7 +436,7 @@ class MeasurementServiceTest extends TestCase
             'metadata' => ['unit' => 'volts', 'frequency' => 50]
         ];
         $payload = json_encode([
-            'deviceId' => 'dev-complex',
+            'deviceId' => 'dev-123',
             'data_series' => 'complex-series',
             'condition_name' => 'ComplexCondition',
             'data' => $complexData
@@ -440,7 +446,7 @@ class MeasurementServiceTest extends TestCase
         $this->assertIsArray($result);
         $this->assertTrue($result['success']);
         $this->assertEquals('complex-series', $result['dataSeriesId']);
-        $this->assertEquals('dev-complex', $result['deviceId']);
+        $this->assertEquals('dev-123', $result['deviceId']);
     }
 
     public function testProcessRealTimeDataWithExceptionHandling()

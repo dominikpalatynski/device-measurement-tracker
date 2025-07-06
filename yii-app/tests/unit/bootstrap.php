@@ -8,46 +8,30 @@ defined('YII_ENV') or define('YII_ENV', 'test');
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../vendor/yiisoft/yii2/Yii.php';
 
-// Test configuration
-$config = [
-    'id' => 'test-app',
-    'basePath' => dirname(__DIR__, 2),
-    'components' => [
-        'request' => [
-            'class' => 'yii\web\Request',
-            'enableCookieValidation' => false,
-            'scriptFile' => __DIR__ . '/../../index.php',
-            'scriptUrl' => '/index.php',
-        ],
-        'response' => [
-            'class' => 'yii\web\Response',
-        ],
-        'user' => [
-            'class' => 'yii\web\User',
-            'identityClass' => 'app\models\User',
-            'enableAutoLogin' => false,
-            'enableSession' => false,
-        ],
-        'db' => [
-            'class' => 'yii\db\Connection',
-            'dsn' => 'sqlite::memory:', // Use in-memory SQLite for tests
-            'charset' => 'utf8',
-        ],
-        'log' => [
-            'class' => 'yii\log\Dispatcher',
-            'targets' => [], // Disable logging in tests
-        ],
-        'mqtt' => [
-            'class' => 'app\components\MqttComponent',
-            // Mock configuration for tests
-        ],
-    ],
-    'modules' => [
-        'api' => [
-            'class' => 'app\modules\api\Module',
-        ],
-    ],
+$config = require __DIR__ . '/../../config/test.php';
+
+// Initialize application
+$app = new \yii\web\Application($config);
+
+// Set up translations
+Yii::$app->language = 'en-US';
+Yii::$app->sourceLanguage = 'en-US';
+
+// Configure message source
+Yii::$app->i18n->translations['app*'] = [
+    'class' => 'yii\i18n\PhpMessageSource',
+    'sourceLanguage' => 'en-US',
+    'basePath' => '@app/messages',
 ];
 
-// Initialize the application for tests
-new \yii\web\Application($config); 
+// Configure request component for testing
+Yii::$app->set('request', new \yii\web\Request());
+Yii::$app->request->enableCsrfValidation = false;
+Yii::$app->request->cookieValidationKey = 'test';
+
+// Configure user component for testing
+Yii::$app->set('user', new \yii\web\User([
+    'identityClass' => 'app\models\User',
+    'enableAutoLogin' => false,
+    'enableSession' => false,
+])); 

@@ -189,4 +189,152 @@ class AuthControllerTest extends TestCase
         $this->assertNotNull($controllerWithModule->module);
         $this->assertEquals('api', $controllerWithModule->module->id);
     }
+
+    public function testActionRefresh()
+    {
+        // Mock user identity with generateAccessToken and save
+        $mockIdentity = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['generateAccessToken', 'save'])
+            ->getMock();
+        $mockIdentity->method('generateAccessToken')->willReturn('mocked_token');
+        $mockIdentity->method('save')->willReturn(true);
+
+        // Mock user application component with identity and logout
+        $mockUserComponent = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['logout'])
+            ->getMock();
+        $mockUserComponent->identity = $mockIdentity;
+        $mockUserComponent->method('logout')->willReturn(true);
+        Yii::$app->set('user', $mockUserComponent);
+
+        $result = $this->controller->actionRefresh();
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+        $this->assertEquals('Token refreshed successfully.', $result['message']);
+        $this->assertArrayHasKey('data', $result);
+        $this->assertEquals('mocked_token', $result['data']['access_token']);
+        $this->assertEquals('Bearer', $result['data']['token_type']);
+        $this->assertArrayHasKey('expires_in', $result['data']);
+    }
+
+    public function testActionChangePasswordMissingFields()
+    {
+        $mockIdentity = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['validatePassword', 'setPassword', 'generateAuthKey', 'revokeAccessToken', 'save'])
+            ->getMock();
+        $mockUserComponent = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['logout'])
+            ->getMock();
+        $mockUserComponent->identity = $mockIdentity;
+        Yii::$app->set('user', $mockUserComponent);
+        Yii::$app->request->setRawBody(json_encode(['current_password' => 'old']));
+        $this->expectException(\yii\web\BadRequestHttpException::class);
+        $this->controller->actionChangePassword();
+    }
+
+    public function testActionChangePasswordWrongCurrentPassword()
+    {
+        $mockIdentity = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['validatePassword', 'setPassword', 'generateAuthKey', 'revokeAccessToken', 'save'])
+            ->getMock();
+        $mockIdentity->method('validatePassword')->willReturn(false);
+        $mockUserComponent = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['logout'])
+            ->getMock();
+        $mockUserComponent->identity = $mockIdentity;
+        Yii::$app->set('user', $mockUserComponent);
+        Yii::$app->request->setRawBody(json_encode(['current_password' => 'wrong', 'new_password' => 'newpass123']));
+        $result = $this->controller->actionChangePassword();
+        $this->assertFalse($result['success']);
+        $this->assertEquals('Current password is incorrect.', $result['message']);
+    }
+
+    public function testActionChangePasswordTooShort()
+    {
+        $mockIdentity = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['validatePassword', 'setPassword', 'generateAuthKey', 'revokeAccessToken', 'save'])
+            ->getMock();
+        $mockIdentity->method('validatePassword')->willReturn(true);
+        $mockUserComponent = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['logout'])
+            ->getMock();
+        $mockUserComponent->identity = $mockIdentity;
+        Yii::$app->set('user', $mockUserComponent);
+        Yii::$app->request->setRawBody(json_encode(['current_password' => 'oldpass', 'new_password' => '123']));
+        $result = $this->controller->actionChangePassword();
+        $this->assertFalse($result['success']);
+        $this->assertEquals('New password must be at least 6 characters long.', $result['message']);
+    }
+
+    public function testActionChangePasswordSaveFailure()
+    {
+        $mockIdentity = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['validatePassword', 'setPassword', 'generateAuthKey', 'revokeAccessToken', 'save'])
+            ->getMock();
+        $mockIdentity->method('validatePassword')->willReturn(true);
+        $mockIdentity->method('save')->willReturn(false);
+        $mockUserComponent = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['logout'])
+            ->getMock();
+        $mockUserComponent->identity = $mockIdentity;
+        Yii::$app->set('user', $mockUserComponent);
+        Yii::$app->request->setRawBody(json_encode(['current_password' => 'oldpass', 'new_password' => 'newpass123']));
+        $this->expectException(\yii\web\ServerErrorHttpException::class);
+        $this->controller->actionChangePassword();
+    }
+
+    public function testActionChangePasswordSuccess()
+    {
+        $mockIdentity = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['validatePassword', 'setPassword', 'generateAuthKey', 'revokeAccessToken', 'save'])
+            ->getMock();
+        $mockIdentity->method('validatePassword')->willReturn(true);
+        $mockIdentity->method('save')->willReturn(true);
+        $mockUserComponent = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['logout'])
+            ->getMock();
+        $mockUserComponent->identity = $mockIdentity;
+        Yii::$app->set('user', $mockUserComponent);
+        Yii::$app->request->setRawBody(json_encode(['current_password' => 'oldpass', 'new_password' => 'newpass123']));
+        $result = $this->controller->actionChangePassword();
+        $this->assertTrue($result['success']);
+        $this->assertEquals('Password changed successfully. Please log in again.', $result['message']);
+    }
+
+    public function testActionMe()
+    {
+        // Mock user identity with all required properties and getDisplayName
+        $mockIdentity = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['getDisplayName'])
+            ->getMock();
+        $mockIdentity->id = 1;
+        $mockIdentity->username = 'testuser';
+        $mockIdentity->email = 'test@example.com';
+        $mockIdentity->first_name = 'Test';
+        $mockIdentity->last_name = 'User';
+        $mockIdentity->role = 'admin';
+        $mockIdentity->last_login_at = '2024-06-13 12:00:00';
+        $mockIdentity->method('getDisplayName')->willReturn('Test User');
+
+        $mockUserComponent = $this->getMockBuilder(\stdClass::class)
+            ->addMethods(['logout'])
+            ->getMock();
+        $mockUserComponent->identity = $mockIdentity;
+        Yii::$app->set('user', $mockUserComponent);
+
+        $result = $this->controller->actionMe();
+        $this->assertIsArray($result);
+        $this->assertTrue($result['success']);
+        $this->assertArrayHasKey('data', $result);
+        $this->assertArrayHasKey('user', $result['data']);
+        $user = $result['data']['user'];
+        $this->assertEquals(1, $user['id']);
+        $this->assertEquals('testuser', $user['username']);
+        $this->assertEquals('test@example.com', $user['email']);
+        $this->assertEquals('Test', $user['first_name']);
+        $this->assertEquals('User', $user['last_name']);
+        $this->assertEquals('admin', $user['role']);
+        $this->assertEquals('Test User', $user['display_name']);
+        $this->assertEquals('2024-06-13 12:00:00', $user['last_login_at']);
+    }
 } 

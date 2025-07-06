@@ -1,0 +1,27 @@
+PHPUnit 11.5.25 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.8 with PCOV 1.0.12
+Configuration: /Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/phpunit.xml
+
+..........F..                                                     13 / 13 (100%)
+
+Time: 00:00.052, Memory: 16.00 MB
+
+There was 1 failure:
+
+1) tests\unit\modules\api\controllers\DeviceRegisterControllerTest::testActionRegenerateTokenDeviceNotFound
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'Device not found'
++'Unexpected error during token regeneration'
+
+/Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/tests/unit/modules/api/controllers/DeviceRegisterControllerTest.php:68
+
+FAILURES!
+Tests: 13, Assertions: 29, Failures: 1, PHPUnit Deprecations: 15.
+
+Generating code coverage report in Clover XML format ... done [00:00.022]
+
+Generating code coverage report in HTML format ... done [00:00.076]

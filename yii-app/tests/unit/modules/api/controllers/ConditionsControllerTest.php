@@ -8,7 +8,7 @@ use yii\web\NotFoundHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\web\ServerErrorHttpException;
 
-class TestCondition extends \app\models\Condition
+class TestCondition extends \yii\base\BaseObject
 {
     public static $findReturn = null;
     public static $findOneReturn = null;
@@ -16,11 +16,17 @@ class TestCondition extends \app\models\Condition
     public static $deleteReturn = true;
     public static $activateReturn = true;
     public static $deactivateReturn = true;
-    public static function find() { return static::$findReturn; }
-    public static function findOne($condition) { return static::$findOneReturn; }
+    public $fault_id;
+    public $name;
+    public $description;
+    public $status;
+    public $condition_id;
     public static $statusActive = 'Active';
     const STATUS_ACTIVE = 'Active';
     const STATUS_INACTIVE = 'Inactive';
+    public static function tableName() { return 'dummy_table'; }
+    public static function find() { return static::$findReturn; }
+    public static function findOne($condition) { return static::$findOneReturn; }
     public static function createCondition($faultId, $name, $description = null) {
         $obj = new static();
         $obj->fault_id = $faultId;
@@ -32,19 +38,24 @@ class TestCondition extends \app\models\Condition
     }
     public static function instantiate($row) { return new static(); }
     public function toArray(...$params) { return ['id' => 1, 'name' => $this->name]; }
-    public function save($runValidation = true, $attributeNames = null) { /*echo 'TestCondition::save called\n';*/ return static::$saveReturn; }
-    public function delete() { /*echo 'TestCondition::delete called\n';*/ return static::$deleteReturn; }
+    public function save($runValidation = true, $attributeNames = null) { return static::$saveReturn; }
+    public function delete() { return static::$deleteReturn; }
     public function activateCondition() { return static::$activateReturn; }
     public function deactivateCondition() { return static::$deactivateReturn; }
+    public function load($data, $formName = null) { foreach ($data as $k => $v) $this->$k = $v; return true; }
 }
-class TestFaults extends \app\models\Faults
+class TestFaults extends \yii\base\BaseObject
 {
     public static $findOneReturn = null;
+    public $device_id;
+    public static function tableName() { return 'dummy_table'; }
     public static function findOne($condition) { return static::$findOneReturn; }
 }
-class TestDevices extends \app\models\Devices
+class TestDevices extends \yii\base\BaseObject
 {
     public static $findOneReturn = null;
+    public $owner_id;
+    public static function tableName() { return 'dummy_table'; }
     public static function findOne($condition) { return static::$findOneReturn; }
 }
 
@@ -92,9 +103,12 @@ class ConditionsControllerTest extends TestCase
         $mockCondition = new TestCondition();
         $mockCondition->name = 'Test';
         $mockQuery = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['all'])
+            ->addMethods(['all', 'joinWith', 'innerJoinWith', 'where'])
             ->getMock();
         $mockQuery->method('all')->willReturn([$mockCondition]);
+        $mockQuery->method('joinWith')->willReturnSelf();
+        $mockQuery->method('innerJoinWith')->willReturnSelf();
+        $mockQuery->method('where')->willReturnSelf();
         TestCondition::$findReturn = $mockQuery;
         TestCondition::$findOneReturn = $mockCondition;
         $result = $this->controller->actionList();
@@ -108,9 +122,10 @@ class ConditionsControllerTest extends TestCase
         $this->mockUser->method('isAdmin')->willReturn(false);
         $this->mockUser->id = 42;
         $mockQuery = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['innerJoinWith', 'where', 'all'])
+            ->addMethods(['innerJoinWith', 'joinWith', 'where', 'all'])
             ->getMock();
         $mockQuery->method('innerJoinWith')->willReturnSelf();
+        $mockQuery->method('joinWith')->willReturnSelf();
         $mockQuery->method('where')->willReturnSelf();
         $mockQuery->method('all')->willReturn([]);
         TestCondition::$findReturn = $mockQuery;
@@ -193,14 +208,18 @@ class ConditionsControllerTest extends TestCase
         ]);
         TestFaults::$findOneReturn = (object)['type' => 'normal', 'device_id' => 1];
         TestDevices::$findOneReturn = (object)['owner_id' => 1];
-        $mockCondition = new TestCondition();
-        $mockCondition->name = 'Test Condition';
-        $mockQuery = $this->getMockBuilder(\stdClass::class)->addMethods(['where','all'])->getMock();
-        $mockQuery->method('where')->willReturnSelf();
-        $mockQuery->method('all')->willReturn([]);
-        TestCondition::$findReturn = $mockQuery;
-        TestCondition::$findOneReturn = $mockCondition;
-        TestCondition::$saveReturn = false;
+        // Simulate createCondition failure by making it return null
+        TestCondition::$findReturn = $this->getMockBuilder(\stdClass::class)->addMethods(['where','all'])->getMock();
+        TestCondition::$findReturn->method('where')->willReturnSelf();
+        TestCondition::$findReturn->method('all')->willReturn([]);
+        TestCondition::$findOneReturn = null;
+        // Use an anonymous class to override createCondition
+        $mockConditionClass = new class extends TestCondition {
+            public static function createCondition($faultId, $name, $description = null) {
+                return null;
+            }
+        };
+        $this->controller->conditionClass = get_class($mockConditionClass);
         $this->expectException(ServerErrorHttpException::class);
         $this->controller->actionCreate();
     }

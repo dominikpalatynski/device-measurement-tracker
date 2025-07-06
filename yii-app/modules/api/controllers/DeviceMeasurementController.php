@@ -242,18 +242,13 @@ class DeviceMeasurementController extends Controller
             ]);
             return [
                 'success' => true,
-                'data' => [
-                    'batch_token' => $batchToken,
-                    'device_id' => $deviceId,
-                    'expires_at' => $expiresAt,
-                    'expires_in' => 3600
-                ]
+                'token' => $batchToken,
+                'expires_at' => $expiresAt
             ];
             
         } catch (\Throwable $e) {
             PerformanceLogger::stopLog('generate_batch_token_method');
             Yii::error("Error generating batch token: " . $e->getMessage(), 'api.device-measurement');
-            Yii::$app->response->statusCode = 500;
             return [
                 'success' => false,
                 'error' => $e->getMessage()
@@ -468,13 +463,13 @@ class DeviceMeasurementController extends Controller
             throw new \Exception("Device not found: $deviceId");
         }
 
-        if($data['data_series'] == null) {
-            throw new \Exception("Data series is required");
+        if (!isset($data['data_series'])) {
+            throw new \Exception("Missing data_series in request");
         }
 
         $measurementData = null;
 
-        if(!$data['condition_name'] == null) {
+        if (isset($data['condition_name'])) {
             $condition = Condition::find()->where(['name' => $data['condition_name']])->one();
             if (!$condition) {
                 $fault = Faults::find()
@@ -529,7 +524,7 @@ class DeviceMeasurementController extends Controller
                     
                     return [
                         'success' => true,
-                        'dataSeriesId' => $measurementData['conditionId'], // Fixed: use conditionId instead of undefined dataSeriesId
+                        'dataSeriesId' => $measurementData['data_series'],
                         'timestamp' => time(),
                         'deviceId' => $deviceIdFromPayload
                     ];
