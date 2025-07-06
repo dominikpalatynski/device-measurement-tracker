@@ -121,7 +121,7 @@ class MQTTDataSender:
     def publish_data(self, data: Dict[str, Any]) -> bool:
         """Publish data to MQTT topic"""
         try:
-            topic = f"device/{self.device_id}/raw"
+            topic = f"sensor/{self.device_id}/raw"
             payload = json.dumps(data, ensure_ascii=False)
             
             print(f"📡 Publishing to topic: {topic}")
@@ -153,7 +153,7 @@ class MQTTDataSender:
         self.running = True
         print(f"🚀 Starting continuous data sending for device: {self.device_id}")
         print(f"⏱ Send interval: {interval} seconds")
-        print(f"📋 Topic: device/{self.device_id}/raw")
+        print(f"📋 Topic: sensor/{self.device_id}/raw")
         print("🔧 Sending simulated, rosnące dane jako payload")
         print("Press Ctrl+C to stop\n")
         try:

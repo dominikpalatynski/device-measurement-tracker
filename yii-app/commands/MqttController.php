@@ -23,7 +23,7 @@ class MqttController extends Controller
      * 
      * @param string $topic Default subscription topic
      */
-    public function actionSubscribe($topic = 'device/+/raw')
+    public function actionSubscribe($topic = 'sensor/+/raw')
     {
         $this->stdout("Starting MQTT subscription service...\n");
         $this->stdout("Subscribing to topic: {$topic}\n");

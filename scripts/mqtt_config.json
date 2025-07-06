@@ -5,8 +5,8 @@
     "password": "iot_password",
     "send_interval": 0.08,
     "deviceId": "P4gkBhfDWLv3",
-    "condition_name": "data6",
-    "data_series": "data6",
+    "condition_name": "data7",
+    "data_series": "data7",
     "included_files": [
       "w.dat",
       "udc.dat", 

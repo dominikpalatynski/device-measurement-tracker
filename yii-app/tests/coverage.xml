@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1751790460">
-  <project timestamp="1751790460" name="Clover Coverage">
+<coverage generated="1751798432">
+  <project timestamp="1751798432" name="Clover Coverage">
     <package name="app\commands">
       <file name="/Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/commands/MqttController.php">
         <class name="app\commands\MqttController" namespace="app\commands">
@@ -451,10 +451,10 @@
       </file>
       <file name="/Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/models/User.php">
         <class name="app\models\User" namespace="app\models">
-          <metrics complexity="34" methods="26" coveredmethods="1" conditionals="0" coveredconditionals="0" statements="100" coveredstatements="10" elements="126" coveredelements="11"/>
+          <metrics complexity="34" methods="26" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="100" coveredstatements="11" elements="126" coveredelements="13"/>
         </class>
-        <line num="45" type="method" name="tableName" visibility="public" complexity="1" crap="2" count="0"/>
-        <line num="47" type="stmt" count="0"/>
+        <line num="45" type="method" name="tableName" visibility="public" complexity="1" crap="1" count="7"/>
+        <line num="47" type="stmt" count="7"/>
         <line num="53" type="method" name="behaviors" visibility="public" complexity="1" crap="1" count="1"/>
         <line num="55" type="stmt" count="1"/>
         <line num="56" type="stmt" count="1"/>
@@ -579,52 +579,52 @@
         <line num="358" type="method" name="revokeAccessToken" visibility="public" complexity="1" crap="2" count="0"/>
         <line num="360" type="stmt" count="0"/>
         <line num="361" type="stmt" count="0"/>
-        <metrics loc="364" ncloc="243" classes="1" methods="26" coveredmethods="1" conditionals="0" coveredconditionals="0" statements="100" coveredstatements="10" elements="126" coveredelements="11"/>
+        <metrics loc="364" ncloc="243" classes="1" methods="26" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="100" coveredstatements="11" elements="126" coveredelements="13"/>
       </file>
       <file name="/Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/models/UserForm.php">
         <class name="app\models\UserForm" namespace="app\models">
-          <metrics complexity="14" methods="7" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="65" coveredstatements="0" elements="72" coveredelements="0"/>
+          <metrics complexity="14" methods="7" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="65" coveredstatements="35" elements="72" coveredelements="37"/>
         </class>
-        <line num="32" type="method" name="__construct" visibility="public" complexity="2" crap="6" count="0"/>
-        <line num="34" type="stmt" count="0"/>
+        <line num="32" type="method" name="__construct" visibility="public" complexity="2" crap="3.19" count="2"/>
+        <line num="34" type="stmt" count="2"/>
         <line num="35" type="stmt" count="0"/>
         <line num="36" type="stmt" count="0"/>
         <line num="37" type="stmt" count="0"/>
         <line num="38" type="stmt" count="0"/>
-        <line num="40" type="stmt" count="0"/>
-        <line num="46" type="method" name="rules" visibility="public" complexity="3" crap="12" count="0"/>
-        <line num="48" type="stmt" count="0"/>
-        <line num="49" type="stmt" count="0"/>
-        <line num="50" type="stmt" count="0"/>
-        <line num="51" type="stmt" count="0"/>
-        <line num="52" type="stmt" count="0"/>
-        <line num="54" type="stmt" count="0"/>
-        <line num="55" type="stmt" count="0"/>
-        <line num="56" type="stmt" count="0"/>
-        <line num="57" type="stmt" count="0"/>
-        <line num="58" type="stmt" count="0"/>
-        <line num="60" type="stmt" count="0"/>
-        <line num="61" type="stmt" count="0"/>
-        <line num="63" type="stmt" count="0"/>
-        <line num="64" type="stmt" count="0"/>
-        <line num="66" type="stmt" count="0"/>
-        <line num="67" type="stmt" count="0"/>
-        <line num="69" type="stmt" count="0"/>
-        <line num="70" type="stmt" count="0"/>
-        <line num="72" type="stmt" count="0"/>
-        <line num="73" type="stmt" count="0"/>
-        <line num="74" type="stmt" count="0"/>
-        <line num="80" type="method" name="attributeLabels" visibility="public" complexity="1" crap="2" count="0"/>
-        <line num="82" type="stmt" count="0"/>
-        <line num="83" type="stmt" count="0"/>
-        <line num="84" type="stmt" count="0"/>
-        <line num="85" type="stmt" count="0"/>
-        <line num="86" type="stmt" count="0"/>
-        <line num="87" type="stmt" count="0"/>
-        <line num="88" type="stmt" count="0"/>
-        <line num="89" type="stmt" count="0"/>
-        <line num="90" type="stmt" count="0"/>
-        <line num="91" type="stmt" count="0"/>
+        <line num="40" type="stmt" count="2"/>
+        <line num="46" type="method" name="rules" visibility="public" complexity="3" crap="3" count="2"/>
+        <line num="48" type="stmt" count="2"/>
+        <line num="49" type="stmt" count="2"/>
+        <line num="50" type="stmt" count="2"/>
+        <line num="51" type="stmt" count="2"/>
+        <line num="52" type="stmt" count="2"/>
+        <line num="54" type="stmt" count="2"/>
+        <line num="55" type="stmt" count="2"/>
+        <line num="56" type="stmt" count="2"/>
+        <line num="57" type="stmt" count="2"/>
+        <line num="58" type="stmt" count="2"/>
+        <line num="60" type="stmt" count="2"/>
+        <line num="61" type="stmt" count="2"/>
+        <line num="63" type="stmt" count="2"/>
+        <line num="64" type="stmt" count="2"/>
+        <line num="66" type="stmt" count="2"/>
+        <line num="67" type="stmt" count="2"/>
+        <line num="69" type="stmt" count="2"/>
+        <line num="70" type="stmt" count="2"/>
+        <line num="72" type="stmt" count="2"/>
+        <line num="73" type="stmt" count="2"/>
+        <line num="74" type="stmt" count="2"/>
+        <line num="80" type="method" name="attributeLabels" visibility="public" complexity="1" crap="1" count="2"/>
+        <line num="82" type="stmt" count="2"/>
+        <line num="83" type="stmt" count="2"/>
+        <line num="84" type="stmt" count="2"/>
+        <line num="85" type="stmt" count="2"/>
+        <line num="86" type="stmt" count="2"/>
+        <line num="87" type="stmt" count="2"/>
+        <line num="88" type="stmt" count="2"/>
+        <line num="89" type="stmt" count="2"/>
+        <line num="90" type="stmt" count="2"/>
+        <line num="91" type="stmt" count="2"/>
         <line num="97" type="method" name="loadFromUser" visibility="protected" complexity="2" crap="6" count="0"/>
         <line num="99" type="stmt" count="0"/>
         <line num="100" type="stmt" count="0"/>
@@ -633,9 +633,9 @@
         <line num="103" type="stmt" count="0"/>
         <line num="104" type="stmt" count="0"/>
         <line num="105" type="stmt" count="0"/>
-        <line num="113" type="method" name="save" visibility="public" complexity="4" crap="20" count="0"/>
-        <line num="115" type="stmt" count="0"/>
-        <line num="116" type="stmt" count="0"/>
+        <line num="113" type="method" name="save" visibility="public" complexity="4" crap="13.69" count="2"/>
+        <line num="115" type="stmt" count="2"/>
+        <line num="116" type="stmt" count="2"/>
         <line num="119" type="stmt" count="0"/>
         <line num="120" type="stmt" count="0"/>
         <line num="123" type="stmt" count="0"/>
@@ -657,7 +657,7 @@
         <line num="156" type="stmt" count="0"/>
         <line num="157" type="stmt" count="0"/>
         <line num="158" type="stmt" count="0"/>
-        <metrics loc="161" ncloc="131" classes="1" methods="7" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="65" coveredstatements="0" elements="72" coveredelements="0"/>
+        <metrics loc="161" ncloc="131" classes="1" methods="7" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="65" coveredstatements="35" elements="72" coveredelements="37"/>
       </file>
       <file name="/Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/models/VerificationToken.php">
         <class name="app\models\VerificationToken" namespace="app\models">
@@ -2476,7 +2476,7 @@
       </file>
       <file name="/Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/modules/api/controllers/UsersController.php">
         <class name="app\modules\api\controllers\UsersController" namespace="app\modules\api\controllers">
-          <metrics complexity="23" methods="10" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="189" coveredstatements="0" elements="199" coveredelements="0"/>
+          <metrics complexity="23" methods="10" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="189" coveredstatements="15" elements="199" coveredelements="15"/>
         </class>
         <line num="26" type="method" name="behaviors" visibility="public" complexity="1" crap="2" count="0"/>
         <line num="28" type="stmt" count="0"/>
@@ -2555,8 +2555,8 @@
         <line num="168" type="stmt" count="0"/>
         <line num="169" type="stmt" count="0"/>
         <line num="170" type="stmt" count="0"/>
-        <line num="177" type="method" name="actionView" visibility="public" complexity="1" crap="2" count="0"/>
-        <line num="179" type="stmt" count="0"/>
+        <line num="177" type="method" name="actionView" visibility="public" complexity="1" crap="1.83" count="1"/>
+        <line num="179" type="stmt" count="1"/>
         <line num="181" type="stmt" count="0"/>
         <line num="182" type="stmt" count="0"/>
         <line num="183" type="stmt" count="0"/>
@@ -2573,16 +2573,16 @@
         <line num="194" type="stmt" count="0"/>
         <line num="195" type="stmt" count="0"/>
         <line num="196" type="stmt" count="0"/>
-        <line num="203" type="method" name="actionCreate" visibility="public" complexity="2" crap="6" count="0"/>
-        <line num="205" type="stmt" count="0"/>
-        <line num="207" type="stmt" count="0"/>
-        <line num="208" type="stmt" count="0"/>
-        <line num="210" type="stmt" count="0"/>
-        <line num="211" type="stmt" count="0"/>
-        <line num="212" type="stmt" count="0"/>
-        <line num="213" type="stmt" count="0"/>
-        <line num="214" type="stmt" count="0"/>
-        <line num="215" type="stmt" count="0"/>
+        <line num="203" type="method" name="actionCreate" visibility="public" complexity="2" crap="3.05" count="2"/>
+        <line num="205" type="stmt" count="2"/>
+        <line num="207" type="stmt" count="2"/>
+        <line num="208" type="stmt" count="2"/>
+        <line num="210" type="stmt" count="2"/>
+        <line num="211" type="stmt" count="2"/>
+        <line num="212" type="stmt" count="2"/>
+        <line num="213" type="stmt" count="2"/>
+        <line num="214" type="stmt" count="2"/>
+        <line num="215" type="stmt" count="2"/>
         <line num="218" type="stmt" count="0"/>
         <line num="220" type="stmt" count="0"/>
         <line num="221" type="stmt" count="0"/>
@@ -2599,8 +2599,8 @@
         <line num="232" type="stmt" count="0"/>
         <line num="233" type="stmt" count="0"/>
         <line num="234" type="stmt" count="0"/>
-        <line num="241" type="method" name="actionUpdate" visibility="public" complexity="2" crap="6" count="0"/>
-        <line num="243" type="stmt" count="0"/>
+        <line num="241" type="method" name="actionUpdate" visibility="public" complexity="2" crap="5.54" count="1"/>
+        <line num="243" type="stmt" count="1"/>
         <line num="244" type="stmt" count="0"/>
         <line num="246" type="stmt" count="0"/>
         <line num="247" type="stmt" count="0"/>
@@ -2625,8 +2625,8 @@
         <line num="269" type="stmt" count="0"/>
         <line num="270" type="stmt" count="0"/>
         <line num="271" type="stmt" count="0"/>
-        <line num="278" type="method" name="actionDelete" visibility="public" complexity="3" crap="12" count="0"/>
-        <line num="280" type="stmt" count="0"/>
+        <line num="278" type="method" name="actionDelete" visibility="public" complexity="3" crap="10.21" count="1"/>
+        <line num="280" type="stmt" count="1"/>
         <line num="283" type="stmt" count="0"/>
         <line num="284" type="stmt" count="0"/>
         <line num="285" type="stmt" count="0"/>
@@ -2640,8 +2640,8 @@
         <line num="299" type="stmt" count="0"/>
         <line num="300" type="stmt" count="0"/>
         <line num="301" type="stmt" count="0"/>
-        <line num="308" type="method" name="actionActivate" visibility="public" complexity="2" crap="6" count="0"/>
-        <line num="310" type="stmt" count="0"/>
+        <line num="308" type="method" name="actionActivate" visibility="public" complexity="2" crap="4.68" count="1"/>
+        <line num="310" type="stmt" count="1"/>
         <line num="311" type="stmt" count="0"/>
         <line num="313" type="stmt" count="0"/>
         <line num="314" type="stmt" count="0"/>
@@ -2649,8 +2649,8 @@
         <line num="318" type="stmt" count="0"/>
         <line num="319" type="stmt" count="0"/>
         <line num="320" type="stmt" count="0"/>
-        <line num="327" type="method" name="actionDeactivate" visibility="public" complexity="3" crap="12" count="0"/>
-        <line num="329" type="stmt" count="0"/>
+        <line num="327" type="method" name="actionDeactivate" visibility="public" complexity="3" crap="10.21" count="1"/>
+        <line num="329" type="stmt" count="1"/>
         <line num="332" type="stmt" count="0"/>
         <line num="333" type="stmt" count="0"/>
         <line num="334" type="stmt" count="0"/>
@@ -2672,12 +2672,12 @@
         <line num="362" type="stmt" count="0"/>
         <line num="363" type="stmt" count="0"/>
         <line num="364" type="stmt" count="0"/>
-        <line num="373" type="method" name="findUser" visibility="protected" complexity="3" crap="12" count="0"/>
-        <line num="375" type="stmt" count="0"/>
+        <line num="373" type="method" name="findUser" visibility="protected" complexity="3" crap="6.80" count="5"/>
+        <line num="375" type="stmt" count="5"/>
         <line num="377" type="stmt" count="0"/>
         <line num="378" type="stmt" count="0"/>
         <line num="381" type="stmt" count="0"/>
-        <metrics loc="384" ncloc="290" classes="1" methods="10" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="189" coveredstatements="0" elements="199" coveredelements="0"/>
+        <metrics loc="384" ncloc="290" classes="1" methods="10" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="189" coveredstatements="15" elements="199" coveredelements="15"/>
       </file>
     </package>
     <package name="app\services">
@@ -3526,6 +3526,6 @@
     <file name="/Users/dominikpalatynski/Public/device-measurement-tracker/yii-app/services/MongoDBClientInterface.php">
       <metrics loc="39" ncloc="16" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="0" coveredstatements="0" elements="0" coveredelements="0"/>
     </file>
-    <metrics files="30" loc="7796" ncloc="5431" classes="26" methods="240" coveredmethods="37" conditionals="0" coveredconditionals="0" statements="3113" coveredstatements="949" elements="3353" coveredelements="986"/>
+    <metrics files="30" loc="7796" ncloc="5431" classes="26" methods="240" coveredmethods="40" conditionals="0" coveredconditionals="0" statements="3113" coveredstatements="1000" elements="3353" coveredelements="1040"/>
   </project>
 </coverage>
